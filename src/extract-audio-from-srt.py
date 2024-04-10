@@ -33,7 +33,6 @@ def main():
         index = 0
         while index < len(lines):
             line = lines[index].strip()
-            print('!!!!!!!!!!', line)
             if line.isdigit():
                 # Get start and end times without milliseconds
                 start_time = lines[index+1].split(" --> ")[0].split(',')[0]
