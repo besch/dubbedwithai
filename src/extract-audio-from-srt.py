@@ -1,11 +1,12 @@
 import os
 import subprocess
 
-home_dir = r"C:\Users\user\Downloads\Gorod.Boga.2002.DUAL.BDRip.XviD.AC3.-Shevon"
-input_file = "Gorod.Boga.2002.DUAL.BDRip.XviD.AC3.-Shevon.ENG.srt"
-subtitle_file = os.path.join(home_dir, input_file)
-audio_file = r"C:\Users\user\Downloads\Gorod.Boga.2002.DUAL.BDRip.XviD.AC3.-Shevon\Gorod.Boga.mp3"
-output_dir = r"C:\Users\user\Desktop\Projects\dubbedwithai\ffmpeg-extract-audio"
+home_dir = r"C:\Users\user\Desktop\Projects\dubbedwithai"
+audio_file = os.path.join(home_dir, 'tmp', 'original', 'audio.mp3')
+subtitles_file = os.path.join(home_dir, 'tmp', 'original', 'subtitles.srt')
+
+output_dir = os.path.join(home_dir, 'tmp', 'extract-subtitle-audio')
+
 
 def extract_audio(input_file, output_file, start_time, end_time):
     ffmpeg_command = [
@@ -27,12 +28,12 @@ def main():
     if not os.path.exists(output_dir):
         os.makedirs(output_dir)
 
-    with open(subtitle_file, 'r') as f:
+    with open(subtitles_file, 'r', encoding='utf-8-sig') as f:
         lines = f.readlines()
         index = 0
-        count = 0
-        while index < len(lines) and count < 5:
+        while index < len(lines):
             line = lines[index].strip()
+            print('!!!!!!!!!!', line)
             if line.isdigit():
                 # Get start and end times without milliseconds
                 start_time = lines[index+1].split(" --> ")[0].split(',')[0]
@@ -50,7 +51,6 @@ def main():
 
                 # Move to next subtitle
                 index += 4  # Skip 4 lines for each subtitle entry
-                count += 1
             else:
                 index += 1
 
