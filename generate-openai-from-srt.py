@@ -1,5 +1,10 @@
 import os
+import subprocess
 from openai import OpenAI
+
+subtitle_file = "f{input_dir}\{input_file}"
+audio_file = "C:\\Users\\user\\Downloads\\Gorod.Boga.2002.DUAL.BDRip.XviD.AC3.-Shevon\\sample.mp3"
+output_dir = "path/to/output/directory"
 
 input_dir = r"C:\Users\user\Downloads\Gorod.Boga.2002.DUAL.BDRip.XviD.AC3.-Shevon"
 input_file = "Gorod.Boga.2002.DUAL.BDRip.XviD.AC3.-Shevon.ENG.srt"
@@ -9,7 +14,7 @@ output_dir = os.path.join(input_dir, "first-10-voices")
 client = OpenAI()
 client.api_key = "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"
 
-def extract_subtitles_content_from_srt(filename, num_subtitles=10):
+def extract_subtitles_content_from_srt(filename, num_subtitles=5):
     with open(filename, 'r') as file:
         lines = file.readlines()
 
@@ -46,8 +51,7 @@ def api_request(i, text):
     response.stream_to_file(f"{output_dir}/{i}.mp3")
 
 def main():
-    filename = f'{input_dir}\{input_file}'
-    subtitles_content = extract_subtitles_content_from_srt(filename, num_subtitles=10)
+    subtitles_content = extract_subtitles_content_from_srt(subtitle_file, num_subtitles=10)
     
     for idx, content in enumerate(subtitles_content, 1):
         api_request(idx, content)
