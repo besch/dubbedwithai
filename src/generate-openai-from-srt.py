@@ -7,7 +7,7 @@ subtitles_file = os.path.join(home_dir, 'tmp', 'original', 'subtitles.srt')
 output_dir = os.path.join(home_dir, 'tmp', 'subtitle-to-voice')
 
 client = OpenAI()
-client.api_key = "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"
+client.api_key = os.environ['OPENAI_API_KEY']
 
 def extract_subtitles_content_from_srt(filename):
     subtitles_content = []
