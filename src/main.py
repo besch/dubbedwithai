@@ -15,7 +15,7 @@ COMBINED_DIR = os.path.join(TMP_DIR, 'combine-two-audio-streams')
 
 AUDIO_FILE = os.path.join(ORIGINAL_DIR, 'audio2.mp3')
 SUBTITLES_FILE = os.path.join(ORIGINAL_DIR, 'subtitles.srt')
-VOCAL_REMOVER = os.path.join(HOME_DIR, 'vocal-remover', 'inference.py')
+VOCAL_REMOVER = os.path.join(HOME_DIR, 'vocal_remover', 'inference.py')
 
 openai_client = OpenAI()
 openai_client.api_key = os.environ['OPENAI_API_KEY']
@@ -29,19 +29,21 @@ class Subtitle:
 
 def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
     subtitles = []
-    with open(filename, 'r') as f:
-        lines = f.readlines()
-        for index, line in enumerate(lines):
-            if line.strip():
-                if index % 4 == 1:
-                    try:
-                        start_time = line.split(" --> ")[0].split(',')[0]
-                        end_time = line.split(" --> ")[1].split(',')[0]
-                        output_file = os.path.join(VOICE_DIR, f"audio_{start_time.replace(':', '_')}_{end_time.replace(':', '_')}.mp3")
-                        subtitles.append(Subtitle(start_time, end_time, output_file, lines[index + 1].strip()))
-                    except (IndexError, ValueError):
-                        print(f"Error parsing line: {line}")
-                        continue
+    with open(filename, 'r') as file:
+        subtitle_blocks = file.read().split('\n\n')
+        for block in subtitle_blocks:
+            lines = block.strip().split('\n')
+            if len(lines) < 3:
+                continue
+
+            # Extract the start and end times
+            start_time = lines[1].split(" --> ")[0].split(',')[0]
+            end_time = lines[1].split(" --> ")[1].split(',')[0]
+            output_file = os.path.join(VOICE_DIR, f"audio_{start_time.replace(':', '_')}_{end_time.replace(':', '_')}.mp3")
+            content = '\n'.join(lines[2:])
+
+            subtitles.append(Subtitle(start_time, end_time, output_file, content))
+
     return subtitles
 
 def generate_voice_from_subtitle(subtitle: Subtitle):
@@ -77,6 +79,7 @@ def remove_vocals(audio_file: str):
     return output_file
 
 def combine_audio_streams(audio_1: str, audio_2: str) -> str:
+    audio_1 = audio_1.replace(".mp3", "_Instruments.wav")
     output_file = os.path.join(COMBINED_DIR, 'combined_audio.mp3')
     subprocess.run(['ffmpeg', '-i', audio_1, '-i', audio_2, '-filter_complex', '[0:a][1:a]amerge=inputs=2[aout]', '-map', '[aout]', output_file], check=True)
     return output_file
