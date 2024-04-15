@@ -84,12 +84,27 @@ def combine_audio_streams(audio_1: str, audio_2: str) -> str:
     subprocess.run(['ffmpeg', '-i', audio_1, '-i', audio_2, '-filter_complex', '[0:a][1:a]amerge=inputs=2[aout]', '-map', '[aout]', output_file], check=True)
     return output_file
 
-def combine_audio_with_delay(audio_1: str, audio_2: str, delay: float) -> str:
-    output_file = os.path.join(COMBINED_DIR, 'combined_audio.mp3')
+def combine_audio_with_delay(audio_1: str, audio_2: str, delay: str) -> str:
+    output_file = os.path.join(COMBINED_DIR, 'combined_audio_final.mp3')
+    hours, minutes, seconds = map(int, delay.split(':'))
+    delay = hours * 3600 + minutes * 60 + seconds
     delay_ms = delay * 1000
-    ffmpeg_cmd = (f'ffmpeg -i "{audio_1}" -i "{audio_2}" '
-                  f'-filter_complex "[1:a]adelay={delay_ms}|{delay_ms}[delayed];[0:a][delayed]amix" '
-                  f'-c:a libmp3lame "{output_file}"')
+
+    duration_cmd = f'ffprobe -i "{audio_1}" -show_entries format=duration -v quiet -of csv="p=0"'
+    duration_1 = float(subprocess.check_output(duration_cmd, shell=True))
+
+    duration_cmd = f'ffprobe -i "{audio_2}" -show_entries format=duration -v quiet -of csv="p=0"'
+    duration_2 = float(subprocess.check_output(duration_cmd, shell=True))
+
+    ffmpeg_cmd = (
+        f'ffmpeg -hwaccel cuda -hwaccel_device 0 '
+        f'-i "{audio_1}" -i "{audio_2}" '
+        f'-filter_complex "[0:a]atrim=start=0:end={delay_ms}[audio1_1];'
+        f'[0:a]atrim=start={delay_ms+duration_2}:end={duration_1}[audio1_2];'
+        f'[1:a]atrim=start=0:end={duration_2}[audio2_1];'
+        f'[audio1_1][audio2_1][audio1_2]concat=n=3:v=0:a=1[outaudio]" '
+        f'-map "[outaudio]" -c:a libmp3lame -c:v hevc_nvenc -preset p7 -rc constqp -qp 25 -tag:v hvc1 "{output_file}"'
+    )
     subprocess.call(ffmpeg_cmd, shell=True)
     return output_file
 
@@ -108,7 +123,11 @@ def main():
             audio_file = extract_audio_from_movie(subtitle)
             vocal_removed_file = remove_vocals(audio_file)
             combined_file = combine_audio_streams(vocal_removed_file, subtitle.output_file)
-            final_file = combine_audio_with_delay(AUDIO_FILE, combined_file, float(subtitle.start_time.replace(':', '.')))
+            final_file = combine_audio_with_delay(AUDIO_FILE, combined_file, subtitle.start_time)
+
+            # combined_file = os.path.join(TMP_DIR, 'combine-two-audio-streams', 'combined_audio.mp3')
+            # final_file = combine_audio_with_delay(AUDIO_FILE, combined_file, subtitle.start_time)
+
             print(f"Completed processing for subtitle: {subtitle.start_time} - {subtitle.end_time}")
         except Exception as e:
             print(f"Error processing subtitle: {subtitle.start_time} - {subtitle.end_time}, Error: {e}")
