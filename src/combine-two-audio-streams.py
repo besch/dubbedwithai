@@ -9,11 +9,12 @@ output_dir = os.path.join(home_dir, 'tmp', 'combine-two-audio-streams')
 output_file = os.path.join(output_dir, 'combined_audio.mp3')
 
 def main():
-    try:
-        subprocess.run(['ffmpeg', '-i', audio_1, '-i', audio_2, '-filter_complex', '[0:a][1:a]amerge=inputs=2[aout]', '-map', '[aout]', output_file], check=True)
-        print(f"Audio files combined successfully: {output_file}")
-    except subprocess.CalledProcessError as e:
-        print(f"Error combining audio files: {e}")
+    ffmpeg_cmd = (f'ffmpeg -hwaccel cuda -hwaccel_device 0 '
+            f'-i "{audio_1}" -i "{audio_2}" '
+            f'-filter_complex "[0:a][1:a]amerge=inputs=2[aout]" '
+            f'-map "[aout]" -c:a libmp3lame -c:v hevc_nvenc -preset p7 -rc constqp -qp 25 -tag:v hvc1 "{output_file}"')
+    subprocess.call(ffmpeg_cmd, shell=True)
+    print(f"Audio files combined successfully: {output_file}")
 
 if __name__ == "__main__":
     main()
