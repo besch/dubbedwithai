@@ -1,7 +1,6 @@
 import os
 import subprocess
 from dataclasses import dataclass
-from typing import Tuple
 from openai import OpenAI
 from pydub import AudioSegment
 from datetime import datetime, timedelta
@@ -125,11 +124,7 @@ def main():
             audio_file = extract_audio_from_movie(subtitle, start_audio)
             vocal_removed_file = remove_vocals(audio_file)
             combined_file = combine_audio_streams(vocal_removed_file, subtitle.output_file, subtitle)
-
             final_file = combine_audio_with_delay(start_audio, combined_file, subtitle)
-
-            # combined_file = os.path.join(VOICE_DIR, f"audio_{subtitle.start_time.replace(':', '_')}_{subtitle.end_time.replace(':', '_')}_Instruments.wav")
-            # final_file = combine_audio_with_delay(AUDIO_FILE, combined_file, subtitle.start_time)
 
             print(f"Completed processing for subtitle: {subtitle.start_time} - {subtitle.end_time}")
         except Exception as e:
