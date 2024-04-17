@@ -3,6 +3,8 @@ import subprocess
 from dataclasses import dataclass
 from typing import Tuple
 from openai import OpenAI
+from pydub import AudioSegment
+from datetime import datetime, timedelta
 
 # Set up environment
 HOME_DIR = r"C:\Users\user\Desktop\Projects\dubbedwithai"
@@ -37,9 +39,9 @@ def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
                 continue
 
             # Extract the start and end times
-            start_time = lines[1].split(" --> ")[0].split(',')[0]
-            end_time = lines[1].split(" --> ")[1].split(',')[0]
-            output_file = os.path.join(VOICE_DIR, f"audio_{start_time.replace(':', '_')}_{end_time.replace(':', '_')}.mp3")
+            start_time = lines[1].split(" --> ")[0]
+            end_time = lines[1].split(" --> ")[1]
+            output_file = os.path.join(VOICE_DIR, f"audio_{start_time.replace(':', '_').replace(',', '.')}_{end_time.replace(':', '_').replace(',', '.')}.mp3")
             content = '\n'.join(lines[2:])
 
             subtitles.append(Subtitle(start_time, end_time, output_file, content))
@@ -55,22 +57,18 @@ def generate_voice_from_subtitle(subtitle: Subtitle):
     response.stream_to_file(subtitle.output_file)
 
 def extract_audio_from_movie(subtitle: Subtitle, start_audio: str):
-    output_file = os.path.join(AUDIO_DIR, f"audio_{subtitle.start_time.replace(':', '_')}_{subtitle.end_time.replace(':', '_')}.mp3")
-    ffmpeg_command = [
-        "ffmpeg",
-        "-y",
-        "-i", start_audio,
-        "-ss", subtitle.start_time,
-        "-to", subtitle.end_time,
-        "-acodec", "copy",
-        "-f", "mp3",
-        output_file
-    ]
-    try:
-        subprocess.run(ffmpeg_command, check=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
-    except subprocess.CalledProcessError as e:
-        print(f"Error extracting audio: {e.stderr.decode().strip()}")
-        raise e
+    formatted_start_time = subtitle.start_time.replace(',', '.')
+    formatted_end_time = subtitle.end_time.replace(',', '.')
+    
+    output_file = os.path.join(AUDIO_DIR, f"audio_{formatted_start_time.replace(':', '_')}_{formatted_end_time.replace(':', '_')}.mp3")
+    start_audio = AudioSegment.from_file(start_audio, format="mp3")
+    start_time = datetime.strptime(formatted_start_time, "%H:%M:%S.%f").time()
+    end_time = datetime.strptime(formatted_end_time, "%H:%M:%S.%f").time()
+    start_time_ms = int(timedelta(hours=start_time.hour, minutes=start_time.minute, seconds=start_time.second, microseconds=start_time.microsecond // 1000).total_seconds() * 1000)
+    end_time_ms = int(timedelta(hours=end_time.hour, minutes=end_time.minute, seconds=end_time.second, microseconds=end_time.microsecond // 1000).total_seconds() * 1000)
+
+    part_audio = start_audio[start_time_ms:end_time_ms]
+    part_audio.export(output_file, format="mp3")
     return output_file
 
 def remove_vocals(audio_file: str):
@@ -80,36 +78,31 @@ def remove_vocals(audio_file: str):
     return output_file
 
 def combine_audio_streams(audio_1: str, audio_2: str, subtitle: Subtitle) -> str:
+    output_file = os.path.join(COMBINED_DIR, f"audio_{subtitle.start_time.replace(':', '_').replace(',', '.')}_{subtitle.end_time.replace(':', '_').replace(',', '.')}.mp3")
     audio_1 = audio_1.replace(".mp3", "_Instruments.wav")
-    output_file = os.path.join(COMBINED_DIR, f"audio_{subtitle.start_time.replace(':', '_')}_{subtitle.end_time.replace(':', '_')}.mp3")
-    # output_file = os.path.join(COMBINED_DIR, 'combined_audio.mp3')
+    audio_1 = AudioSegment.from_file(audio_1, format="wav")
+    audio_2 = AudioSegment.from_file(audio_2, format="mp3")
     
-    subprocess.run(['ffmpeg', '-y', '-i', audio_1, '-i', audio_2, '-filter_complex', '[0:a][1:a]amerge=inputs=2[aout]', '-map', '[aout]', output_file], check=True)
+    modified_audio1 = audio_1.overlay(audio_2)
+    modified_audio1.export(output_file, format="mp3")
     return output_file
 
 def combine_audio_with_delay(audio_1: str, audio_2: str, subtitle: Subtitle) -> str:
-    hours, minutes, seconds = map(int, subtitle.start_time.split(':'))
-    delay = hours * 3600 + minutes * 60 + seconds
-    delay_ms = delay * 1000
+    formatted_start_time = subtitle.start_time.replace(',', '.')
+    formatted_end_time = subtitle.end_time.replace(',', '.')
+    
+    output_audio = os.path.join(COMBINED_DIR, f"combined_{formatted_start_time.replace(':', '_')}_{formatted_end_time.replace(':', '_')}.mp3")
 
-    duration_cmd = f'ffprobe -i "{audio_1}" -show_entries format=duration -v quiet -of csv="p=0"'
-    duration_1 = float(subprocess.check_output(duration_cmd, shell=True))
+    audio1 = AudioSegment.from_file(audio_1)
+    audio2 = AudioSegment.from_file(audio_2)
 
-    duration_cmd = f'ffprobe -i "{audio_2}" -show_entries format=duration -v quiet -of csv="p=0"'
-    duration_2 = float(subprocess.check_output(duration_cmd, shell=True))
+    start_time = datetime.strptime(formatted_start_time, "%H:%M:%S.%f").time()
+    end_time = datetime.strptime(formatted_end_time, "%H:%M:%S.%f").time()
+    start_time_ms = int(timedelta(hours=start_time.hour, minutes=start_time.minute, seconds=start_time.second, microseconds=start_time.microsecond // 1000).total_seconds() * 1000)
+    end_time_ms = int(timedelta(hours=end_time.hour, minutes=end_time.minute, seconds=end_time.second, microseconds=end_time.microsecond // 1000).total_seconds() * 1000)
 
-    output_audio = os.path.join(COMBINED_DIR, f"combined_{subtitle.start_time.replace(':', '_')}_{subtitle.end_time.replace(':', '_')}.mp3")
-
-    ffmpeg_cmd = (
-        f'ffmpeg -y -hwaccel cuda -hwaccel_device 0 '
-        f'-i "{audio_1}" -i "{audio_2}" '
-        f'-filter_complex "[0:a]atrim=start=0:end={delay_ms}[audio1_1];'
-        f'[0:a]atrim=start={delay_ms+duration_2}:end={duration_1}[audio1_2];'
-        f'[1:a]atrim=start=0:end={duration_2}[audio2_1];'
-        f'[audio1_1][audio2_1][audio1_2]concat=n=3:v=0:a=1[outaudio]" '
-        f'-map "[outaudio]" -c:a libmp3lame -c:v hevc_nvenc -preset p7 -rc constqp -qp 25 -tag:v hvc1 "{output_audio}"'
-    )
-    subprocess.call(ffmpeg_cmd, shell=True)
+    modified_audio1 = audio1[:start_time_ms] + audio2 + audio1[end_time_ms:]
+    modified_audio1.export(output_audio, format="mp3")
     return output_audio
 
 def main():
@@ -123,11 +116,12 @@ def main():
 
     for index, subtitle in enumerate(subtitles):
         try:
-            start_audio = os.path.join(COMBINED_DIR, f"combined_{subtitles[index-1].start_time.replace(':', '_')}_{subtitles[index-1].end_time.replace(':', '_')}.mp3")
-            if (start_audio is None) or (not os.path.exists(start_audio)):
+            if index == 0:
                 start_audio = AUDIO_FILE
-
-            generate_voice_from_subtitle(subtitle)
+            else:
+                start_audio = os.path.join(COMBINED_DIR, f"combined_{subtitles[index-1].start_time.replace(':', '_').replace(',', '.')}_{subtitles[index-1].end_time.replace(':', '_').replace(',', '.')}.mp3")
+                
+            # generate_voice_from_subtitle(subtitle)
             audio_file = extract_audio_from_movie(subtitle, start_audio)
             vocal_removed_file = remove_vocals(audio_file)
             combined_file = combine_audio_streams(vocal_removed_file, subtitle.output_file, subtitle)
