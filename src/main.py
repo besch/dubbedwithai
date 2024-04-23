@@ -152,13 +152,13 @@ def main():
             audio_file = extract_audio_from_movie(subtitle, start_audio)
             vocal_removed_file = remove_vocals(audio_file)
             combined_file = combine_audio_streams(vocal_removed_file, subtitle.output_file, subtitle)
-            final_file = combine_audio_with_delay(start_audio, combined_file, subtitle)
-            
-            combined = combine_audio_and_video(VIDEO_FILE, final_file)
+            final_audio = combine_audio_with_delay(start_audio, combined_file, subtitle)
 
             print(f"Completed processing for subtitle: {subtitle.start_time} - {subtitle.end_time}")
         except Exception as e:
             print(f"Error processing subtitle: {subtitle.start_time} - {subtitle.end_time}, Error: {e}")
+            
+    combine_audio_and_video(VIDEO_FILE, final_audio)
 
 if __name__ == "__main__":
     main()
