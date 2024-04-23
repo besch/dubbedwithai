@@ -8,14 +8,19 @@ from datetime import datetime, timedelta
 # Set up environment
 HOME_DIR = r"C:\Users\user\Desktop\Projects\dubbedwithai"
 TMP_DIR = os.path.join(HOME_DIR, 'tmp')
-ORIGINAL_DIR = os.path.join(TMP_DIR, 'original')
+ORIGINAL_DIR = os.path.join(TMP_DIR, 'original', '18-23')
+PROCESSED_DIR = os.path.join(ORIGINAL_DIR, 'processed')
 AUDIO_DIR = os.path.join(TMP_DIR, 'extract-subtitle-audio')
 VOICE_DIR = os.path.join(TMP_DIR, 'subtitle-to-voice')
 VOCAL_DIR = os.path.join(TMP_DIR, 'audio-remove-vocals')
 COMBINED_DIR = os.path.join(TMP_DIR, 'combine-two-audio-streams')
 
-AUDIO_FILE = os.path.join(ORIGINAL_DIR, 'audio2.mp3')
+ORIGINAL_VIDEO_FILE = os.path.join(ORIGINAL_DIR, 'video.mp4')
+VIDEO_FILE = os.path.join(PROCESSED_DIR, 'video.mp4')
+AUDIO_FILE = os.path.join(PROCESSED_DIR, 'audio.mp3')
 SUBTITLES_FILE = os.path.join(ORIGINAL_DIR, 'subtitles.srt')
+COMBINED_VIDEO_FILE = os.path.join(PROCESSED_DIR, 'combined.mp4')
+
 VOCAL_REMOVER = os.path.join(HOME_DIR, 'vocal_remover', 'inference.py')
 
 openai_client = OpenAI()
@@ -104,13 +109,36 @@ def combine_audio_with_delay(audio_1: str, audio_2: str, subtitle: Subtitle) -> 
     modified_audio1.export(output_audio, format="mp3")
     return output_audio
 
+def extract_audio_and_video_from_original_video():
+    try:
+        ffmpeg_video = f'ffmpeg -i {ORIGINAL_VIDEO_FILE} -vcodec copy -an -y {VIDEO_FILE}'
+        subprocess.call(ffmpeg_video, shell=True)
+    except Exception as e:
+        print(f"Failed to extract video, Error: {e}")
+    
+    try:
+        ffmpeg_audio = f'ffmpeg -i {ORIGINAL_VIDEO_FILE} -acodec libmp3lame -vn -y {AUDIO_FILE}'
+        subprocess.call(ffmpeg_audio, shell=True)
+    except Exception as e:
+        print(f"Failed to extract audio, Error: {e}")
+        
+        ffmpeg_audio = f'ffmpeg -i {ORIGINAL_VIDEO_FILE} -acodec libmp3lame -vn -y {AUDIO_FILE}'
+    return AUDIO_FILE
+    
+def combine_audio_and_video(video_file: str, audio_file: str) -> str:
+    ffmpeg_combine = f'ffmpeg -i {video_file} -i {audio_file} -c:v copy -c:a aac -strict experimental -y {COMBINED_VIDEO_FILE}'
+    subprocess.call(ffmpeg_combine, shell=True)
+
 def main():
     os.makedirs(TMP_DIR, exist_ok=True)
     os.makedirs(AUDIO_DIR, exist_ok=True)
     os.makedirs(VOICE_DIR, exist_ok=True)
     os.makedirs(VOCAL_DIR, exist_ok=True)
     os.makedirs(COMBINED_DIR, exist_ok=True)
-
+    os.makedirs(PROCESSED_DIR, exist_ok=True)
+    
+    AUDIO_FILE = extract_audio_and_video_from_original_video()
+    
     subtitles = extract_subtitles_from_srt(SUBTITLES_FILE)
 
     for index, subtitle in enumerate(subtitles):
@@ -120,11 +148,13 @@ def main():
             else:
                 start_audio = os.path.join(COMBINED_DIR, f"combined_{subtitles[index-1].start_time.replace(':', '_').replace(',', '.')}_{subtitles[index-1].end_time.replace(':', '_').replace(',', '.')}.mp3")
                 
-            # generate_voice_from_subtitle(subtitle)
+            generate_voice_from_subtitle(subtitle)
             audio_file = extract_audio_from_movie(subtitle, start_audio)
             vocal_removed_file = remove_vocals(audio_file)
             combined_file = combine_audio_streams(vocal_removed_file, subtitle.output_file, subtitle)
             final_file = combine_audio_with_delay(start_audio, combined_file, subtitle)
+            
+            combined = combine_audio_and_video(VIDEO_FILE, final_file)
 
             print(f"Completed processing for subtitle: {subtitle.start_time} - {subtitle.end_time}")
         except Exception as e:
