@@ -1,12 +1,18 @@
 "use client";
+import React, { useState, useRef, useEffect } from "react";
 
-import React, { useState, useRef } from "react";
+interface Subtitle {
+  start: string;
+  end: string;
+  text: string;
+}
 
-const Timeline = () => {
-  const [zoom, setZoom] = useState(0);
-  const timelineRef = useRef(null);
+const Timeline: React.FC = () => {
+  const [zoom, setZoom] = useState<number>(0);
+  const timelineRef = useRef<HTMLDivElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
 
-  const subtitles = [
+  const subtitles: Subtitle[] = [
     { start: "00:00:49,162", end: "00:00:50,959", text: "CITY OF GOD" },
     {
       start: "00:01:51,991",
@@ -28,38 +34,52 @@ const Timeline = () => {
   const totalDuration = 180000; // 3 minutes in milliseconds
   const timelineWidth = `${100 + zoom * 25}%`;
 
-  const handleWheel = (e) => {
+  const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.altKey) {
       e.preventDefault();
-      const newZoom = Math.max(0, zoom + (e.deltaY < 0 ? 1 : -1));
-      setZoom(newZoom);
+      const container = containerRef.current;
+      const timeline = timelineRef.current;
+      if (container && timeline) {
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const relativeMouseX = mouseX / rect.width;
+        const newZoom = Math.max(0, zoom + (e.deltaY < 0 ? 1 : -1));
+        setZoom(newZoom);
+        const scrollWidth = timeline.scrollWidth - rect.width;
+        const newScrollLeft = scrollWidth * relativeMouseX;
+        timeline.scrollLeft = newScrollLeft;
+      }
     }
   };
 
+  useEffect(() => {
+    const timeline = timelineRef.current;
+    if (timeline) {
+      timeline.scrollLeft = 0;
+    }
+  }, []);
+
   return (
     <div
-      className="relative w-full h-24 overflow-x-auto"
+      className="relative w-full h-24 overflow-x-auto overflow-y-hidden"
       onWheel={handleWheel}
-      ref={timelineRef}
+      ref={containerRef}
     >
       <div
         className="h-24 bg-gray-200 rounded-md relative"
         style={{ width: timelineWidth }}
+        ref={timelineRef}
       >
         {subtitles.map((subtitle, index) => {
           const startTime = convertToMilliseconds(subtitle.start);
           const endTime = convertToMilliseconds(subtitle.end);
           const startWidth = (startTime / totalDuration) * 100;
           const subtitleWidth = ((endTime - startTime) / totalDuration) * 100;
-
           return (
             <div
               key={index}
-              className="absolute bg-blue-500 h-24 rounded-md"
-              style={{
-                left: `${startWidth}%`,
-                width: `${subtitleWidth}%`,
-              }}
+              className="absolute bg-blue-500 h-16 rounded-md mt-2"
+              style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
             />
           );
         })}
@@ -68,11 +88,10 @@ const Timeline = () => {
   );
 };
 
-const convertToMilliseconds = (timeString) => {
+const convertToMilliseconds = (timeString: string): number => {
   const [hours, minutes, secondsMillis] = timeString.split(":");
   const seconds = secondsMillis.split(",")[0];
   const millis = secondsMillis.split(",")[1];
-
   return (
     parseInt(hours, 10) * 3600000 +
     parseInt(minutes, 10) * 60000 +
