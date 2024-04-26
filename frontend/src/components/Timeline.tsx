@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
+import SubtitleHoverCard from "./HoverCard";
 
 interface Subtitle {
   start: string;
@@ -90,11 +91,17 @@ const Timeline: React.FC = () => {
           const subtitleWidth = ((endTime - startTime) / totalDuration) * 100;
 
           return (
-            <div
+            <SubtitleHoverCard
               key={index}
-              className="absolute bg-blue-500 h-16 rounded-md mt-2"
-              style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
-            ></div>
+              start={subtitle.start}
+              end={subtitle.end}
+              text={subtitle.text}
+            >
+              <div
+                className="absolute bg-blue-500 h-16 rounded-md mt-2 cursor-pointer"
+                style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
+              ></div>
+            </SubtitleHoverCard>
           );
         })}
       </div>
