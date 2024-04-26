@@ -61,7 +61,7 @@ const Timeline: React.FC = () => {
 
   return (
     <div
-      className="relative w-full h-24 overflow-x-auto overflow-y-hidden"
+      className="relative w-full h-32 overflow-x-auto overflow-y-hidden"
       onWheel={handleWheel}
       ref={containerRef}
     >
@@ -70,17 +70,31 @@ const Timeline: React.FC = () => {
         style={{ width: timelineWidth }}
         ref={timelineRef}
       >
+        {/* Render vertical dashed lines */}
+        {Array.from({ length: 11 }, (_, i) => (
+          <div
+            key={i}
+            className="absolute top-0 bottom-0 border-l border-dashed border-gray-400"
+            style={{ left: `${(i * 100) / 10}%` }}
+          >
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-xs">
+              {formatTime((totalDuration * i) / 10)}
+            </div>
+          </div>
+        ))}
+
         {subtitles.map((subtitle, index) => {
           const startTime = convertToMilliseconds(subtitle.start);
           const endTime = convertToMilliseconds(subtitle.end);
           const startWidth = (startTime / totalDuration) * 100;
           const subtitleWidth = ((endTime - startTime) / totalDuration) * 100;
+
           return (
             <div
               key={index}
               className="absolute bg-blue-500 h-16 rounded-md mt-2"
               style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
-            />
+            ></div>
           );
         })}
       </div>
@@ -98,6 +112,17 @@ const convertToMilliseconds = (timeString: string): number => {
     parseInt(seconds, 10) * 1000 +
     parseInt(millis, 10)
   );
+};
+
+const formatTime = (milliseconds: number): string => {
+  const totalSeconds = Math.floor(milliseconds / 1000);
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${padZero(minutes)}:${padZero(seconds)}`;
+};
+
+const padZero = (num: number): string => {
+  return num.toString().padStart(2, "0");
 };
 
 export default Timeline;
