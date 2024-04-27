@@ -12,8 +12,10 @@ export default function Home() {
   return (
     <Provider store={store}>
       <Timeline />
-      <SubtitleCard />
-      <VoiceGenerator />
+      <div className="flex flex-row">
+        <SubtitleCard />
+        <VoiceGenerator />
+      </div>
     </Provider>
   );
 }

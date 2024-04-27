@@ -3,7 +3,6 @@ import {
   Card,
   CardContent,
   CardDescription,
-  CardFooter,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -66,7 +65,7 @@ const VoiceGenerator = () => {
   };
 
   return (
-    <Card className="w-[350px] m-10">
+    <Card className="w-[350px] m-10 mr-0">
       <CardHeader>
         <CardTitle>Create project</CardTitle>
         <CardDescription>Deploy your new project in one-click.</CardDescription>

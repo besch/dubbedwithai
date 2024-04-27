@@ -24,7 +24,7 @@ const convertVideoToAudio = async (
     const videoPath = videoFile.path;
     const audioPath = `${videoPath.split(".")[0]}.mp3`;
 
-    const python_script = path.join(__dirname, "../../../../../src/main.py");
+    const python_script = path.join(__dirname, "../../../../../../src/main.py");
 
     // Convert video to audio using Python
     const pythonProcess = spawn("python", [

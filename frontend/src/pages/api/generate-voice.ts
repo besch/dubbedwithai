@@ -17,36 +17,26 @@ const generateVoice = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(500).json({ error: "Error parsing form data" });
     }
 
-    console.log("fields", fields);
+    console.log(fields);
 
-    // const videoFile = files.file as formidable.File;
-    // const videoPath = videoFile.path;
-    // const audioPath = `${videoPath.split(".")[0]}.mp3`;
+    const python_script = path.join(
+      __dirname,
+      "../../../../../src/generate_voice.py"
+    );
+    const fieldsString = JSON.stringify(fields);
+    const pythonProcess = spawn("python", [python_script, fieldsString]);
 
-    // const python_script = path.join(__dirname, "../../../../../src/main.py");
+    pythonProcess.stdout.on("data", (data) => {
+      console.log(`stdout: ${data}`);
+    });
 
-    // // Convert video to audio using Python
-    // const pythonProcess = spawn("python", [
-    //   python_script,
-    //   videoPath,
-    //   audioPath,
-    // ]);
+    pythonProcess.stderr.on("data", (data) => {
+      console.error(`stderr: ${data}`);
+    });
 
-    // pythonProcess.stdout.on("data", (data) => {
-    //   console.log(`stdout: ${data}`);
-    // });
-
-    // pythonProcess.stderr.on("data", (data) => {
-    //   console.error(`stderr: ${data}`);
-    // });
-
-    // pythonProcess.on("close", (code) => {
-    //   console.log(`child process exited with code ${code}`);
-
-    //   // Clean up temporary files
-    //   fs.unlinkSync(videoPath);
-    //   fs.unlinkSync(audioPath);
-    // });
+    pythonProcess.on("close", (code) => {
+      console.log(`child process exited with code ${code}`);
+    });
   });
 };
 
