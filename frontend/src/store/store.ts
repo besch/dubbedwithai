@@ -1,29 +1,14 @@
 // store.ts
 import { configureStore, createSlice, PayloadAction } from "@reduxjs/toolkit";
-
-interface VideoState {
-  videoBlob: Blob | null;
-}
-
-const initialState: VideoState = {
-  videoBlob: null,
-};
-
-const videoSlice = createSlice({
-  name: "video",
-  initialState,
-  reducers: {
-    setVideoBlob: (state, action: PayloadAction<Blob | null>) => {
-      state.videoBlob = action.payload;
-    },
-  },
-});
+import { videoSlice } from "./slices/video";
+import { subtitleSlice } from "./slices/subtitle";
 
 export const { setVideoBlob } = videoSlice.actions;
 
 const store = configureStore({
   reducer: {
     video: videoSlice.reducer,
+    subtitle: subtitleSlice.reducer,
   },
 });
 

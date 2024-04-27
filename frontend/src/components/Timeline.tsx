@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
-import SubtitleHoverCard from "./HoverCard";
+import { setSubtitle } from "@/store/slices/subtitle";
+import { useDispatch } from "react-redux";
 
 interface Subtitle {
   start: string;
@@ -9,6 +10,7 @@ interface Subtitle {
 }
 
 const Timeline: React.FC = () => {
+  const dispatch = useDispatch();
   const [zoom, setZoom] = useState<number>(0);
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,17 +93,12 @@ const Timeline: React.FC = () => {
           const subtitleWidth = ((endTime - startTime) / totalDuration) * 100;
 
           return (
-            <SubtitleHoverCard
+            <div
               key={index}
-              start={subtitle.start}
-              end={subtitle.end}
-              text={subtitle.text}
-            >
-              <div
-                className="absolute bg-blue-500 h-16 rounded-md mt-2 cursor-pointer"
-                style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
-              ></div>
-            </SubtitleHoverCard>
+              onClick={() => dispatch(setSubtitle(subtitle))}
+              className="absolute bg-blue-500 h-16 rounded-md mt-2 cursor-pointer"
+              style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
+            ></div>
           );
         })}
       </div>
