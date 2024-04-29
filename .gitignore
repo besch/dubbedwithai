@@ -4,6 +4,6 @@ tmp
 vocal_remover
 openvoice
 
-
+frontend/.env
 
 frontend/node_modules

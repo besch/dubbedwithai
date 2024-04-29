@@ -1,6 +1,10 @@
 "use client";
 
 import { Provider } from "react-redux";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
+
 import store from "@/store/store";
 import FileUpload from "@/components/FileUpload";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -10,13 +14,15 @@ import SubtitleCard from "@/components/SubtitleCard";
 
 export default function Home() {
   return (
-    <Provider store={store}>
-      <Timeline />
-      <div className="flex flex-row">
-        <SubtitleCard />
-        <VoiceGenerator />
-      </div>
-    </Provider>
+    <QueryClientProvider client={queryClient}>
+      <Provider store={store}>
+        <Timeline />
+        <div className="flex flex-row">
+          <SubtitleCard />
+          <VoiceGenerator />
+        </div>
+      </Provider>
+    </QueryClientProvider>
   );
 }
 

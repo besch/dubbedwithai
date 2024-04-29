@@ -18,18 +18,20 @@ def main():
     ckpt_converter = os.path.join(current_dir, 'lib', 'openvoice', 'checkpoints', 'converter')
     device="cuda:0" if torch.cuda.is_available() else "cpu"
     output_dir = os.path.join(current_dir, '..', 'tmp', 'outputs')
+    checkpoint_config = os.path.join(ckpt_base, 'config.json')
+    checkpoint_pth = os.path.join(ckpt_base, 'checkpoint.pth')
 
-    base_speaker_tts = BaseSpeakerTTS(f'{ckpt_base}/config.json', device=device)
-    base_speaker_tts.load_ckpt(f'{ckpt_base}/checkpoint.pth')
+    base_speaker_tts = BaseSpeakerTTS(checkpoint_config, device=device)
+    base_speaker_tts.load_ckpt(checkpoint_pth)
 
     tone_color_converter = ToneColorConverter(f'{ckpt_converter}/config.json', device=device)
-    tone_color_converter.load_ckpt(f'{ckpt_converter}/checkpoint.pth')
+    tone_color_converter.load_ckpt(os.path.join(ckpt_converter, 'checkpoint.pth'))
 
     os.makedirs(output_dir , exist_ok=True)
 
-    source_se = torch.load(f'{ckpt_base}/en_default_se.pth').to(device)
+    source_se = torch.load(os.path.join(ckpt_base, 'en_default_se.pth')).to(device)
 
-    reference_speaker = os.path.join(current_dir, 'lib/openvoice/resources/demo_speaker2.mp3') # This is the voice you want to clone
+    reference_speaker = os.path.join(current_dir, 'lib', 'openvoice', 'resources', 'demo_speaker2.mp3') # This is the voice you want to clone
     target_se, audio_name = se_extractor.get_se(reference_speaker, tone_color_converter, target_dir='processed', vad=True)
 
     save_path = os.path.join(output_dir, 'output_en_default.wav')

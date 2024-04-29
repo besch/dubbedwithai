@@ -4,12 +4,14 @@ interface SubtitleState {
   start: string;
   end: string;
   text: string;
+  audioFileUrl: string;
 }
 
 const initialState: SubtitleState = {
   start: "",
   end: "",
   text: "",
+  audioFileUrl: "",
 };
 
 export const subtitleSlice = createSlice({

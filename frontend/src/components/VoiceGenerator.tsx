@@ -1,3 +1,5 @@
+import { useMutation } from "@tanstack/react-query";
+import { Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,10 +16,12 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { setSubtitle } from "@/store/slices/subtitle";
 import { RootState } from "@/store/store";
 
 const VoiceGenerator = () => {
+  const dispatch = useDispatch();
   const subtitle = useSelector((state: RootState) => state.subtitle);
   const voiceStyles: string[] = [
     "friendly",
@@ -41,32 +45,42 @@ const VoiceGenerator = () => {
     const voice_language = formData.get("voicelanguage") as string;
     const voice_speed = formData.get("voicespeed") as string;
 
-    try {
-      const response = await fetch("/api/generate-voice", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subtitle_name,
-          subtitle_text: subtitle.text,
-          voice_actor,
-          voice_style,
-          voice_language,
-          voice_speed,
-        }),
-      });
+    const data = JSON.stringify({
+      subtitle_name,
+      subtitle_text: subtitle.text,
+      voice_actor,
+      voice_style,
+      voice_language,
+      voice_speed,
+    });
 
-      if (response.ok) {
-        const data = await response.json();
-        console.log("!!!!!!!!!!!!!!!!!!!!", data);
-      } else {
-        console.error("Error generating voice:", response.status);
-      }
-    } catch (error) {
-      console.error("Error generating voice:", error);
-    }
+    mutate(data);
   };
+
+  const generateVoice = async (data: string) => {
+    const response = await fetch("/api/generate-voice", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: data,
+    });
+
+    return response.json();
+  };
+
+  const { mutate, isPending } = useMutation({
+    mutationFn: generateVoice,
+    onSuccess: (data) => {
+      dispatch(setSubtitle({ ...subtitle, audioFileUrl: data.audioFileUrl }));
+    },
+    onError: (error) => {
+      console.log(error.message);
+    },
+    onSettled: (data) => {
+      console.log("onSettled", data);
+    },
+  });
 
   return (
     <Card className="w-[350px] m-10 mr-0">
@@ -141,7 +155,14 @@ const VoiceGenerator = () => {
             </div>
           </div>
           <div className="flex flex-col space-y-1.5 mt-5">
-            <Button type="submit">Generate</Button>
+            {isPending ? (
+              <Button disabled>
+                <Loader className="animate-spin" />
+                Loading...
+              </Button>
+            ) : (
+              <Button type="submit">Generate</Button>
+            )}
           </div>
         </form>
       </CardContent>
