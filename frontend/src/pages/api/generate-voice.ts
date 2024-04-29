@@ -26,16 +26,21 @@ const generateVoice = async (req: NextApiRequest, res: NextApiResponse) => {
     const fieldsString = JSON.stringify(fields);
     const pythonProcess = spawn("python", [python_script, fieldsString]);
 
-    pythonProcess.stdout.on("data", (data) => {
-      console.log(`stdout: ${data}`);
-    });
+    return new Promise((resolve, reject) => {
+      let result = "";
+      pythonProcess.stdout.on("data", (data) => {
+        console.log(`stdout: ${data}`);
+        result += data;
+      });
 
-    pythonProcess.stderr.on("data", (data) => {
-      console.error(`stderr: ${data}`);
-    });
+      pythonProcess.on("error", (err) => {
+        reject(err);
+      });
 
-    pythonProcess.on("close", (code) => {
-      console.log(`child process exited with code ${code}`);
+      pythonProcess.on("close", (code) => {
+        console.log("result", result);
+        resolve(result);
+      });
     });
   });
 };

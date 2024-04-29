@@ -1,7 +1,8 @@
 "use client";
 import React, { useState, useRef, useEffect } from "react";
 import { setSubtitle } from "@/store/slices/subtitle";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 interface Subtitle {
   start: string;
@@ -11,6 +12,7 @@ interface Subtitle {
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
+  const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
   const [zoom, setZoom] = useState<number>(0);
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -96,7 +98,11 @@ const Timeline: React.FC = () => {
             <div
               key={index}
               onClick={() => dispatch(setSubtitle(subtitle))}
-              className="absolute bg-blue-500 h-16 rounded-md mt-2 cursor-pointer"
+              className={`absolute h-16 rounded-md mt-2 cursor-pointer ${
+                selectedSubtitle.start === subtitle.start
+                  ? "bg-green-500"
+                  : "bg-blue-500"
+              }`}
               style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
             ></div>
           );

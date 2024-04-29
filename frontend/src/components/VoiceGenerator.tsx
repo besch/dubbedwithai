@@ -14,10 +14,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-import { generateVoice } from "@/actions/generate-voice";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 const VoiceGenerator = () => {
+  const subtitle = useSelector((state: RootState) => state.subtitle);
   const voiceStyles: string[] = [
     "friendly",
     "cheerful",
@@ -34,10 +35,11 @@ const VoiceGenerator = () => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const voiceActor = formData.get("voiceactor") as string;
-    const voiceStyle = formData.get("voicestyle") as string;
-    const voiceLanguage = formData.get("voicelanguage") as string;
-    const voiceSpeed = formData.get("voicespeed") as string;
+    const subtitle_name = `${subtitle.start}__${subtitle.end}`;
+    const voice_actor = formData.get("voiceactor") as string;
+    const voice_style = formData.get("voicestyle") as string;
+    const voice_language = formData.get("voicelanguage") as string;
+    const voice_speed = formData.get("voicespeed") as string;
 
     try {
       const response = await fetch("/api/generate-voice", {
@@ -46,16 +48,18 @@ const VoiceGenerator = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          voiceActor,
-          voiceStyle,
-          voiceLanguage,
-          voiceSpeed,
+          subtitle_name,
+          subtitle_text: subtitle.text,
+          voice_actor,
+          voice_style,
+          voice_language,
+          voice_speed,
         }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        console.log(data);
+        console.log("!!!!!!!!!!!!!!!!!!!!", data);
       } else {
         console.error("Error generating voice:", response.status);
       }
@@ -67,8 +71,8 @@ const VoiceGenerator = () => {
   return (
     <Card className="w-[350px] m-10 mr-0">
       <CardHeader>
-        <CardTitle>Create project</CardTitle>
-        <CardDescription>Deploy your new project in one-click.</CardDescription>
+        <CardTitle>Generate voice</CardTitle>
+        <CardDescription>Generate voice</CardDescription>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit}>
