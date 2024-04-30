@@ -14,29 +14,15 @@ const Timeline: React.FC = () => {
   const dispatch = useDispatch();
   const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
   const [zoom, setZoom] = useState<number>(0);
+  const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  const subtitles: Subtitle[] = [
-    { start: "00:00:49,162", end: "00:00:50,959", text: "CITY OF GOD" },
-    {
-      start: "00:01:51,991",
-      end: "00:01:57,759",
-      text: "Fuck, the chicken's got away! Go after that chicken, man!",
-    },
-    {
-      start: "00:02:37,604",
-      end: "00:02:41,472",
-      text: "Get that chicken, bro!",
-    },
-    {
-      start: "00:02:43,743",
-      end: "00:02:46,769",
-      text: "Motherfucker! I told you to grab that chicken!",
-    },
-  ];
-
-  const totalDuration = 180000; // 3 minutes in milliseconds
+  let totalDuration = 0;
+  if (subtitles.length) {
+    const lastSubtitleEndTime = subtitles[subtitles.length - 1].end;
+    totalDuration = convertToMilliseconds(lastSubtitleEndTime);
+  }
   const timelineWidth = `${100 + zoom * 25}%`;
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
@@ -62,11 +48,25 @@ const Timeline: React.FC = () => {
     if (timeline) {
       timeline.scrollLeft = 0;
     }
+
+    const fetchSubtitles = async () => {
+      console.log("Fetching subtitles");
+      try {
+        const response = await fetch("/api/get-subtitles");
+        const { subtitles } = await response.json();
+        setSubtitles(subtitles);
+      } catch (error) {
+        console.error("Error Fetching subtitles:", error);
+      } finally {
+      }
+    };
+
+    fetchSubtitles();
   }, []);
 
   return (
     <div
-      className="relative w-full h-32 overflow-x-auto overflow-y-hidden"
+      className="relative w-full h-32 overflow-x-auto overflow-y-hidden p-4"
       onWheel={handleWheel}
       ref={containerRef}
     >

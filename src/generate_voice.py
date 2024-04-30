@@ -39,7 +39,7 @@ def main():
     # Run the base speaker tts
     text = "Random Text Generator is a web application which provides true random text which you can use in your documents or web designs. How does it work?"
     src_path = os.path.join(output_dir, 'tmp.wav')
-    base_speaker_tts.tts(subtitle_text, src_path, speaker='default', language='English', speed=1.0)
+    base_speaker_tts.tts(subtitle_text, src_path, speaker='default', language='English', speed=1.3)
 
     # Run the tone color converter
     encode_message = "@MyShell"
@@ -56,7 +56,7 @@ def main():
     final_save_path = os.path.join(output_dir, f'output__{voice_style}__{subtitle_name}.wav')
 
     # Run the base speaker tts
-    base_speaker_tts.tts(subtitle_text, src_path, speaker=voice_style, language=voice_language, speed=0.9)
+    base_speaker_tts.tts(subtitle_text, src_path, speaker=voice_style, language=voice_language, speed=1.3)
 
     # friendly, cheerful, excited, sad, angry, terrified, shouting, whispering
 
