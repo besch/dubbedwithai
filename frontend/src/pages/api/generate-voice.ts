@@ -1,3 +1,5 @@
+"use server";
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { Storage } from "@google-cloud/storage";
 import formidable from "formidable-serverless";
