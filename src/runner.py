@@ -59,9 +59,12 @@ def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
 #     return AUDIO_FILE
     
 def combine_audio_and_video(video_file: str, audio_file: str) -> str:
+    if os.path.exists(FINAL_VIDEO):
+        os.remove(FINAL_VIDEO)
+    
     video = ffmpeg.input(video_file)
     audio = ffmpeg.input(audio_file)
-    output = ffmpeg.output(video, audio, FINAL_VIDEO, vcodec='copy', acodec='aac', strict='experimental', overwrite_output=True)
+    output = ffmpeg.output(video, audio, FINAL_VIDEO, vcodec='copy', acodec='aac', strict='experimental')
     ffmpeg.run(output)
 
 def main():
