@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import vocal_extractor
 import speach_overlay
 import shutil
+import ffmpeg
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 source_dir = os.path.join(curr_dir, "source")
@@ -58,8 +59,10 @@ def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
 #     return AUDIO_FILE
     
 def combine_audio_and_video(video_file: str, audio_file: str) -> str:
-    ffmpeg_combine = f'ffmpeg -i {video_file} -i {audio_file} -c:v copy -c:a aac -strict experimental -y {FINAL_VIDEO}'
-    subprocess.call(ffmpeg_combine, shell=True)
+    video = ffmpeg.input(video_file)
+    audio = ffmpeg.input(audio_file)
+    output = ffmpeg.output(video, audio, FINAL_VIDEO, vcodec='copy', acodec='aac', strict='experimental', overwrite_output=True)
+    ffmpeg.run(output)
 
 def main():
     if os.path.exists(ONLY_AUDIO_COPY):
