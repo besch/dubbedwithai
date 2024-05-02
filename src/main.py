@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 # Set up environment
 HOME_DIR = r"C:\Users\user\Desktop\Projects\dubbedwithai"
 TMP_DIR = os.path.join(HOME_DIR, 'tmp')
-ORIGINAL_DIR = os.path.join(TMP_DIR, 'original', '18-23')
+ORIGINAL_DIR = os.path.join(TMP_DIR, 'original', '521')
 PROCESSED_DIR = os.path.join(ORIGINAL_DIR, 'processed')
 AUDIO_DIR = os.path.join(TMP_DIR, 'extract-subtitle-audio')
 VOICE_DIR = os.path.join(TMP_DIR, 'subtitle-to-voice')
@@ -16,8 +16,8 @@ VOCAL_DIR = os.path.join(TMP_DIR, 'audio-remove-vocals')
 COMBINED_DIR = os.path.join(TMP_DIR, 'combine-two-audio-streams')
 
 ORIGINAL_VIDEO_FILE = os.path.join(ORIGINAL_DIR, 'video.mp4')
-VIDEO_FILE = os.path.join(PROCESSED_DIR, 'video.mp4')
-AUDIO_FILE = os.path.join(PROCESSED_DIR, 'audio.mp3')
+VIDEO_FILE = os.path.join(ORIGINAL_DIR, 'video.mp4')
+AUDIO_FILE = os.path.join(ORIGINAL_DIR, 'audio.mp3')
 SUBTITLES_FILE = os.path.join(ORIGINAL_DIR, 'subtitles.srt')
 COMBINED_VIDEO_FILE = os.path.join(PROCESSED_DIR, 'combined.mp4')
 
@@ -55,7 +55,7 @@ def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
 def generate_voice_from_subtitle(subtitle: Subtitle):
     response = openai_client.audio.speech.create(
         model="tts-1",
-        voice="alloy",
+        voice="echo",
         input=subtitle.content
     )
     response.stream_to_file(subtitle.output_file)
@@ -137,7 +137,7 @@ def main():
     os.makedirs(COMBINED_DIR, exist_ok=True)
     os.makedirs(PROCESSED_DIR, exist_ok=True)
     
-    AUDIO_FILE = extract_audio_and_video_from_original_video()
+    # AUDIO_FILE = extract_audio_and_video_from_original_video()
     
     subtitles = extract_subtitles_from_srt(SUBTITLES_FILE)
 
