@@ -10,7 +10,7 @@ openai_client = OpenAI()
 openai_client.api_key = os.environ['OPENAI_API_KEY']
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
-original_audio_copy = os.path.join(curr_dir, 'tmp', 'audio_copy_copy.mp3')
+original_audio_copy = os.path.join(curr_dir, 'tmp', 'audio_copy_copy.wav')
 SUBTITLE_TO_VOICE_DIR = os.path.join(curr_dir, 'tmp', 'subtitle_to_voice')
 
 @dataclass
@@ -23,9 +23,10 @@ def generate_voice_from_subtitle(subtitle: Subtitle):
     response = openai_client.audio.speech.create(
         model="tts-1",
         voice="echo",
-        input=subtitle.content
+        input=subtitle.content,
+        response_format="wav"
     )
-    output_file = os.path.join(SUBTITLE_TO_VOICE_DIR, f"audio_{subtitle.start_time.replace(':', '_').replace(',', '.')}_{subtitle.end_time.replace(':', '_').replace(',', '.')}.mp3")
+    output_file = os.path.join(SUBTITLE_TO_VOICE_DIR, f"audio_{subtitle.start_time.replace(':', '_').replace(',', '.')}_{subtitle.end_time.replace(':', '_').replace(',', '.')}.wav")
     response.stream_to_file(output_file)
     return output_file
 
@@ -38,14 +39,17 @@ def overlay_generated_voice_over_original_audio(audio_1: str, subtitle: Subtitle
     start_time = datetime.strptime(formatted_start_time, "%H:%M:%S.%f").time()
     start_time_ms = int(timedelta(hours=start_time.hour, minutes=start_time.minute, seconds=start_time.second, microseconds=start_time.microsecond // 1000).total_seconds() * 1000)
 
-    audio_segment_1 = AudioSegment.from_file(original_audio_copy, format="mp3")
-    audio_2 = generate_voice_from_subtitle(subtitle)
-    audio_2 = AudioSegment.from_file(audio_2, format="mp3")
+    audio1 = AudioSegment.from_file(original_audio_copy, format="wav")
+    audio2 = generate_voice_from_subtitle(subtitle)
+    audio2 = AudioSegment.from_file(audio2, format="wav")
     
-    modified_audio1 = audio_segment_1.overlay(audio_2, position=start_time_ms)
+    diff_in_dB = audio1.dBFS - audio2.dBFS
+    audio2 = audio2.apply_gain(diff_in_dB)
+
+    modified_audio1 = audio1.overlay(audio2, position=start_time_ms)
     modified_audio1 = modified_audio1 + 1
-    modified_audio1.export(audio_1, format="mp3")
-    return audio_segment_1
+    modified_audio1.export(audio_1, format="wav")
+    return audio1
 
 
 def main(ORIGINAL_AUDIO_FILE: str, subtitles: list[Subtitle]):

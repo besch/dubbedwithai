@@ -1,9 +1,5 @@
 import os
-import subprocess
 from dataclasses import dataclass
-from openai import OpenAI
-from pydub import AudioSegment
-from datetime import datetime, timedelta
 import vocal_extractor
 import speach_overlay
 import shutil
@@ -14,8 +10,8 @@ source_dir = os.path.join(curr_dir, "source")
 tmp_dir = os.path.join(curr_dir, "tmp")
 FINAL_VIDEO = os.path.join(curr_dir, "tmp", 'final_video.mp4')
 ONLY_VIDEO = os.path.join(source_dir, 'video.mp4')
-ONLY_AUDIO = os.path.join(source_dir, 'audio.mp3')
-ONLY_AUDIO_COPY = os.path.join(tmp_dir, 'audio_copy.mp3')
+ONLY_AUDIO = os.path.join(source_dir, 'audio.wav')
+ONLY_AUDIO_COPY = os.path.join(tmp_dir, 'audio_copy.wav')
 SUBTITLES = os.path.join(source_dir, 'subtitles.srt')
 
 @dataclass
@@ -64,7 +60,7 @@ def combine_audio_and_video(video_file: str, audio_file: str) -> str:
     
     video = ffmpeg.input(video_file)
     audio = ffmpeg.input(audio_file)
-    output = ffmpeg.output(video, audio, FINAL_VIDEO, vcodec='copy', acodec='aac', strict='experimental')
+    output = ffmpeg.output(video, audio, FINAL_VIDEO, vcodec='copy', acodec='pcm_s16le', strict='experimental')
     ffmpeg.run(output)
 
 def main():

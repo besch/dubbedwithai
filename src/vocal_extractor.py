@@ -21,15 +21,15 @@ def extract_subtitle_audio(subtitle: Subtitle, start_audio: str):
     formatted_start_time = subtitle.start_time.replace(',', '.')
     formatted_end_time = subtitle.end_time.replace(',', '.')
     
-    output_file = os.path.join(AUDIO_DIR, f"audio_{formatted_start_time.replace(':', '_')}_{formatted_end_time.replace(':', '_')}.mp3")
-    start_audio = AudioSegment.from_file(start_audio, format="mp3")
+    output_file = os.path.join(AUDIO_DIR, f"audio_{formatted_start_time.replace(':', '_')}_{formatted_end_time.replace(':', '_')}.wav")
+    start_audio = AudioSegment.from_file(start_audio, format="wav")
     start_time = datetime.strptime(formatted_start_time, "%H:%M:%S.%f").time()
     end_time = datetime.strptime(formatted_end_time, "%H:%M:%S.%f").time()
     start_time_ms = int(timedelta(hours=start_time.hour, minutes=start_time.minute, seconds=start_time.second, microseconds=start_time.microsecond // 1000).total_seconds() * 1000)
     end_time_ms = int(timedelta(hours=end_time.hour, minutes=end_time.minute, seconds=end_time.second, microseconds=end_time.microsecond // 1000).total_seconds() * 1000)
 
     part_audio = start_audio[start_time_ms:end_time_ms]
-    part_audio.export(output_file, format="mp3")
+    part_audio.export(output_file, format="wav")
     return output_file
 
 def remove_vocals_from_audio(audio_file: str):
@@ -45,13 +45,16 @@ def insert_no_vocal_audio_part_into_original_audio(audio_1: str, audio_2: str, s
     audio1 = AudioSegment.from_file(audio_1)
     audio2 = AudioSegment.from_file(audio_2)
 
+    # Adjust generated audio volume to match original audio
+    diff_in_dB = audio1.dBFS - audio2.dBFS
+    audio2 = audio2.apply_gain(diff_in_dB)
+
     start_time = datetime.strptime(formatted_start_time, "%H:%M:%S.%f").time()
     end_time = datetime.strptime(formatted_end_time, "%H:%M:%S.%f").time()
     start_time_ms = int(timedelta(hours=start_time.hour, minutes=start_time.minute, seconds=start_time.second, microseconds=start_time.microsecond // 1000).total_seconds() * 1000)
     end_time_ms = int(timedelta(hours=end_time.hour, minutes=end_time.minute, seconds=end_time.second, microseconds=end_time.microsecond // 1000).total_seconds() * 1000)
-
     modified_audio1 = audio1[:start_time_ms] + audio2 + audio1[end_time_ms:]
-    modified_audio1.export(audio_1, format="mp3")
+    modified_audio1.export(audio_1, format="wav")
     return audio_1
 
 def main(ORIGINAL_AUDIO_FILE: str, subtitles: list[Subtitle]):
@@ -62,7 +65,7 @@ def main(ORIGINAL_AUDIO_FILE: str, subtitles: list[Subtitle]):
         try:
             audio_file = extract_subtitle_audio(subtitle, ORIGINAL_AUDIO_FILE)
             vocal_removed_file = remove_vocals_from_audio(audio_file)
-            vocal_removed_file = vocal_removed_file.replace(".mp3", "_Instruments.wav")
+            vocal_removed_file = vocal_removed_file.replace(".wav", "_Instruments.wav")
             final_audio = insert_no_vocal_audio_part_into_original_audio(ORIGINAL_AUDIO_FILE, vocal_removed_file, subtitle)
             
             VOCAL_DIR
