@@ -10,7 +10,7 @@ curr_dir = os.path.dirname(os.path.abspath(__file__))
 source_dir = os.path.join(curr_dir, "source")
 tmp_dir = os.path.join(curr_dir, "tmp")
 ORIGINAL_VIDEO = os.path.join(source_dir, 'original_video.mp4')
-SUBTITLES = os.path.join(source_dir, 'subtitles.srt')
+SUBTITLES = os.path.join(source_dir, 'subtitles_ru.srt')
 
 ONLY_VIDEO = os.path.join(tmp_dir, 'video.mp4')
 ONLY_AUDIO = os.path.join(tmp_dir, 'audio.wav')
@@ -25,7 +25,7 @@ class Subtitle:
 
 def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
     subtitles = []
-    with open(filename, 'r') as file:
+    with open(filename, 'r', encoding='utf-8') as file:
         subtitle_blocks = file.read().split('\n\n')
         for block in subtitle_blocks:
             lines = block.strip().split('\n')
