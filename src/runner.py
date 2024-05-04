@@ -1,19 +1,21 @@
 import os
 from dataclasses import dataclass
-import vocal_extractor
 import speach_overlay
 import shutil
 import ffmpeg
 from audio_separator.separator import Separator
+import subprocess
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 source_dir = os.path.join(curr_dir, "source")
 tmp_dir = os.path.join(curr_dir, "tmp")
-FINAL_VIDEO = os.path.join(curr_dir, "tmp", 'final_video.mp4')
-ONLY_VIDEO = os.path.join(source_dir, 'video.mp4')
-ONLY_AUDIO = os.path.join(source_dir, 'audio.wav')
-ONLY_AUDIO_COPY = os.path.join(tmp_dir, 'audio_copy.wav')
+ORIGINAL_VIDEO = os.path.join(source_dir, 'original_video.mp4')
 SUBTITLES = os.path.join(source_dir, 'subtitles.srt')
+
+ONLY_VIDEO = os.path.join(tmp_dir, 'video.mp4')
+ONLY_AUDIO = os.path.join(tmp_dir, 'audio.wav')
+FINAL_VIDEO = os.path.join(tmp_dir, 'final_video.mp4')
+# ONLY_AUDIO_COPY = os.path.join(tmp_dir, 'audio_copy.wav')
 
 @dataclass
 class Subtitle:
@@ -39,21 +41,21 @@ def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
 
     return subtitles
 
-# def extract_audio_and_video_from_original_video():
-#     try:
-#         ffmpeg_video = f'ffmpeg -i {ONLY_VIDEO} -vcodec copy -an -y {VIDEO_FILE}'
-#         subprocess.call(ffmpeg_video, shell=True)
-#     except Exception as e:
-#         print(f"Failed to extract video, Error: {e}")
+def extract_audio_and_video_from_original_video(video):
+    try:
+        ffmpeg_video = f'ffmpeg -i {video} -vcodec copy -an -y {ONLY_VIDEO}'
+        subprocess.call(ffmpeg_video, shell=True)
+    except Exception as e:
+        print(f"Failed to extract video, Error: {e}")
     
-#     try:
-#         ffmpeg_audio = f'ffmpeg -i {ONLY_VIDEO} -acodec libmp3lame -vn -y {AUDIO_FILE}'
-#         subprocess.call(ffmpeg_audio, shell=True)
-#     except Exception as e:
-#         print(f"Failed to extract audio, Error: {e}")
+    try:
+        ffmpeg_audio = f'ffmpeg -i {video} -acodec libmp3lame -vn -y {ONLY_AUDIO}'
+        subprocess.call(ffmpeg_audio, shell=True)
+    except Exception as e:
+        print(f"Failed to extract audio, Error: {e}")
         
-#         ffmpeg_audio = f'ffmpeg -i {ONLY_VIDEO} -acodec libmp3lame -vn -y {AUDIO_FILE}'
-#     return AUDIO_FILE
+        ffmpeg_audio = f'ffmpeg -i {video} -acodec libmp3lame -vn -y {ONLY_AUDIO}'
+    return ONLY_AUDIO
 
 
 
@@ -77,19 +79,16 @@ def combine_audio_and_video(video_file: str, audio_file: str) -> str:
     ffmpeg.run(output)
 
 def main():
-    if os.path.exists(ONLY_AUDIO_COPY):
-        os.remove(ONLY_AUDIO_COPY)
-    shutil.copy2(ONLY_AUDIO, ONLY_AUDIO_COPY)
+    # if os.path.exists(ONLY_AUDIO_COPY):
+    #     os.remove(ONLY_AUDIO_COPY)
+    # shutil.copy2(ONLY_AUDIO, ONLY_AUDIO_COPY)
     
+    AUDIO_FILE = extract_audio_and_video_from_original_video(ORIGINAL_VIDEO)
     
     subtitles = extract_subtitles_from_srt(SUBTITLES)
-    instrumental_audio = separate_vocals(ONLY_AUDIO_COPY)
-    # vocal_extractor.main(ONLY_AUDIO_COPY, subtitles)
-    # audio_no_vocals = extract_all_vocals_from_audio(ONLY_AUDIO_COPY)
-    
+    instrumental_audio = separate_vocals(AUDIO_FILE)
     speach_overlay.main(instrumental_audio, subtitles)
             
-    # AUDIO_FILE = extract_audio_and_video_from_original_video()
     combine_audio_and_video(ONLY_VIDEO, instrumental_audio)
 
 if __name__ == "__main__":
