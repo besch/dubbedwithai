@@ -4,6 +4,7 @@ import vocal_extractor
 import speach_overlay
 import shutil
 import ffmpeg
+from audio_separator.separator import Separator
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 source_dir = os.path.join(curr_dir, "source")
@@ -53,6 +54,18 @@ def extract_subtitles_from_srt(filename: str) -> list[Subtitle]:
         
 #         ffmpeg_audio = f'ffmpeg -i {ONLY_VIDEO} -acodec libmp3lame -vn -y {AUDIO_FILE}'
 #     return AUDIO_FILE
+
+
+
+def separate_vocals(audio):
+    separator = Separator()
+    separator.load_model(model_filename='UVR-MDX-NET-Inst_HQ_3.onnx')
+
+    output_file_paths = separator.separate(audio)
+
+    # The separated vocals will be saved as the first output file
+    vocals_file = output_file_paths[1]
+    return vocals_file
     
 def combine_audio_and_video(video_file: str, audio_file: str) -> str:
     if os.path.exists(FINAL_VIDEO):
@@ -70,11 +83,14 @@ def main():
     
     
     subtitles = extract_subtitles_from_srt(SUBTITLES)
-    vocal_extractor.main(ONLY_AUDIO_COPY, subtitles)
-    speach_overlay.main(ONLY_AUDIO_COPY, subtitles)
+    instrumental_audio = separate_vocals(ONLY_AUDIO_COPY)
+    # vocal_extractor.main(ONLY_AUDIO_COPY, subtitles)
+    # audio_no_vocals = extract_all_vocals_from_audio(ONLY_AUDIO_COPY)
+    
+    speach_overlay.main(instrumental_audio, subtitles)
             
     # AUDIO_FILE = extract_audio_and_video_from_original_video()
-    combine_audio_and_video(ONLY_VIDEO, ONLY_AUDIO_COPY)
+    combine_audio_and_video(ONLY_VIDEO, instrumental_audio)
 
 if __name__ == "__main__":
     main()

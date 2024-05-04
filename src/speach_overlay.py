@@ -44,10 +44,10 @@ def overlay_generated_voice_over_original_audio(audio_1: str, subtitle: Subtitle
     audio2 = AudioSegment.from_file(audio2, format="wav")
     
     diff_in_dB = audio1.dBFS - audio2.dBFS
-    audio2 = audio2.apply_gain(diff_in_dB)
+    # make generated audio 10 dBFS louder then original audio to make it sound more clearer to head
+    audio2 = audio2.apply_gain(diff_in_dB + 10)
 
     modified_audio1 = audio1.overlay(audio2, position=start_time_ms)
-    modified_audio1 = modified_audio1 + 1
     modified_audio1.export(audio_1, format="wav")
     return audio1
 
