@@ -10,7 +10,7 @@ curr_dir = os.path.dirname(os.path.abspath(__file__))
 source_dir = os.path.join(curr_dir, "source")
 tmp_dir = os.path.join(curr_dir, "tmp")
 ORIGINAL_VIDEO = os.path.join(source_dir, 'original_video.mp4')
-SUBTITLES = os.path.join(source_dir, 'subtitles_ru.srt')
+SUBTITLES = os.path.join(source_dir, 'subtitles.srt')
 
 ONLY_VIDEO = os.path.join(tmp_dir, 'video.mp4')
 ONLY_AUDIO = os.path.join(tmp_dir, 'audio.wav')
