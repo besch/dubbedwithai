@@ -9,7 +9,7 @@ from utils import extract_subtitles_from_srt, subtitle_to_ms, Subtitle, FACES_DI
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 source_dir = os.path.join(curr_dir, "source")
 tmp_dir = os.path.join(curr_dir, "tmp")
-ORIGINAL_VIDEO = os.path.join(source_dir, 'original_video.mp4')
+ORIGINAL_VIDEO = os.path.join(source_dir, 'original_video_full.mp4')
 SUBTITLES = os.path.join(source_dir, 'subtitles.srt')
 CSV = os.path.join(tmp_dir, 'final.csv')
 take_picture_delay_ms = 300
@@ -35,45 +35,57 @@ def process_pictures(video, subtitles: list[Subtitle]):
         # Extract the frame at the subtitle start time
         video.set(cv2.CAP_PROP_POS_MSEC, sub_time)
         ret, frame = video.read()
+        
+        # Check if the frame is valid
+        if ret:
+            # Detect faces in the frame
+            face_locations = face_recognition.face_locations(frame)
+            if face_locations:
+                face_encodings = face_recognition.face_encodings(frame, face_locations)
 
-        # Detect faces in the frame
-        face_locations = face_recognition.face_locations(frame)
-        if face_locations:
-            face_encodings = face_recognition.face_encodings(frame, face_locations)
-
-            # Compare faces with known faces
-            actors = []
-            for face_encoding in face_encodings:
-                matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
-                if any(matches):
-                    matched_idxs = [i for i, match in enumerate(matches) if match]
-                    names = [known_face_names[i] for i in matched_idxs]
-                    name = ", ".join(names)
-                else:
-                    # Check if the face encoding is already in known_face_encodings
-                    if not any(face_recognition.compare_faces(known_face_encodings, face_encoding)):
-                        known_face_encodings.append(face_encoding)
-                        known_face_names.append(f"Face {len(known_face_encodings)}")
-                        name = known_face_names[-1]
+                # Compare faces with known faces
+                actors = []
+                face_images = []
+                for i, face_encoding in enumerate(face_encodings):
+                    matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+                    if any(matches):
+                        matched_idxs = [i for i, match in enumerate(matches) if match]
+                        names = [known_face_names[i] for i in matched_idxs]
+                        name = ", ".join(names)
                     else:
-                        # Find the index of the existing face encoding
-                        for i, known_encoding in enumerate(known_face_encodings):
-                            if face_recognition.compare_faces([known_encoding], face_encoding)[0]:
-                                name = known_face_names[i]
-                                break
-                actors.append(name)
+                        # Check if the face encoding is already in known_face_encodings
+                        if not any(face_recognition.compare_faces(known_face_encodings, face_encoding)):
+                            known_face_encodings.append(face_encoding)
+                            known_face_names.append(f"Face {len(known_face_encodings)}")
+                            name = known_face_names[-1]
+                        else:
+                            # Find the index of the existing face encoding
+                            for i, known_encoding in enumerate(known_face_encodings):
+                                if face_recognition.compare_faces([known_encoding], face_encoding)[0]:
+                                    name = known_face_names[i]
+                                    break
+                    actors.append(name)
 
-            # Update data structures
-            actors_scenes[tuple(actors)].append(sub.text)
-            scene_summaries[tuple(actors)].append(f"Start Time: {sub.start}")
+                    # Save the face image
+                    face_image = frame[face_locations[i][0]:face_locations[i][2], face_locations[i][3]:face_locations[i][1]]
+                    face_image_path = os.path.join(FACES_DIR, f"{name}_{len(face_images)}.jpg")
+                    cv2.imwrite(face_image_path, face_image)
+                    face_images.append(face_image_path)
 
-            # Add data to the list
-            data.append({
-                "Actors": ", ".join(actors),
-                "Start Time": sub.start,
-                "End Time": sub.end,
-                "Content": sub.text
-            })
+                # Update data structures
+                actors_scenes[tuple(actors)].append(sub.text)
+                scene_summaries[tuple(actors)].append(f"Start Time: {sub.start}")
+
+                # Add data to the list
+                data.append({
+                    "Actors": ", ".join(actors),
+                    "Start Time": sub.start,
+                    "End Time": sub.end,
+                    "Content": sub.text,
+                    "Face Images": ", ".join(face_images)
+                })
+        else:
+            print(f"Failed to read frame at time {sub_time} ms.")
 
     # Create a pandas DataFrame and save it to a CSV file
     df = pd.DataFrame(data)
