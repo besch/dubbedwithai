@@ -59,7 +59,8 @@ def categorize_faces(face_names):
         actor_dir = os.path.join(CATEGORIZED_DIR, actor_name)
         os.makedirs(actor_dir, exist_ok=True)
         for image_path in image_paths:
-            os.rename(image_path, os.path.join(actor_dir, os.path.basename(image_path)))
+            if os.path.exists(image_path):
+                os.rename(image_path, os.path.join(actor_dir, os.path.basename(image_path)))
 
 def save_to_csv(face_names, subtitles):
     data = []
