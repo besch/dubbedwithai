@@ -5,6 +5,7 @@ import shutil
 import ffmpeg
 from audio_separator.separator import Separator
 import subprocess
+from take_picture import take_pictures_from_subtitles
 
 curr_dir = os.path.dirname(os.path.abspath(__file__))
 source_dir = os.path.join(curr_dir, "source")
@@ -15,6 +16,7 @@ SUBTITLES = os.path.join(source_dir, 'subtitles.srt')
 ONLY_VIDEO = os.path.join(tmp_dir, 'video.mp4')
 ONLY_AUDIO = os.path.join(tmp_dir, 'audio.wav')
 FINAL_VIDEO = os.path.join(tmp_dir, 'final_video.mp4')
+PICTURES_DIR = os.path.join(tmp_dir, 'pictures')
 # ONLY_AUDIO_COPY = os.path.join(tmp_dir, 'audio_copy.wav')
 
 @dataclass
@@ -83,13 +85,14 @@ def main():
     #     os.remove(ONLY_AUDIO_COPY)
     # shutil.copy2(ONLY_AUDIO, ONLY_AUDIO_COPY)
     
-    AUDIO_FILE = extract_audio_and_video_from_original_video(ORIGINAL_VIDEO)
+    # AUDIO_FILE = extract_audio_and_video_from_original_video(ORIGINAL_VIDEO)
     
     subtitles = extract_subtitles_from_srt(SUBTITLES)
-    instrumental_audio = separate_vocals(AUDIO_FILE)
-    speach_overlay.main(instrumental_audio, subtitles)
+    take_pictures_from_subtitles(ORIGINAL_VIDEO, subtitles)
+    # instrumental_audio = separate_vocals(AUDIO_FILE)
+    # speach_overlay.main(instrumental_audio, subtitles)
             
-    combine_audio_and_video(ONLY_VIDEO, instrumental_audio)
+    # combine_audio_and_video(ONLY_VIDEO, instrumental_audio)
 
 if __name__ == "__main__":
     main()
