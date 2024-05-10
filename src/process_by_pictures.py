@@ -5,6 +5,7 @@ from compreface import CompreFace
 from compreface.service import RecognitionService, DetectionService, VerificationService
 from compreface.collections import FaceCollection
 from compreface.collections.face_collections import Subjects
+import time
 from utils import extract_subtitles_from_srt, subtitle_to_ms, FACES_DIR, CATEGORIZED_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR
 
 DOMAIN: str = 'http://localhost'
@@ -37,10 +38,10 @@ if os.path.exists(CATEGORIZED_DIR):
     shutil.rmtree(CATEGORIZED_DIR)
 os.makedirs(CATEGORIZED_DIR)
 
-# # Remove and recreate CATEGORIZED_DIR
-# if os.path.exists(FRAMES_DIR):
-#     shutil.rmtree(FRAMES_DIR)
-# os.makedirs(FRAMES_DIR)
+# Remove and recreate CATEGORIZED_DIR
+if os.path.exists(FRAMES_DIR):
+    shutil.rmtree(FRAMES_DIR)
+os.makedirs(FRAMES_DIR)
 
 def detect_single_face():
     frame_dir = os.listdir(FRAMES_DIR)
@@ -87,6 +88,10 @@ def categorize_faces():
         for existing_face_dir in os.listdir(CATEGORIZED_DIR):
             existing_face_path = os.path.join(CATEGORIZED_DIR, existing_face_dir, os.listdir(os.path.join(CATEGORIZED_DIR, existing_face_dir))[0])
             result = verification.verify(face_path, existing_face_path)
+            
+            if result.get('code') and result.get('code') == 28:
+                continue
+            
             similarity = result['result'][0]['face_matches'][0]['similarity']
 
             if similarity > max_similarity:
@@ -103,7 +108,12 @@ def categorize_faces():
             faces_dir.remove(face)  # Remove the moved file from the list
 
 if __name__ == "__main__":
-    # subtitles = extract_subtitles_from_srt(SUBTITLES)
-    # extract_frames_from_video(subtitles)
+    start_time = time.time()
+    
+    subtitles = extract_subtitles_from_srt(SUBTITLES)
+    extract_frames_from_video(subtitles)
     detect_single_face()
     categorize_faces()
+    
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
