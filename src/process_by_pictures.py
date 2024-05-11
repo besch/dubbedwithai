@@ -6,7 +6,8 @@ from compreface.service import RecognitionService, DetectionService, Verificatio
 from compreface.collections import FaceCollection
 from compreface.collections.face_collections import Subjects
 import time
-from utils import extract_subtitles_from_srt, subtitle_to_ms, FACES_DIR, CATEGORIZED_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR
+import json
+from utils import extract_subtitles_from_srt, subtitle_to_ms, FACES_DIR, CATEGORIZED_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
 
 DOMAIN: str = 'http://localhost'
 PORT: str = '8000'
@@ -27,21 +28,6 @@ face_collection: FaceCollection = recognition.get_face_collection()
 subjects: Subjects = recognition.get_subjects()
 detection: DetectionService = compre_face.init_face_detection(API_KEY_DETECTION)
 verification: VerificationService = compre_face.init_face_verification(API_KEY_VERIFICATION)
-
-# Remove and recreate FACES_DIR
-if os.path.exists(FACES_DIR):
-    shutil.rmtree(FACES_DIR)
-os.makedirs(FACES_DIR)
-
-# Remove and recreate CATEGORIZED_DIR
-if os.path.exists(CATEGORIZED_DIR):
-    shutil.rmtree(CATEGORIZED_DIR)
-os.makedirs(CATEGORIZED_DIR)
-
-# Remove and recreate CATEGORIZED_DIR
-if os.path.exists(FRAMES_DIR):
-    shutil.rmtree(FRAMES_DIR)
-os.makedirs(FRAMES_DIR)
 
 def detect_single_face():
     frame_dir = os.listdir(FRAMES_DIR)
@@ -107,13 +93,45 @@ def categorize_faces():
             shutil.move(face_path, new_dir)
             faces_dir.remove(face)  # Remove the moved file from the list
 
+def generate_json_file():
+    data = []
+    for categorized_dir in os.listdir(CATEGORIZED_DIR):
+        for face in os.listdir(os.path.join(CATEGORIZED_DIR, categorized_dir)):
+            start_time = face.split('.')[0]
+            data.append({
+                "start": int(start_time),
+                "speaker": categorized_dir,
+            })
+            
+    data.sort(key=lambda x: x['start'])
+            
+    with open(FACE_VERIFICATION, 'w') as outfile:
+            json.dump(data, outfile)
+
 if __name__ == "__main__":
-    start_time = time.time()
+    # # Remove and recreate FACES_DIR
+    # if os.path.exists(FACES_DIR):
+    #     shutil.rmtree(FACES_DIR)
+    # os.makedirs(FACES_DIR)
+
+    # # Remove and recreate CATEGORIZED_DIR
+    # if os.path.exists(CATEGORIZED_DIR):
+    #     shutil.rmtree(CATEGORIZED_DIR)
+    # os.makedirs(CATEGORIZED_DIR)
+
+    # # Remove and recreate CATEGORIZED_DIR
+    # if os.path.exists(FRAMES_DIR):
+    #     shutil.rmtree(FRAMES_DIR)
+    # os.makedirs(FRAMES_DIR)
     
-    subtitles = extract_subtitles_from_srt(SUBTITLES)
-    extract_frames_from_video(subtitles)
-    detect_single_face()
-    categorize_faces()
+    # start_time = time.time()
     
-    end_time = time.time()
-    print(f"Execution time: {end_time - start_time} seconds")
+    # subtitles = extract_subtitles_from_srt(SUBTITLES)
+    # extract_frames_from_video(subtitles)
+    # detect_single_face()
+    # categorize_faces()
+    
+    # end_time = time.time()
+    # print(f"Execution time: {end_time - start_time} seconds")
+    
+    generate_json_file()
