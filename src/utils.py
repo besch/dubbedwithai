@@ -1,6 +1,7 @@
 import os
 from dataclasses import dataclass
 import cv2
+import shutil
 import pytesseract
 import face_recognition
 import pandas as pd
@@ -30,6 +31,7 @@ OUTPUT_AUDIO = os.path.join(tmp_dir, 'output_audio.wav')
 RESPONSE_DATA = os.path.join(tmp_dir,'response_data.json')
 UPDATED_RESPONSE_DATA = os.path.join(tmp_dir,'updated_response_data.json')
 FACES_DIR = os.path.join(tmp_dir,'faces_dir')
+FACES_DIR_TEMP = os.path.join(tmp_dir,'faces_dir_temp')
 FRAMES_DIR = os.path.join(tmp_dir,'frames_dir')
 CATEGORIZED_DIR = os.path.join(tmp_dir,'categorized')
 FACE_VERIFICATION = os.path.join(tmp_dir,'face_verification.json')
@@ -96,3 +98,16 @@ def ms_to_subtitle_time(ms):
     time_str = f"{hours:02d}:{minutes:02d}:{seconds:02d},{remaining_ms:03d}"
     
     return time_str
+
+def extract_face_from_image(input: str, box, output: str):
+    image = cv2.imread(input)
+    x1, y1 = box['x_min'], box['y_min']
+    x2, y2 = box['x_max'], box['y_max']
+    face_image = image[y1:y2, x1:x2]
+    
+    if (face_image.shape[0] > 0 and face_image.shape[1] > 0):
+        cv2.imwrite(output, face_image)
+
+def copy_dir(source_dir, dest_dir):
+    shutil.rmtree(dest_dir, ignore_errors=True)
+    shutil.copytree(source_dir, dest_dir)

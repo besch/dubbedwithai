@@ -7,13 +7,15 @@ from compreface.collections import FaceCollection
 from compreface.collections.face_collections import Subjects
 import time
 import json
-from utils import extract_subtitles_from_srt, subtitle_to_ms, FACES_DIR, CATEGORIZED_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
+import tqdm
+import random
+from utils import extract_subtitles_from_srt, subtitle_to_ms, copy_dir, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
 
 DOMAIN: str = 'http://localhost'
 PORT: str = '8000'
-API_KEY_RECOGNITION: str = '964aa302-aca5-4712-8cf3-1c6929b59b91'
-API_KEY_DETECTION: str = 'eae4480b-cf40-4b28-ab4c-ddc5c349e8ba'
-API_KEY_VERIFICATION: str = 'd75fe71e-8fad-4767-8fda-974349a4d4f0'
+API_KEY_RECOGNITION: str = 'c4b2ea65-a422-46b3-a64b-3bdbdd803150'
+API_KEY_DETECTION: str = '3c4304e3-7ecd-4bb2-ae84-629a664531a2'
+API_KEY_VERIFICATION: str = '00000000-0000-0000-0000-000000000004'
 
 compre_face: CompreFace = CompreFace(DOMAIN, PORT, options={
     "limit": 0,
@@ -64,19 +66,21 @@ def extract_frames_from_video(subtitles):
         img_path = os.path.join(FRAMES_DIR, f"{sub_start_ms}.jpg")
         cv2.imwrite(img_path, image)
 
-def categorize_faces():
-    faces_dir = os.listdir(FACES_DIR)
-    for face in faces_dir[:]:  # Create a copy of the list
-        face_path = os.path.join(FACES_DIR, face)
+def categorize_faces(faces_dir, categorized_dir, similarity_threshold=0.7):
+    faces_items = os.listdir(faces_dir)
+    for face in tqdm.tqdm(faces_items[:], total = len(faces_items)):  # Create a copy of the list
+        face_path = os.path.join(faces_dir, face)
         matched_face_dir = None
         max_similarity = 0
 
-        for existing_face_dir in os.listdir(CATEGORIZED_DIR):
-            existing_face_path = os.path.join(CATEGORIZED_DIR, existing_face_dir, os.listdir(os.path.join(CATEGORIZED_DIR, existing_face_dir))[0])
+        for existing_face_dir in os.listdir(categorized_dir):
+            existing_face_path = os.path.join(categorized_dir, existing_face_dir, os.listdir(os.path.join(categorized_dir, existing_face_dir))[0])
             result = verification.verify(face_path, existing_face_path)
             
             if result.get('code') and result.get('code') == 28:
                 continue
+            # if not result.get('result'):
+            #     continue
             
             similarity = result['result'][0]['face_matches'][0]['similarity']
 
@@ -84,23 +88,63 @@ def categorize_faces():
                 max_similarity = similarity
                 matched_face_dir = existing_face_dir
 
-        if max_similarity > 0.7:
-            shutil.move(face_path, os.path.join(CATEGORIZED_DIR, matched_face_dir))
-            faces_dir.remove(face)  # Remove the moved file from the list
+        if max_similarity > similarity_threshold:
+            shutil.move(face_path, os.path.join(categorized_dir, matched_face_dir))
+            faces_items.remove(face)  # Remove the moved file from the list
         else:
-            new_dir = os.path.join(CATEGORIZED_DIR, face.split('.')[0])
+            new_dir = os.path.join(categorized_dir, face.split('.')[0])
             os.makedirs(new_dir, exist_ok=True)
             shutil.move(face_path, new_dir)
-            faces_dir.remove(face)  # Remove the moved file from the list
+            faces_items.remove(face)  # Remove the moved file from the list
+            
+def double_check_similar_faces(categorized_dir, similarity_threshold=0.7):
+    dirs_to_check = []
+    dirs_to_compare = []
 
-def generate_json_file():
+    # Separate directories based on the number of images
+    for dir_name in os.listdir(categorized_dir):
+        dir_path = os.path.join(categorized_dir, dir_name)
+        if os.path.isdir(dir_path):
+            num_images = len(os.listdir(dir_path))
+            if num_images < 4:
+                dirs_to_check.append(dir_path)
+            elif num_images >= 5:
+                dirs_to_compare.append(dir_path)
+
+    # Compare directories with less than 4 images against those with 5 or more images
+    for check_dir in tqdm.tqdm(dirs_to_check, total = len(dirs_to_check)):
+        check_images = os.listdir(check_dir)
+        for compare_dir in dirs_to_compare:
+            compare_images = os.listdir(compare_dir)
+            for check_image in check_images:
+                check_image_path = os.path.join(check_dir, check_image)
+                for compare_image in random.sample(compare_images, min(len(compare_images), 5)):
+                    compare_image_path = os.path.join(compare_dir, compare_image)
+                    result = verification.verify(check_image_path, compare_image_path)
+
+                    if result.get('code') and result.get('code') == 28:
+                        continue
+
+                    similarity = result['result'][0]['face_matches'][0]['similarity']
+                    if similarity > similarity_threshold:
+                        # Move the check_image to the compare_dir
+                        shutil.move(check_image_path, compare_dir)
+                        check_images.remove(check_image)
+                        break
+
+            # If there are no remaining images in the check_dir, remove the directory
+            if not check_images:
+                shutil.rmtree(check_dir)
+                break
+
+def generate_json_file(categorized_dir):
     data = []
-    for categorized_dir in os.listdir(CATEGORIZED_DIR):
-        for face in os.listdir(os.path.join(CATEGORIZED_DIR, categorized_dir)):
+    for speaker in os.listdir(categorized_dir):
+        for face in os.listdir(os.path.join(categorized_dir, speaker)):
             start_time = face.split('.')[0]
             data.append({
                 "start": int(start_time),
-                "speaker": categorized_dir,
+                "speaker": speaker,
             })
             
     data.sort(key=lambda x: x['start'])
@@ -109,29 +153,34 @@ def generate_json_file():
             json.dump(data, outfile)
 
 if __name__ == "__main__":
-    # # Remove and recreate FACES_DIR
     # if os.path.exists(FACES_DIR):
     #     shutil.rmtree(FACES_DIR)
     # os.makedirs(FACES_DIR)
 
-    # # Remove and recreate CATEGORIZED_DIR
-    # if os.path.exists(CATEGORIZED_DIR):
-    #     shutil.rmtree(CATEGORIZED_DIR)
-    # os.makedirs(CATEGORIZED_DIR)
+    CATEGORIZED_DIR = r"C:\Users\user\Desktop\Projects\talknet\TalkNet-ASD\demo\video\pyframes_face_categorized"
+    if os.path.exists(CATEGORIZED_DIR):
+        shutil.rmtree(CATEGORIZED_DIR)
+    os.makedirs(CATEGORIZED_DIR)
 
-    # # Remove and recreate CATEGORIZED_DIR
     # if os.path.exists(FRAMES_DIR):
     #     shutil.rmtree(FRAMES_DIR)
     # os.makedirs(FRAMES_DIR)
     
-    # start_time = time.time()
+    start_time = time.time()
     
     # subtitles = extract_subtitles_from_srt(SUBTITLES)
     # extract_frames_from_video(subtitles)
     # detect_single_face()
-    # categorize_faces()
+    # categorize_faces(FACES_DIR, CATEGORIZED_DIR)
+    # generate_json_file(CATEGORIZED_DIR)
     
-    # end_time = time.time()
-    # print(f"Execution time: {end_time - start_time} seconds")
     
-    generate_json_file()
+    faces_dir = r"C:\Users\user\Desktop\Projects\talknet\TalkNet-ASD\demo\video\pyframes_face"
+    faces_dir_copy = r"C:\Users\user\Desktop\Projects\talknet\TalkNet-ASD\demo\video\pyframes_face_copy"
+    copy_dir(faces_dir, faces_dir_copy)
+    categorize_faces(faces_dir_copy, CATEGORIZED_DIR)
+    # double_check_similar_faces(CATEGORIZED_DIR)
+    
+    end_time = time.time()
+    print(f"Execution time: {end_time - start_time} seconds")
+    
