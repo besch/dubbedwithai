@@ -7,14 +7,14 @@ from compreface.collections import FaceCollection
 from compreface.collections.face_collections import Subjects
 import time
 import json
-import tqdm
+from tqdm import tqdm
 import random
-from utils import extract_subtitles_from_srt, subtitle_to_ms, copy_dir, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
+from utils import extract_subtitles_from_srt, get_files_sorted_by_size, subtitle_to_ms, copy_dir, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
 
 DOMAIN: str = 'http://localhost'
 PORT: str = '8000'
-API_KEY_RECOGNITION: str = 'c4b2ea65-a422-46b3-a64b-3bdbdd803150'
-API_KEY_DETECTION: str = '3c4304e3-7ecd-4bb2-ae84-629a664531a2'
+API_KEY_RECOGNITION: str = '00000000-0000-0000-0000-000000000002'
+API_KEY_DETECTION: str = '00000000-0000-0000-0000-000000000003'
 API_KEY_VERIFICATION: str = '00000000-0000-0000-0000-000000000004'
 
 compre_face: CompreFace = CompreFace(DOMAIN, PORT, options={
@@ -56,6 +56,10 @@ def detect_single_face():
             # Save the face image using OpenCV
             cv2.imwrite(output_path, face_image)
 
+def detected_face(image_path) -> bool:
+    result = detection.detect(image_path)
+    return not (result.get('code') == 28)
+
 def extract_frames_from_video(subtitles):
     video = cv2.VideoCapture(ORIGINAL_VIDEO)
     for subtitle in subtitles:
@@ -66,22 +70,32 @@ def extract_frames_from_video(subtitles):
         img_path = os.path.join(FRAMES_DIR, f"{sub_start_ms}.jpg")
         cv2.imwrite(img_path, image)
 
-def categorize_faces(faces_dir, categorized_dir, similarity_threshold=0.7):
-    faces_items = os.listdir(faces_dir)
-    for face in tqdm.tqdm(faces_items[:], total = len(faces_items)):  # Create a copy of the list
-        face_path = os.path.join(faces_dir, face)
+def categorize_faces(faces_dir, categorized_dir, batch=19, similarity_threshold=0.7):
+    # faces_sorted_by_size = sorted(os.listdir(faces_dir))
+    faces_sorted_by_size = get_files_sorted_by_size(faces_dir)
+    created_folder_count = 0
+
+    for face_path in tqdm(faces_sorted_by_size):  # Create a copy of the list
+        # face_path = os.path.join(faces_dir, face)
+
+        if not detected_face(face_path):
+            continue
+
         matched_face_dir = None
         max_similarity = 0
+        # Sort the directories in categorized_dir by the number of files in descending order
+        sorted_dirs = sorted(os.listdir(categorized_dir), key=lambda d: len(os.listdir(os.path.join(categorized_dir, d))), reverse=True)
+        # filtered_dirs = sorted_dirs[:]
 
-        for existing_face_dir in os.listdir(categorized_dir):
-            existing_face_path = os.path.join(categorized_dir, existing_face_dir, os.listdir(os.path.join(categorized_dir, existing_face_dir))[0])
-            result = verification.verify(face_path, existing_face_path)
-            
-            if result.get('code') and result.get('code') == 28:
-                continue
-            # if not result.get('result'):
-            #     continue
-            
+        # # If there are more than 9 directories, filter out those with only one file
+        # if len(sorted_dirs) > batch:
+        #     filtered_dirs = [d for d in sorted_dirs if len(os.listdir(os.path.join(categorized_dir, d))) > 3]
+
+        for existing_face_dir in sorted_dirs:
+            existing_face_path = os.path.join(categorized_dir, str(existing_face_dir))
+            biggest_image_in_existing_face_dir = get_files_sorted_by_size(existing_face_path)[0]
+
+            result = verification.verify(face_path, biggest_image_in_existing_face_dir)
             similarity = result['result'][0]['face_matches'][0]['similarity']
 
             if similarity > max_similarity:
@@ -90,52 +104,42 @@ def categorize_faces(faces_dir, categorized_dir, similarity_threshold=0.7):
 
         if max_similarity > similarity_threshold:
             shutil.move(face_path, os.path.join(categorized_dir, matched_face_dir))
-            faces_items.remove(face)  # Remove the moved file from the list
+            faces_sorted_by_size.remove(face_path)  # Remove the moved file from the list
+        # elif len(sorted_dirs) <= batch:
         else:
-            new_dir = os.path.join(categorized_dir, face.split('.')[0])
+            new_dir = os.path.join(categorized_dir, str(created_folder_count))
             os.makedirs(new_dir, exist_ok=True)
             shutil.move(face_path, new_dir)
-            faces_items.remove(face)  # Remove the moved file from the list
+            faces_sorted_by_size.remove(face_path)  # Remove the moved file from the list
+            created_folder_count += 1
+
+            # Check if 5 folders have been created
+            # if created_folder_count % 5 == 0:
+            #     check_for_duplicates_in_categorized_faces(categorized_dir, similarity_threshold)
+            #     created_folder_count = 0  # Reset the count
             
-def double_check_similar_faces(categorized_dir, similarity_threshold=0.7):
-    dirs_to_check = []
-    dirs_to_compare = []
+def check_for_duplicates_in_categorized_faces(categorized_dir, similarity_threshold=0.7):
+    filtered_dirs = [d for d in os.listdir(categorized_dir) if 2 <= len(os.listdir(os.path.join(categorized_dir, d))) <= 4]
 
-    # Separate directories based on the number of images
-    for dir_name in os.listdir(categorized_dir):
-        dir_path = os.path.join(categorized_dir, dir_name)
-        if os.path.isdir(dir_path):
-            num_images = len(os.listdir(dir_path))
-            if num_images < 4:
-                dirs_to_check.append(dir_path)
-            elif num_images >= 5:
-                dirs_to_compare.append(dir_path)
+    for i, existing_face_dir in enumerate(tqdm(filtered_dirs)):
+        existing_face_paths = [os.path.join(categorized_dir, existing_face_dir, f) for f in os.listdir(os.path.join(categorized_dir, existing_face_dir))]
+        existing_face_path = existing_face_paths[1]  # Take the second image in the directory
 
-    # Compare directories with less than 4 images against those with 5 or more images
-    for check_dir in tqdm.tqdm(dirs_to_check, total = len(dirs_to_check)):
-        check_images = os.listdir(check_dir)
-        for compare_dir in dirs_to_compare:
-            compare_images = os.listdir(compare_dir)
-            for check_image in check_images:
-                check_image_path = os.path.join(check_dir, check_image)
-                for compare_image in random.sample(compare_images, min(len(compare_images), 5)):
-                    compare_image_path = os.path.join(compare_dir, compare_image)
-                    result = verification.verify(check_image_path, compare_image_path)
+        for j, other_face_dir in enumerate(filtered_dirs[i+1:], start=i+1):
+            other_face_paths = [os.path.join(categorized_dir, other_face_dir, f) for f in os.listdir(os.path.join(categorized_dir, other_face_dir))]
+            other_face_path = other_face_paths[1]  # Take the second image in the directory
 
-                    if result.get('code') and result.get('code') == 28:
-                        continue
+            result = verification.verify(existing_face_path, other_face_path)
+            similarity = result['result'][0]['face_matches'][0]['similarity']
 
-                    similarity = result['result'][0]['face_matches'][0]['similarity']
-                    if similarity > similarity_threshold:
-                        # Move the check_image to the compare_dir
-                        shutil.move(check_image_path, compare_dir)
-                        check_images.remove(check_image)
-                        break
-
-            # If there are no remaining images in the check_dir, remove the directory
-            if not check_images:
-                shutil.rmtree(check_dir)
-                break
+            if similarity > similarity_threshold:
+                # Move images from other_face_dir to existing_face_dir
+                for img_path in other_face_paths:
+                    shutil.move(img_path, os.path.join(categorized_dir, existing_face_dir))
+                os.rmdir(os.path.join(categorized_dir, other_face_dir))
+                
+                # Remove the other_face_dir from filtered_dirs
+                filtered_dirs.remove(other_face_dir)
 
 def generate_json_file(categorized_dir):
     data = []

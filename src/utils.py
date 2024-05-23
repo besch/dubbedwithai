@@ -7,6 +7,7 @@ import face_recognition
 import pandas as pd
 from collections import defaultdict
 from openai import OpenAI
+from pathlib import Path
 
 @dataclass
 class Subtitle:
@@ -111,3 +112,18 @@ def extract_face_from_image(input: str, box, output: str):
 def copy_dir(source_dir, dest_dir):
     shutil.rmtree(dest_dir, ignore_errors=True)
     shutil.copytree(source_dir, dest_dir)
+
+def get_files_sorted_by_size(directory):
+    files = []
+    for entry in os.scandir(directory):
+        if entry.is_file():
+            files.append((entry.path, entry.stat().st_size))
+    
+    # Sort the list of tuples by file size
+    files.sort(key=lambda x: x[1], reverse=True)
+    files = [file[0] for file in files]
+    
+    return files
+
+def sort_dirs_by_num_of_files(dirs):
+    return dirs.sort(key=lambda x: len(os.listdir(x)), reverse=True)
