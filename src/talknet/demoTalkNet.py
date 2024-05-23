@@ -1,5 +1,6 @@
 import sys, time, os, tqdm, torch, argparse, glob, subprocess, warnings, cv2, pickle, numpy, pdb, math, python_speech_features
 import pysrt
+import json
 from scipy import signal
 from shutil import rmtree
 from scipy.io import wavfile
@@ -253,13 +254,16 @@ def evaluate_network(files, args):
 	return allScores
 
 def visualization(tracks, scores, args):
-	subtitles_times = read_subtitle_times(r"C:\Users\user\Desktop\Projects\talknet\TalkNet-ASD\demo\subtitles.srt")
-	subtitles_start_time_frames = [milliseconds_to_frame(x[0]) for x in subtitles_times]
-	subtitles_end_time_frames = [milliseconds_to_frame(x[1]) for x in subtitles_times]
+	subtitles = read_subtitles(r"C:\Users\user\Desktop\Projects\talknet\TalkNet-ASD\demo\subtitles.srt")
+	subtitles_start_time_frames = [milliseconds_to_frame(x[0]) for x in subtitles]
+	subtitles_end_time_frames = [milliseconds_to_frame(x[1]) for x in subtitles]
+	subtitle_texts = [x[2] for x in subtitles]
 
 	flist = glob.glob(os.path.join(args.pyframesPath, '*.jpg'))
 	flist.sort()
 	faces = [[] for i in range(len(flist))]
+ 
+	printed_entries = []
 
 	for tidx, track in enumerate(tracks):
 		score = scores[tidx]
@@ -269,9 +273,32 @@ def visualization(tracks, scores, args):
 			faces[frame].append({'track':tidx,'score':float(s),'s':track['proc_track']['s'][fidx], 'x':track['proc_track']['x'][fidx], 'y':track['proc_track']['y'][fidx]})
 
 			for i, (start_frame, end_frame) in enumerate(zip(subtitles_start_time_frames, subtitles_end_time_frames)):
-				if start_frame <= frame <= end_frame and s > 0.2:
-					start_ms = subtitles_times[i][0]
-					print(f"Time: {ms_to_subtitle_time(start_ms)}, Frame: {frame}, Score: {s}, Face: {tidx}")
+				if start_frame <= frame <= end_frame:
+					start_ms = subtitles[i][0]
+					end_ms = subtitles[i][1]
+					for face in faces[frame]:
+						if face['score'] > 0.2:
+							printed_entries.append({
+								'time_start_ms': start_ms,
+								'time_start_srt': ms_to_subtitle_time(start_ms),
+								'time_end_ms': end_ms,
+								'time_end_srt': ms_to_subtitle_time(end_ms),
+								'frame': frame,
+								'track': face['track'],
+								'score': face['score'],
+								'image_path': os.path.abspath(flist[frame]),
+								'box': {
+									'x_min': int(face['x']-face['s']), 
+									'y_min': int(face['y']-face['s']),
+									'x_max': int(face['x']+face['s']), 
+									'y_max': int(face['y']+face['s'])
+								},
+								'subtitle_text': subtitle_texts[i]
+							})
+							# print(f"Time: {ms_to_subtitle_time(start_ms)}, Frame: {frame}, Score: {face['score']}, Image Path: {flist[frame]}, Bounding Box: [{int(face['x']-face['s'])}, {int(face['y']-face['s'])}, {int(face['x']+face['s'])}, {int(face['y']+face['s'])}]")
+
+	with open(r"C:\Users\user\Desktop\Projects\talknet\TalkNet-ASD\demo\video\dump.json", 'w') as f:
+		json.dump(printed_entries, f)
 
 	firstImage = cv2.imread(flist[0])
 	fw = firstImage.shape[1]
@@ -286,6 +313,9 @@ def visualization(tracks, scores, args):
 			cv2.rectangle(image, (int(face['x']-face['s']), int(face['y']-face['s'])), (int(face['x']+face['s']), int(face['y']+face['s'])),(0,clr,255-clr),10)
 			cv2.putText(image,'%s'%(txt), (int(face['x']-face['s']), int(face['y']-face['s'])), cv2.FONT_HERSHEY_SIMPLEX, 1.5, (0,clr,255-clr),5)
 		vOut.write(image)
+		image_name = fname.split('\\')[-1]
+		image_path = os.path.join(args.pyframesFacePath, image_name)
+		cv2.imwrite(image_path, image)
 	vOut.release()
 	command = ("ffmpeg -y -i %s -i %s -threads %d -c:v copy -c:a copy %s -loglevel panic" % \
 		(os.path.join(args.pyaviPath, 'video_only.avi'), os.path.join(args.pyaviPath, 'audio.wav'), \
@@ -359,10 +389,10 @@ def evaluate_col_ASD(tracks, scores, args):
 			print("%s, ACC:%.2f, F1:%.2f"%(i, 100 * ACC, 100 * F1))
 	print("Average F1:%.2f"%(100 * (F1s / 5)))	
  
-def read_subtitle_times(subtitle_file):
+def read_subtitles(subtitle_file):
     subs = pysrt.open(subtitle_file)
-    start_times = [(((sub.start.hours * 60 + sub.start.minutes) * 60 + sub.start.seconds) * 1000 + sub.start.milliseconds, (((sub.end.hours * 60 + sub.end.minutes) * 60 + sub.end.seconds) * 1000 + sub.end.milliseconds)) for sub in subs]
-    return start_times
+    sutitles = [(((sub.start.hours * 60 + sub.start.minutes) * 60 + sub.start.seconds) * 1000 + sub.start.milliseconds, (((sub.end.hours * 60 + sub.end.minutes) * 60 + sub.end.seconds) * 1000 + sub.end.milliseconds), sub.text) for sub in subs]
+    return sutitles
 
 def milliseconds_to_frame(milliseconds, fps=25):
 	frame_number = int(milliseconds * fps / 1000)
@@ -379,11 +409,22 @@ def ms_to_subtitle_time(ms):
     
     return time_str
 
+def extract_face_from_image(input: str, box, output: str) -> dict:
+    image = cv2.imread(input)
+    x1, y1 = box['x_min'], box['y_min']
+    x2, y2 = box['x_max'], box['y_max']
+    face_image = image[y1:y2, x1:x2]
+
+    cv2.imwrite(output, face_image)
+
 # Main function
 def main():
 	# This preprocesstion is modified based on this [repository](https://github.com/joonson/syncnet_python).
 	# ```
 	# .
+ 
+ 
+ 
 	# ├── pyavi
 	# │   ├── audio.wav (Audio from input video)
 	# │   ├── video.avi (Copy of the input video)
@@ -409,12 +450,14 @@ def main():
 	# Initialization 
 	args.pyaviPath = os.path.join(args.savePath, 'pyavi')
 	args.pyframesPath = os.path.join(args.savePath, 'pyframes')
+	args.pyframesFacePath = os.path.join(args.savePath, 'pyframes_face')
 	args.pyworkPath = os.path.join(args.savePath, 'pywork')
 	args.pycropPath = os.path.join(args.savePath, 'pycrop')
 	if os.path.exists(args.savePath):
 		rmtree(args.savePath)
 	os.makedirs(args.pyaviPath, exist_ok = True) # The path for the input video, input audio, output video
 	os.makedirs(args.pyframesPath, exist_ok = True) # Save all the video frames
+	os.makedirs(args.pyframesFacePath, exist_ok = True) # Save all the video frames
 	os.makedirs(args.pyworkPath, exist_ok = True) # Save the results in this process by the pckl method
 	os.makedirs(args.pycropPath, exist_ok = True) # Save the detected face clips (audio+video) in this process
 
