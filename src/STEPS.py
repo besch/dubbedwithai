@@ -14,12 +14,14 @@ def run_demoTalkNet_for_chunks(CHUNKS_DIR):
     chunk_dirs = os.listdir(CHUNKS_DIR)
     chunk_dirs.sort()
     
-    for dir in chunk_dirs:
-        files = os.listdir(os.path.join(CHUNKS_DIR, dir))
-        mp4_files = [f for f in files if f.endswith(".mp4")]
-        video_path = os.path.join(CHUNKS_DIR, dir, mp4_files[0])
-        subtitles_path = os.path.join(CHUNKS_DIR, dir, "subtitles.srt")
-        demoTalkNet.main(video_path, subtitles_path, os.path.join(CHUNKS_DIR, dir))
+    # for dir in chunk_dirs:
+    for i, dir in enumerate(chunk_dirs):
+        if i == 0:
+            files = os.listdir(os.path.join(CHUNKS_DIR, dir))
+            mp4_files = [f for f in files if f.endswith(".mp4")]
+            video_path = os.path.join(CHUNKS_DIR, dir, mp4_files[0])
+            subtitles_path = os.path.join(CHUNKS_DIR, dir, "subtitles.srt")
+            demoTalkNet.main(video_path, subtitles_path, os.path.join(CHUNKS_DIR, dir))
 
 def main():
     parser = argparse.ArgumentParser(description='Process video and subtitle files')
@@ -29,11 +31,9 @@ def main():
     
     video_path = args.video_path
     subtitles_path = args.subtitles_path
-    # START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR = initialize_start_dir(video_path)
+    START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR = initialize_start_dir(video_path)
     
-    # cut_in_chunks(video_path, subtitles_path, CHUNKS_DIR)
-    
-    CHUNKS_DIR = r"C:\Users\user\Downloads\chlopaki_nie_placza\tmp\chunks"
+    cut_in_chunks(video_path, subtitles_path, CHUNKS_DIR)
     run_demoTalkNet_for_chunks(CHUNKS_DIR)
     
     
