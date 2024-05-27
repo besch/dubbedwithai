@@ -3,7 +3,7 @@ import subprocess
 import pysrt
 from datetime import datetime
 
-def cut_video_and_subtitles_into_chunks(input_video, output_dir, subtitle_file, chunk_duration=600):
+def cut_in_chunks(input_video, subtitle_file, output_dir, chunk_duration=600):
     os.makedirs(output_dir, exist_ok=True)
 
     # Cut video into chunks using FFmpeg
@@ -11,7 +11,7 @@ def cut_video_and_subtitles_into_chunks(input_video, output_dir, subtitle_file, 
     ffmpeg_cmd = [
         'ffmpeg', '-i', input_video,
         '-map', '0:v',
-        '-map', '0:a:1',  # !!!!!!!!! Copy second audio stream
+        '-map', '0:a:1',  # !!!!!!!!! Copy second audio stream, make change if needed
         '-c', 'copy',
         '-f', 'segment',
         '-segment_time', str(chunk_duration),
@@ -42,11 +42,3 @@ def cut_video_and_subtitles_into_chunks(input_video, output_dir, subtitle_file, 
 
             os.rename(os.path.join(output_dir, video_chunk),
                       os.path.join(chunk_dir, video_chunk))
-
-# Example usage
-input_video = r"C:\Users\user\Downloads\Chlopaki Nie Placza.mp4"
-subtitle_file = r"C:\Users\user\Downloads\subtitles.srt"
-output_dir = r"C:\Users\user\Downloads\cutted"
-
-# Split into 10-minute chunks (default)
-cut_video_and_subtitles_into_chunks(input_video, output_dir, subtitle_file)

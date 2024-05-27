@@ -2,12 +2,7 @@ import os
 from dataclasses import dataclass
 import cv2
 import shutil
-import pytesseract
-import face_recognition
-import pandas as pd
-from collections import defaultdict
 from openai import OpenAI
-from pathlib import Path
 
 @dataclass
 class Subtitle:
@@ -127,3 +122,23 @@ def get_files_sorted_by_size(directory):
 
 def sort_dirs_by_num_of_files(dirs):
     return dirs.sort(key=lambda x: len(os.listdir(x)), reverse=True)
+
+def initialize_start_dir(video_path):
+    original_dir = os.path.dirname(video_path)
+    original_file_name_with_ext = os.path.basename(video_path)
+    original_file_name, ext = os.path.splitext(original_file_name_with_ext)
+    START_DIR = os.path.join(original_dir, original_file_name)
+    
+    if os.path.exists(START_DIR):
+        shutil.rmtree(START_DIR)
+        os.makedirs(START_DIR)
+        
+    TMP_DIR = os.path.join(START_DIR, "tmp")
+    CHUNKS_DIR = os.path.join(TMP_DIR, "chunks")
+    TALKNET_DIR = os.path.join(TMP_DIR, "talknet")
+    
+    os.makedirs(TMP_DIR, exist_ok = True)
+    os.makedirs(CHUNKS_DIR, exist_ok = True)
+    os.makedirs(TALKNET_DIR, exist_ok = True)
+    
+    return START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR
