@@ -1,6 +1,7 @@
 import argparse
 from utils import initialize_start_dir
-from cut_video_and_subtitles_in_chunks import cut_in_chunks
+from cut_video_and_subtitles_in_chunks import cut_subtitles_in_chunks
+# from process_by_pictures import categorize_faces
 import os
 import sys
 
@@ -14,14 +15,12 @@ def run_demoTalkNet_for_chunks(CHUNKS_DIR):
     chunk_dirs = os.listdir(CHUNKS_DIR)
     chunk_dirs.sort()
     
-    # for dir in chunk_dirs:
-    for i, dir in enumerate(chunk_dirs):
-        if i == 0:
-            files = os.listdir(os.path.join(CHUNKS_DIR, dir))
-            mp4_files = [f for f in files if f.endswith(".mp4")]
-            video_path = os.path.join(CHUNKS_DIR, dir, mp4_files[0])
-            subtitles_path = os.path.join(CHUNKS_DIR, dir, "subtitles.srt")
-            demoTalkNet.main(video_path, subtitles_path, os.path.join(CHUNKS_DIR, dir))
+    for dir in chunk_dirs:
+        files = os.listdir(os.path.join(CHUNKS_DIR, dir))
+        mp4_files = [f for f in files if f.endswith(".mp4")]
+        video_path = os.path.join(CHUNKS_DIR, dir, mp4_files[0])
+        subtitles_path = os.path.join(CHUNKS_DIR, dir, "subtitles.srt")
+        demoTalkNet.main(video_path, subtitles_path, os.path.join(CHUNKS_DIR, dir))
 
 def main():
     parser = argparse.ArgumentParser(description='Process video and subtitle files')
@@ -31,11 +30,15 @@ def main():
     
     video_path = args.video_path
     subtitles_path = args.subtitles_path
-    START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR = initialize_start_dir(video_path)
+    # START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR, FACES_DIR, FACES_COPY_DIR, CATEGORIZED_FACES_DIR = initialize_start_dir(video_path)
+    # demoTalkNet.main(video_path, subtitles_path, TALKNET_DIR)
+    # cut_subtitles_in_chunks(subtitles_path, CHUNKS_DIR)
     
-    cut_in_chunks(video_path, subtitles_path, CHUNKS_DIR)
-    run_demoTalkNet_for_chunks(CHUNKS_DIR)
     
+    
+    
+    CHUNKS_DIR = r"C:\Users\user\Downloads\chlopaki_nie_placza\tmp\chunks"
+    # categorize_faces(FACES_DIR, FACES_COPY_DIR, CATEGORIZED_FACES_DIR)
     
     
 
@@ -43,3 +46,18 @@ if __name__ == '__main__':
     main()
 
     
+    
+    
+    
+    
+    
+
+
+    # cut_in_chunks(video_path, subtitles_path, CHUNKS_DIR)
+    # CHUNKS_DIR = r"C:\Users\user\Downloads\chlopaki_nie_placza\tmp\chunks"
+    # run_demoTalkNet_for_chunks(CHUNKS_DIR)
+
+    # files = os.listdir(os.path.join(CHUNKS_DIR, dir))
+    # mp4_files = [f for f in files if f.endswith(".mp4")]
+    # video_path = os.path.join(CHUNKS_DIR, dir, mp4_files[0])
+    # subtitles_path = os.path.join(CHUNKS_DIR, dir, "subtitles.srt")
