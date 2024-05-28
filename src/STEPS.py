@@ -1,7 +1,7 @@
 import argparse
 from utils import initialize_start_dir
-from cut_video_and_subtitles_in_chunks import cut_subtitles_in_chunks
-# from process_by_pictures import categorize_faces
+from cut_video_and_subtitles_in_chunks import cut_subtitles_in_chunks_and_filter_images
+from process_by_pictures import categorize_faces
 import os
 import sys
 
@@ -30,18 +30,11 @@ def main():
     
     video_path = args.video_path
     subtitles_path = args.subtitles_path
-    # START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR, FACES_DIR, FACES_COPY_DIR, CATEGORIZED_FACES_DIR = initialize_start_dir(video_path)
-    # demoTalkNet.main(video_path, subtitles_path, TALKNET_DIR)
-    # cut_subtitles_in_chunks(subtitles_path, CHUNKS_DIR)
+    START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR, FACES_DIR, FACES_COPY_DIR, CATEGORIZED_FACES_DIR = initialize_start_dir(video_path)
+    demoTalkNet.main(video_path, subtitles_path, TALKNET_DIR)
+    cut_subtitles_in_chunks_and_filter_images(subtitles_path, CHUNKS_DIR)
     
     
-    
-    
-    CHUNKS_DIR = r"C:\Users\user\Downloads\chlopaki_nie_placza\tmp\chunks"
-    # categorize_faces(FACES_DIR, FACES_COPY_DIR, CATEGORIZED_FACES_DIR)
-    
-    
-
 if __name__ == '__main__':
     main()
 

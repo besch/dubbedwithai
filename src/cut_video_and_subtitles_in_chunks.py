@@ -3,8 +3,9 @@ import subprocess
 import pysrt
 from datetime import datetime, timedelta
 from math import ceil
+from tqdm import tqdm
 
-def cut_subtitles_in_chunks(subtitle_file, output_dir, chunk_duration=600):
+def cut_subtitles_in_chunks_and_filter_images(subtitle_file, input_image_dir, output_dir, chunk_duration=600):
     os.makedirs(output_dir, exist_ok=True)
 
     # Load subtitles
@@ -20,10 +21,13 @@ def cut_subtitles_in_chunks(subtitle_file, output_dir, chunk_duration=600):
     # Calculate the number of chunks required
     num_chunks = ceil(total_duration / chunk_duration)
 
-    # Split subtitles into chunks
+    # Split subtitles into chunks and filter images
     for i in range(num_chunks):
         chunk_dir = os.path.join(output_dir, f"chunk_{i:03d}")
         os.makedirs(chunk_dir, exist_ok=True)
+
+        faces_dir = os.path.join(chunk_dir, "faces")
+        os.makedirs(faces_dir, exist_ok=True)
 
         start_chunk = start_time + timedelta(seconds=chunk_duration * i)
         end_chunk = start_chunk + timedelta(seconds=chunk_duration)
@@ -33,6 +37,19 @@ def cut_subtitles_in_chunks(subtitle_file, output_dir, chunk_duration=600):
         if chunk_subs:
             chunk_sub_file = os.path.join(chunk_dir, "subtitles.srt")
             pysrt.SubRipFile(chunk_subs).save(chunk_sub_file, encoding='utf-8')
+
+            # Filter images belonging to the current chunk
+            for sub in tqdm(chunk_subs, desc=f"Processing chunk {i}", unit="sub"):
+                start_dt = datetime.combine(datetime.min.date(), sub.start.to_time())
+                end_dt = datetime.combine(datetime.min.date(), sub.end.to_time())
+                start_ms = int((start_dt - datetime.min).total_seconds() * 1000)
+                end_ms = int((end_dt - datetime.min).total_seconds() * 1000)
+
+                for ms in range(start_ms, end_ms + 1):
+                    image_file = os.path.join(input_image_dir, f"{ms}.jpg")
+                    if os.path.exists(image_file):
+                        dest_file = os.path.join(faces_dir, f"{ms}.jpg")
+                        os.rename(image_file, dest_file)
 
 
 
