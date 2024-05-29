@@ -9,7 +9,7 @@ import time
 import json
 from tqdm import tqdm
 import random
-from utils import extract_subtitles_from_srt, get_files_sorted_by_size, subtitle_to_ms, copy_dir, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
+from utils import extract_subtitles_from_srt, get_files_sorted_by_size, subtitle_to_ms, copy_dir, remove_dir_and_recreate, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
 
 DOMAIN: str = 'http://localhost'
 PORT: str = '8000'
@@ -70,29 +70,28 @@ def extract_frames_from_video(subtitles):
         img_path = os.path.join(FRAMES_DIR, f"{sub_start_ms}.jpg")
         cv2.imwrite(img_path, image)
 
-def categorize_faces(faces_dir, categorized_dir, batch=19, similarity_threshold=0.7):
-    # faces_sorted_by_size = sorted(os.listdir(faces_dir))
-    faces_sorted_by_size = get_files_sorted_by_size(faces_dir)
+def categorize_faces(FACES_DIR, CATEGORIZED_FACES_DIR, batch=19, similarity_threshold=0.7):
+    FACES_COPY_DIR = copy_dir(FACES_DIR)
+    remove_dir_and_recreate(CATEGORIZED_FACES_DIR)
+    
+    faces_sorted_by_size = get_files_sorted_by_size(FACES_COPY_DIR)
     created_folder_count = 0
 
-    for face_path in tqdm(faces_sorted_by_size):  # Create a copy of the list
-        # face_path = os.path.join(faces_dir, face)
-
+    for face_path in tqdm(faces_sorted_by_size[:], total=len(faces_sorted_by_size)):
         if not detected_face(face_path):
             continue
 
         matched_face_dir = None
         max_similarity = 0
         # Sort the directories in categorized_dir by the number of files in descending order
-        sorted_dirs = sorted(os.listdir(categorized_dir), key=lambda d: len(os.listdir(os.path.join(categorized_dir, d))), reverse=True)
-        # filtered_dirs = sorted_dirs[:]
+        sorted_dirs = sorted(os.listdir(CATEGORIZED_FACES_DIR), key=lambda d: len(os.listdir(os.path.join(CATEGORIZED_FACES_DIR, d))), reverse=True)
 
         # # If there are more than 9 directories, filter out those with only one file
         # if len(sorted_dirs) > batch:
-        #     filtered_dirs = [d for d in sorted_dirs if len(os.listdir(os.path.join(categorized_dir, d))) > 3]
+        #     filtered_dirs = [d for d in sorted_dirs if len(os.listdir(os.path.join(CATEGORIZED_FACES_DIR, d))) > 3]
 
         for existing_face_dir in sorted_dirs:
-            existing_face_path = os.path.join(categorized_dir, str(existing_face_dir))
+            existing_face_path = os.path.join(CATEGORIZED_FACES_DIR, str(existing_face_dir))
             biggest_image_in_existing_face_dir = get_files_sorted_by_size(existing_face_path)[0]
 
             result = verification.verify(face_path, biggest_image_in_existing_face_dir)
@@ -103,11 +102,11 @@ def categorize_faces(faces_dir, categorized_dir, batch=19, similarity_threshold=
                 matched_face_dir = existing_face_dir
 
         if max_similarity > similarity_threshold:
-            shutil.move(face_path, os.path.join(categorized_dir, matched_face_dir))
+            shutil.move(face_path, os.path.join(CATEGORIZED_FACES_DIR, matched_face_dir))
             faces_sorted_by_size.remove(face_path)  # Remove the moved file from the list
         # elif len(sorted_dirs) <= batch:
         else:
-            new_dir = os.path.join(categorized_dir, str(created_folder_count))
+            new_dir = os.path.join(CATEGORIZED_FACES_DIR, str(created_folder_count))
             os.makedirs(new_dir, exist_ok=True)
             shutil.move(face_path, new_dir)
             faces_sorted_by_size.remove(face_path)  # Remove the moved file from the list

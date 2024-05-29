@@ -104,10 +104,6 @@ def extract_face_from_image(input: str, box, output: str):
     if (face_image.shape[0] > 0 and face_image.shape[1] > 0):
         cv2.imwrite(output, face_image)
 
-def copy_dir(source_dir, dest_dir):
-    shutil.rmtree(dest_dir, ignore_errors=True)
-    shutil.copytree(source_dir, dest_dir)
-
 def get_files_sorted_by_size(directory):
     files = []
     for entry in os.scandir(directory):
@@ -123,6 +119,17 @@ def get_files_sorted_by_size(directory):
 def sort_dirs_by_num_of_files(dirs):
     return dirs.sort(key=lambda x: len(os.listdir(x)), reverse=True)
 
+def copy_dir(input_dir, output_dir = None):
+    if not output_dir:
+        output_dir = input_dir + '_copy'
+    if os.path.exists(output_dir):
+        shutil.rmtree(output_dir, ignore_errors=True)
+    shutil.copytree(input_dir, output_dir)
+        
+    return output_dir
+
+remove_dir_and_recreate = lambda dir: shutil.rmtree(dir, ignore_errors=True) or os.makedirs(dir)
+
 def initialize_start_dir(video_path):
     original_dir = os.path.dirname(video_path)
     original_file_name_with_ext = os.path.basename(video_path)
@@ -136,9 +143,11 @@ def initialize_start_dir(video_path):
     TMP_DIR = os.path.join(START_DIR, "tmp")
     CHUNKS_DIR = os.path.join(TMP_DIR, "chunks")
     TALKNET_DIR = os.path.join(TMP_DIR, "talknet")
+    FACES_DIR = os.path.join(TALKNET_DIR, "faces")
     
     os.makedirs(TMP_DIR, exist_ok = True)
     os.makedirs(CHUNKS_DIR, exist_ok = True)
     os.makedirs(TALKNET_DIR, exist_ok = True)
+    os.makedirs(FACES_DIR, exist_ok = True)
     
-    return START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR
+    return START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR, FACES_DIR
