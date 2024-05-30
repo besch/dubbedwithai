@@ -8,7 +8,9 @@ from compreface.collections.face_collections import Subjects
 import time
 import json
 from tqdm import tqdm
+from tqdm.contrib import tenumerate
 import random
+import heapq
 from utils import extract_subtitles_from_srt, get_files_sorted_by_size, subtitle_to_ms, copy_dir, remove_dir_and_recreate, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
 
 DOMAIN: str = 'http://localhost'
@@ -117,6 +119,70 @@ def categorize_faces(FACES_DIR, batch=19, similarity_threshold=0.7):
             # if created_folder_count % 5 == 0:
             #     check_for_duplicates_in_categorized_faces(categorized_dir, similarity_threshold)
             #     created_folder_count = 0  # Reset the count
+
+            
+def find_similar_faces_in_directories(chunks_dir, similarity_threshold=0.7):
+    sorted_chunks = sorted(os.listdir(chunks_dir))
+    all_face_dirs = []
+    for chunk in sorted_chunks:
+        chunk_dir = os.path.join(chunks_dir, chunk)
+        faces_categorized_dir = os.path.join(chunk_dir, 'faces_categorized')
+        
+        # Sort faces_categorized directories
+        sorted_face_dirs = sorted(os.path.join(faces_categorized_dir, face_dir) for face_dir in os.listdir(faces_categorized_dir))
+        
+        # Add face_dir only if it has at least two images
+        for face_dir in sorted_face_dirs:
+            face_images = [os.path.join(face_dir, f) for f in os.listdir(face_dir) if f.endswith(('.jpg', '.png'))]
+            if len(face_images) >= 2:
+                all_face_dirs.append(face_dir)
+
+    for i, face_dir1 in tenumerate(all_face_dirs, total=len(all_face_dirs), desc="Comparing face dirs"):
+        chunk1 = os.path.dirname(os.path.dirname(face_dir1))
+        
+        # Check if face_dir1 exists
+        if os.path.isdir(face_dir1):
+            face_images1 = [os.path.join(face_dir1, f) for f in os.listdir(face_dir1) if f.endswith(('.jpg', '.png'))]
+        else:
+            continue
+        
+        # Compare face_dir1 with all other face_dirs within the same chunk
+        for face_dir2 in [fd for fd in all_face_dirs if os.path.dirname(os.path.dirname(fd)) == chunk1]:
+            if face_dir1 != face_dir2:
+                compare_face_dirs(face_dir1, face_dir2, similarity_threshold)
+        
+        # Compare face_dir1 with face_dirs from other chunks
+        for face_dir2 in all_face_dirs[i+1:]:
+            chunk2 = os.path.dirname(os.path.dirname(face_dir2))
+            if chunk1 != chunk2:
+                compare_face_dirs(face_dir1, face_dir2, similarity_threshold)
+
+def compare_face_dirs(face_dir1, face_dir2, similarity_threshold):
+    face_images1 = [os.path.join(face_dir1, f) for f in os.listdir(face_dir1) if f.endswith(('.jpg', '.png'))]
+    
+    try:
+        face_images2 = [os.path.join(face_dir2, f) for f in os.listdir(face_dir2) if f.endswith(('.jpg', '.png'))]
+    except FileNotFoundError:
+        return
+    
+    if face_images1 and face_images2:
+        largest_images1 = heapq.nlargest(5, face_images1, key=lambda x: os.path.getsize(x))
+        largest_images2 = heapq.nlargest(5, face_images2, key=lambda x: os.path.getsize(x))
+        
+        image1 = random.choice(largest_images1)
+        image2 = random.choice(largest_images2)
+        
+        result = verification.verify(image1, image2)
+        similarity = result['result'][0]['face_matches'][0]['similarity']
+        
+        if similarity >= similarity_threshold:
+            # Move all images from face_dir2 to face_dir1
+            for img in face_images2:
+                shutil.move(img, face_dir1)
+            
+            # Remove the now empty face_dir2
+            shutil.rmtree(face_dir2)
+    
             
 def check_for_duplicates_in_categorized_faces(categorized_dir, similarity_threshold=0.7):
     filtered_dirs = [d for d in os.listdir(categorized_dir) if 2 <= len(os.listdir(os.path.join(categorized_dir, d))) <= 4]
