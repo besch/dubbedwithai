@@ -143,11 +143,10 @@ def initialize_start_dir(video_path):
     TMP_DIR = os.path.join(START_DIR, "tmp")
     CHUNKS_DIR = os.path.join(TMP_DIR, "chunks")
     TALKNET_DIR = os.path.join(TMP_DIR, "talknet")
-    FACES_DIR = os.path.join(TALKNET_DIR, "faces")
     
     os.makedirs(TMP_DIR, exist_ok = True)
     os.makedirs(CHUNKS_DIR, exist_ok = True)
     os.makedirs(TALKNET_DIR, exist_ok = True)
     os.makedirs(FACES_DIR, exist_ok = True)
     
-    return START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR, FACES_DIR
+    return START_DIR, TMP_DIR, CHUNKS_DIR, TALKNET_DIR
