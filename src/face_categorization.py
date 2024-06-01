@@ -11,7 +11,9 @@ from tqdm import tqdm
 from tqdm.contrib import tenumerate
 import random
 import heapq
-from utils import extract_subtitles_from_srt, get_files_sorted_by_size, subtitle_to_ms, copy_dir, remove_dir_and_recreate, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
+import base64
+from datetime import timedelta, datetime
+from utils import extract_subtitles_from_srt, get_files_sorted_by_size, subtitle_to_ms, copy_dir, ms_to_subtitle_time, remove_dir_and_recreate, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
 
 DOMAIN: str = 'http://localhost'
 PORT: str = '8000'
@@ -156,6 +158,63 @@ def find_similar_faces_in_directories(chunks_dir, similarity_threshold=0.7):
             chunk2 = os.path.dirname(os.path.dirname(face_dir2))
             if chunk1 != chunk2:
                 compare_face_dirs(face_dir1, face_dir2, similarity_threshold)
+
+
+
+def milliseconds_to_str(milliseconds):
+    return str(timedelta(milliseconds=milliseconds))
+     
+def get_path_of_largest_file_in_dir(dir):
+    jpg_files = [f for f in os.listdir(dir) if os.path.isfile(os.path.join(dir, f)) and f.lower().endswith('.jpg')]
+    
+    # Get the file sizes
+    file_sizes = {os.path.join(dir, f): os.path.getsize(os.path.join(dir, f)) for f in jpg_files}
+    
+    # Find the maximum size
+    max_size = max(file_sizes.values())
+    
+    # Get the file path corresponding to the maximum size
+    largest_jpg_path = [path for path, size in file_sizes.items() if size == max_size][0]
+    
+    return largest_jpg_path
+           
+def find_similar_faces_in_directories_to_json(chunks_dir, output_json_path):
+    json_data = []
+    encoded_images = {}
+
+    for chunk_dir in os.listdir(chunks_dir):
+        chunk_path = os.path.join(chunks_dir, chunk_dir, "faces_categorized")
+        if os.path.isdir(chunk_path):
+            for person_dir in os.listdir(chunk_path):
+                largest_image_path = get_path_of_largest_file_in_dir(os.path.join(chunk_path, person_dir))
+                person_path = os.path.join(chunk_path, person_dir)
+
+                largest_image_name, _ = os.path.splitext(os.path.basename(largest_image_path))
+
+                if largest_image_name not in encoded_images:
+                    with open(largest_image_path, "rb") as image_file:
+                        encoded_images[largest_image_name] = base64.b64encode(image_file.read()).decode('utf-8')
+
+                for face_image in os.listdir(person_path):
+                    milliseconds = int(os.path.splitext(face_image)[0])
+                    time_str = ms_to_subtitle_time(milliseconds)
+
+                    json_data.append({
+                        "image_name": face_image,
+                        "subtitle_time_ms": milliseconds,
+                        "subtitle_time_str": time_str,
+                        "image_path": os.path.join(person_path, face_image),
+                        "group_image_name": os.path.basename(largest_image_path),
+                        "group_image_path": largest_image_path,
+                        "group_image_encoded_ref": largest_image_name
+                    })
+
+    with open(output_json_path, "w", encoding="utf-8") as json_file:
+        json.dump({
+            "data": json_data,
+            "encoded_images": encoded_images
+        }, json_file, ensure_ascii=False, indent=4)
+    
 
 def compare_face_dirs(face_dir1, face_dir2, similarity_threshold):
     face_images1 = [os.path.join(face_dir1, f) for f in os.listdir(face_dir1) if f.endswith(('.jpg', '.png'))]
