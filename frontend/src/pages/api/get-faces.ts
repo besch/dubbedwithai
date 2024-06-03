@@ -17,6 +17,7 @@ const getFaces = async (req: NextApiRequest, res: NextApiResponse) => {
   fs.readFile(absPath, "utf8", (err, data) => {
     if (err) {
       console.error("Error reading file:", err);
+      res.status(500).json({ error: "Internal Server Error" });
       return;
     }
 
@@ -25,6 +26,7 @@ const getFaces = async (req: NextApiRequest, res: NextApiResponse) => {
       res.status(200).json({ jsonData });
     } catch (err) {
       console.error("Error parsing JSON:", err);
+      res.status(500).json({ error: "Internal Server Error" });
     }
   });
 };

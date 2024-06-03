@@ -1,5 +1,11 @@
 "use client";
-import React, { useState, useRef, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useMemo,
+  useCallback,
+} from "react";
 import { setSubtitle } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
@@ -24,6 +30,7 @@ const Timeline: React.FC = () => {
   const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
   const [zoom, setZoom] = useState<number>(0);
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
+  const [faceData, setFaceData] = useState<any>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -119,12 +126,43 @@ const Timeline: React.FC = () => {
     const fetchFaces = async () => {
       try {
         const response = await fetch("/api/get-faces");
-        const { faces } = await response.json();
-      } catch (error) {}
+        const data = await response.json();
+        setFaceData(data.jsonData);
+      } catch (error) {
+        console.log(error);
+      }
     };
 
+    fetchFaces();
     fetchSubtitles();
   }, []);
+
+  const getFaceImage = useCallback(
+    (subtitle: Subtitle) => {
+      if (!faceData) return null;
+
+      const foundFace = faceData.data.find((face) => {
+        const subtitleStartMs = convertToMilliseconds(subtitle.start);
+        const subtitleEndMs = convertToMilliseconds(subtitle.end);
+
+        if (
+          subtitleStartMs <= face.subtitle_time_ms &&
+          face.subtitle_time_ms <= subtitleEndMs
+        ) {
+          return true;
+        }
+
+        return false;
+      });
+
+      if (foundFace) {
+        return faceData.encoded_images[foundFace.group_image_encoded_ref];
+      }
+
+      return null;
+    },
+    [faceData]
+  );
 
   return (
     <>
@@ -189,6 +227,7 @@ const Timeline: React.FC = () => {
               const startWidth = (startTime / totalDuration) * 100;
               const subtitleWidth =
                 ((endTime - startTime) / totalDuration) * 100;
+              const faceImage = getFaceImage(subtitle);
 
               return (
                 <SubtitleItem
@@ -202,6 +241,7 @@ const Timeline: React.FC = () => {
                   }}
                   startWidth={startWidth}
                   subtitleWidth={subtitleWidth}
+                  faceImage={faceImage}
                 />
               );
             })}
