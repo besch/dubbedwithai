@@ -33,7 +33,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({
         >
           <img
             src={`data:image/jpeg;base64,${faceImage}`}
-            className="w-10 h-10"
+            className="w-10 h-10 top-10"
             alt="Face"
           />
         </div>

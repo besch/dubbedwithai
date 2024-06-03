@@ -2,7 +2,6 @@
 
 import { Provider } from "react-redux";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import LazyLoad from "react-lazyload";
 
 const queryClient = new QueryClient();
 
@@ -17,9 +16,7 @@ export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <LazyLoad height={250} once>
-          <Timeline />
-        </LazyLoad>
+        <Timeline />
         <div className="flex flex-row">
           <SubtitleCard />
           <VoiceGenerator />

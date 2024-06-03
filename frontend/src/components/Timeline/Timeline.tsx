@@ -1,23 +1,14 @@
 "use client";
-import React, {
-  useState,
-  useRef,
-  useEffect,
-  useMemo,
-  useCallback,
-} from "react";
+import React, { useState, useRef, useEffect, useMemo } from "react";
+import LazyLoad from "react-lazyload";
+import { List } from "react-virtualized";
 import { setSubtitle } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import {
-  FaSearchPlus,
-  FaSearchMinus,
-  FaArrowLeft,
-  FaArrowRight,
-} from "react-icons/fa";
 import { convertToMilliseconds } from "@/utils/timeline";
 import SubtitleItem from "@/components/Timeline/SubtitleItem";
 import TimelineMarkers from "@/components/Timeline/TimelineMarkers";
+import TimelineControls from "@/components/Timeline/TimelineControls";
 
 export interface Subtitle {
   start: string;
@@ -28,7 +19,7 @@ export interface Subtitle {
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
   const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
-  const [zoom, setZoom] = useState<number>(0);
+  const [zoom, setZoom] = useState<number>(15);
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [faceData, setFaceData] = useState<any>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -137,8 +128,8 @@ const Timeline: React.FC = () => {
     fetchSubtitles();
   }, []);
 
-  const getFaceImage = useCallback(
-    (subtitle: Subtitle) => {
+  const getFaceImage = useMemo(() => {
+    return (subtitle: Subtitle) => {
       if (!faceData) return null;
 
       const foundFace = faceData.data.find((face) => {
@@ -160,55 +151,19 @@ const Timeline: React.FC = () => {
       }
 
       return null;
-    },
-    [faceData]
-  );
+    };
+  }, [faceData]);
 
   return (
     <>
-      <div>
-        <div className="flex justify-end mb-2">
-          <button
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l mr-1"
-            onClick={handlePrevSubtitle}
-            disabled={currentIndex === 0}
-          >
-            <FaArrowLeft className="w-4 h-4" />
-          </button>
-          <button
-            className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r"
-            onClick={handleNextSubtitle}
-            disabled={currentIndex === subtitles.length - 1}
-          >
-            <FaArrowRight className="w-4 h-4" />
-          </button>
-        </div>
-        <div className="flex justify-end items-center">
-          <div>
-            <span className="ml-2 pr-5 text-white">Current Zoom: {zoom}</span>
-            <input
-              type="range"
-              min="0"
-              max="40"
-              value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="w-40 mr-2"
-            />
-            <button
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l mr-1"
-              onClick={() => setZoom(Math.min(10, zoom + 1))}
-            >
-              <FaSearchPlus className="w-4 h-4" />
-            </button>
-            <button
-              className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r"
-              onClick={() => setZoom(Math.max(0, zoom - 1))}
-            >
-              <FaSearchMinus className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+      <TimelineControls
+        zoom={zoom}
+        setZoom={setZoom}
+        handlePrevSubtitle={handlePrevSubtitle}
+        handleNextSubtitle={handleNextSubtitle}
+        currentIndex={currentIndex}
+        subtitlesLength={subtitles.length}
+      />
       <div
         id="timeline"
         className="relative w-full h-40 overflow-x-auto overflow-y-hidden p-4"
