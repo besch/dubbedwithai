@@ -1,5 +1,4 @@
 import { Suspense, useRef, useEffect } from "react";
-import Video from "next-video";
 import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { convertToMilliseconds } from "@/utils/timeline";
@@ -21,7 +20,7 @@ export default function ShowVideo() {
   return (
     <div className="m-5 w-2/3">
       <Suspense fallback={<p>Loading video...</p>}>
-        <Video ref={videoRef} src="/chlopaki_nie_placza.mp4" />
+        <video ref={videoRef} src="/chlopaki_nie_placza.mp4" controls />
       </Suspense>
     </div>
   );
