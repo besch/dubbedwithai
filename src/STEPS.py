@@ -1,7 +1,7 @@
 import argparse
 from utils import initialize_start_dir, sort_dirs_by_num_of_files
 from cut_video_and_subtitles_in_chunks import cut_subtitles_in_chunks_and_filter_images
-from face_categorization import categorize_faces, find_similar_faces_in_directories, find_similar_faces_in_directories_to_json
+from face_categorization import categorize_faces, find_similar_faces_in_directories_to_json
 import os
 import sys
 

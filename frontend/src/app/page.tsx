@@ -11,11 +11,13 @@ import VideoPlayer from "@/components/VideoPlayer";
 import VoiceGenerator from "@/components/VoiceGenerator";
 import Timeline from "@/components/Timeline/Timeline";
 import SubtitleCard from "@/components/SubtitleCard";
+import ShowVideo from "@/components/ShowVideo";
 
 export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
+        <ShowVideo />
         <Timeline />
         <div className="flex flex-row">
           <SubtitleCard />

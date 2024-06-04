@@ -13,6 +13,8 @@ import random
 import heapq
 import base64
 from datetime import timedelta, datetime
+from PIL import Image
+from io import BytesIO
 from utils import extract_subtitles_from_srt, get_files_sorted_by_size, subtitle_to_ms, copy_dir, ms_to_subtitle_time, remove_dir_and_recreate, FACES_DIR, ORIGINAL_VIDEO, SUBTITLES, FRAMES_DIR, FACE_VERIFICATION
 
 DOMAIN: str = 'http://localhost'
@@ -193,7 +195,11 @@ def find_similar_faces_in_directories_to_json(chunks_dir, output_json_path):
 
                 if largest_image_name not in encoded_images:
                     with open(largest_image_path, "rb") as image_file:
-                        encoded_images[largest_image_name] = base64.b64encode(image_file.read()).decode('utf-8')
+                        image = Image.open(image_file)
+                        image = image.resize((60, 60))
+                        buffer = BytesIO()
+                        image.save(buffer, format="JPEG")
+                        encoded_images[largest_image_name] = base64.b64encode(buffer.getvalue()).decode('utf-8')
 
                 for face_image in os.listdir(person_path):
                     milliseconds = int(os.path.splitext(face_image)[0])

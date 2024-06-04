@@ -1,6 +1,6 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-interface SubtitleState {
+export interface SubtitleState {
   start: string;
   end: string;
   text: string;

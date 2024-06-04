@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from "react";
 import LazyLoad from "react-lazyload";
-import { List } from "react-virtualized";
+import { Grid, AutoSizer } from "react-virtualized";
 import { setSubtitle } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
@@ -164,10 +164,7 @@ const Timeline: React.FC = () => {
         currentIndex={currentIndex}
         subtitlesLength={subtitles.length}
       />
-      <div
-        id="timeline"
-        className="relative w-full h-40 overflow-x-auto overflow-y-hidden p-4"
-      >
+      <div className="relative w-full h-40 overflow-x-auto overflow-y-hidden p-4">
         <div
           className="h-32 bg-gray-200 rounded-md relative"
           style={{ width: timelineWidth }}
