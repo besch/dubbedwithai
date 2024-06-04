@@ -2,19 +2,23 @@ import { formatTime } from "@/utils/timeline";
 
 interface TimelineMarkersProps {
   totalDuration: number;
+  zoom: number;
 }
 
-const TimelineMarkers: React.FC<TimelineMarkersProps> = ({ totalDuration }) => {
+const TimelineMarkers: React.FC<TimelineMarkersProps> = ({
+  totalDuration,
+  zoom,
+}) => {
   return (
     <>
-      {Array.from({ length: 11 }, (_, i) => (
+      {Array.from({ length: zoom * 11 }, (_, i) => (
         <div
           key={i}
           className="absolute top-0 bottom-0 border-l border-dashed border-gray-400"
-          style={{ left: `${(i * 100) / 10}%` }}
+          style={{ left: `${(i * 100) / (11 * zoom)}%` }}
         >
           <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-xs">
-            {formatTime((totalDuration * i) / 10)}
+            {formatTime((totalDuration * i) / (11 * zoom))}
           </div>
         </div>
       ))}

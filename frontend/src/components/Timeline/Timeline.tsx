@@ -185,7 +185,7 @@ const Timeline: React.FC = () => {
           ref={containerRef}
         >
           <div ref={timelineRef}>
-            <TimelineMarkers totalDuration={totalDuration} />
+            <TimelineMarkers totalDuration={totalDuration} zoom={zoom} />
             {subtitlesWithFaces.map((subtitle, index) => {
               const startTime = convertToMilliseconds(subtitle.start);
               const endTime = convertToMilliseconds(subtitle.end);
