@@ -20,6 +20,9 @@ const Timeline: React.FC = () => {
   const dispatch = useDispatch();
   const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
   const [zoom, setZoom] = useState<number>(15);
+  const [subtitlesWithFaces, setSubtitlesWithFaces] = useState<
+    (Subtitle & { faceImage: string | null })[]
+  >([]);
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [faceData, setFaceData] = useState<any>(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
@@ -124,12 +127,12 @@ const Timeline: React.FC = () => {
       }
     };
 
-    fetchFaces();
     fetchSubtitles();
+    fetchFaces();
   }, []);
 
   const getFaceImage = useMemo(() => {
-    return (subtitle: Subtitle) => {
+    return (subtitle: Subtitle, faceData: any) => {
       if (!faceData) return null;
 
       const foundFace = faceData.data.find((face) => {
@@ -152,7 +155,17 @@ const Timeline: React.FC = () => {
 
       return null;
     };
-  }, [faceData]);
+  }, []);
+
+  useEffect(() => {
+    if (faceData && subtitles.length > 0) {
+      const updatedSubtitles = subtitles.map((subtitle) => ({
+        ...subtitle,
+        faceImage: getFaceImage(subtitle, faceData),
+      }));
+      setSubtitlesWithFaces(updatedSubtitles);
+    }
+  }, [faceData, subtitles, getFaceImage]);
 
   return (
     <>
@@ -173,13 +186,12 @@ const Timeline: React.FC = () => {
         >
           <div ref={timelineRef}>
             <TimelineMarkers totalDuration={totalDuration} />
-            {subtitles.map((subtitle, index) => {
+            {subtitlesWithFaces.map((subtitle, index) => {
               const startTime = convertToMilliseconds(subtitle.start);
               const endTime = convertToMilliseconds(subtitle.end);
               const startWidth = (startTime / totalDuration) * 100;
               const subtitleWidth =
                 ((endTime - startTime) / totalDuration) * 100;
-              const faceImage = getFaceImage(subtitle);
 
               return (
                 <SubtitleItem
@@ -193,7 +205,7 @@ const Timeline: React.FC = () => {
                   }}
                   startWidth={startWidth}
                   subtitleWidth={subtitleWidth}
-                  faceImage={faceImage}
+                  faceImage={subtitle.faceImage}
                 />
               );
             })}

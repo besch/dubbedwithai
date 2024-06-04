@@ -10,7 +10,6 @@ export default function ShowVideo() {
   );
 
   useEffect(() => {
-    console.warn(currentSubtitleStartTime);
     if (videoRef.current && currentSubtitleStartTime) {
       const startTime = convertToMilliseconds(currentSubtitleStartTime);
       videoRef.current.currentTime = startTime / 1000; // Convert milliseconds to seconds
