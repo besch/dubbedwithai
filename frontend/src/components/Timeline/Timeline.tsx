@@ -9,6 +9,7 @@ import { convertToMilliseconds } from "@/utils/timeline";
 import SubtitleItem from "@/components/Timeline/SubtitleItem";
 import TimelineMarkers from "@/components/Timeline/TimelineMarkers";
 import TimelineControls from "@/components/Timeline/TimelineControls";
+import TimelineMarker from "@/components/Timeline/TimelineMarker";
 
 export interface Subtitle {
   start: string;
@@ -25,6 +26,9 @@ const Timeline: React.FC = () => {
   >([]);
   const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
   const [faceData, setFaceData] = useState<any>(null);
+  const [currentMarkerPosition, setCurrentMarkerPosition] = useState<
+    number | null
+  >(null);
   const [currentIndex, setCurrentIndex] = useState<number>(0);
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -47,11 +51,27 @@ const Timeline: React.FC = () => {
         const relativeMouseX = mouseX / rect.width;
         const newZoom = Math.max(0, zoom + (e.deltaY < 0 ? 1 : -1));
         setZoom(newZoom);
-        // const scrollWidth = timeline.scrollWidth - rect.width;
-        // const newScrollLeft = scrollWidth * relativeMouseX;
-        // timeline.scrollLeft = newScrollLeft;
-        scrollToSubtitle(currentIndex);
       }
+    }
+  };
+
+  const handleTimelineMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const position = (mouseX / rect.width) * 100;
+      setCurrentMarkerPosition(position);
+    }
+  };
+
+  const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const container = containerRef.current;
+    if (container) {
+      const rect = container.getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const position = (mouseX / rect.width) * 100;
+      setCurrentMarkerPosition(position);
     }
   };
 
@@ -59,48 +79,12 @@ const Timeline: React.FC = () => {
     const newIndex = Math.max(0, currentIndex - 1);
     setCurrentIndex(newIndex);
     dispatch(setSubtitle(subtitles[newIndex]));
-    scrollToSubtitle(newIndex);
   };
 
   const handleNextSubtitle = () => {
     const newIndex = Math.min(subtitles.length - 1, currentIndex + 1);
     setCurrentIndex(newIndex);
     dispatch(setSubtitle(subtitles[newIndex]));
-    scrollToSubtitle(newIndex);
-  };
-
-  // const scrollToSubtitle = (index: number) => {
-  //   const timeline = timelineRef.current;
-  //   if (timeline) {
-  //     const subtitleElement = timeline.children[index];
-  //     if (subtitleElement) {
-  //       subtitleElement.scrollIntoView({
-  //         behavior: "smooth",
-  //         block: "center",
-  //         inline: "center",
-  //       });
-  //     }
-  //   }
-  // };
-
-  const scrollToSubtitle = (index: number) => {
-    const timeline = timelineRef.current;
-    const container = containerRef.current;
-    if (timeline && container) {
-      const subtitleElement = timeline.children[index];
-      if (subtitleElement) {
-        const subtitleRect = subtitleElement.getBoundingClientRect();
-        const containerRect = container.getBoundingClientRect();
-        const scrollLeft =
-          subtitleElement.offsetLeft -
-          containerRect.width / 2 +
-          subtitleRect.width / 2;
-        timeline.scrollTo({
-          left: scrollLeft,
-          behavior: "smooth",
-        });
-      }
-    }
   };
 
   useEffect(() => {
@@ -182,6 +166,8 @@ const Timeline: React.FC = () => {
           className="h-32 bg-gray-200 rounded-md relative"
           style={{ width: timelineWidth }}
           onWheel={handleWheel}
+          onMouseMove={handleTimelineMouseMove}
+          onClick={(e) => handleTimelineClick(e)}
           ref={containerRef}
         >
           <div ref={timelineRef}>
@@ -201,7 +187,6 @@ const Timeline: React.FC = () => {
                   onClick={() => {
                     setCurrentIndex(index);
                     dispatch(setSubtitle(subtitle));
-                    scrollToSubtitle(index);
                   }}
                   startWidth={startWidth}
                   subtitleWidth={subtitleWidth}
@@ -210,6 +195,9 @@ const Timeline: React.FC = () => {
               );
             })}
           </div>
+          {currentMarkerPosition !== null && (
+            <TimelineMarker position={currentMarkerPosition} />
+          )}
         </div>
       </div>
     </>
