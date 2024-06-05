@@ -2,13 +2,13 @@
 import { configureStore, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { videoSlice } from "./slices/video";
 import { subtitleSlice } from "./slices/subtitle";
-
-export const { setVideoBlob } = videoSlice.actions;
+import { markerSlice } from "./slices/marker";
 
 const store = configureStore({
   reducer: {
     video: videoSlice.reducer,
     subtitle: subtitleSlice.reducer,
+    marker: markerSlice.reducer,
   },
 });
 

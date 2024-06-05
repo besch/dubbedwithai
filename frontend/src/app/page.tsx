@@ -12,12 +12,16 @@ import VoiceGenerator from "@/components/VoiceGenerator";
 import Timeline from "@/components/Timeline/Timeline";
 import SubtitleCard from "@/components/SubtitleCard";
 import ShowVideo from "@/components/ShowVideo";
+import ActorList from "@/components/ActorList";
 
 export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <ShowVideo />
+        <div className="flex flex-row">
+          <ShowVideo />
+          <ActorList />
+        </div>
         <Timeline />
         <div className="flex flex-row">
           <SubtitleCard />
@@ -27,9 +31,3 @@ export default function Home() {
     </QueryClientProvider>
   );
 }
-
-// <main className="flex min-h-screen flex-col items-center justify-center bg-gray-700">
-// <VideoPlayer />
-// <FileUpload />
-// <VoiceGenerator />
-// </main>

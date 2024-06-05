@@ -1,15 +1,18 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import LazyLoad from "react-lazyload";
-import { Grid, AutoSizer } from "react-virtualized";
 import { setSubtitle } from "@/store/slices/subtitle";
+import {
+  setMarkerStartPosition,
+  setMarkerEndPosition,
+} from "@/store/slices/marker";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { convertToMilliseconds } from "@/utils/timeline";
 import SubtitleItem from "@/components/Timeline/SubtitleItem";
-import TimelineMarkers from "@/components/Timeline/TimelineMarkers";
+import TimelineInvervalLabels from "@/components/Timeline/TimelineInvervalLabels";
 import TimelineControls from "@/components/Timeline/TimelineControls";
 import TimelineMarker from "@/components/Timeline/TimelineMarker";
+import TimelineHighlight from "@/components/Timeline/TimelineHighlight";
 
 export interface Subtitle {
   start: string;
@@ -20,6 +23,9 @@ export interface Subtitle {
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
   const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
+  const { markerStartPosition, markerEndPosition } = useSelector(
+    (state: RootState) => state.marker
+  );
   const [zoom, setZoom] = useState<number>(15);
   const [subtitlesWithFaces, setSubtitlesWithFaces] = useState<
     (Subtitle & { faceImage: string | null })[]
@@ -71,7 +77,13 @@ const Timeline: React.FC = () => {
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const position = (mouseX / rect.width) * 100;
-      setCurrentMarkerPosition(position);
+
+      if (e.shiftKey) {
+        dispatch(setMarkerEndPosition(position));
+      } else {
+        dispatch(setMarkerStartPosition(position));
+        dispatch(setMarkerEndPosition(null));
+      }
     }
   };
 
@@ -171,7 +183,7 @@ const Timeline: React.FC = () => {
           ref={containerRef}
         >
           <div ref={timelineRef}>
-            <TimelineMarkers totalDuration={totalDuration} zoom={zoom} />
+            <TimelineInvervalLabels totalDuration={totalDuration} zoom={zoom} />
             {subtitlesWithFaces.map((subtitle, index) => {
               const startTime = convertToMilliseconds(subtitle.start);
               const endTime = convertToMilliseconds(subtitle.end);
@@ -197,6 +209,18 @@ const Timeline: React.FC = () => {
           </div>
           {currentMarkerPosition !== null && (
             <TimelineMarker position={currentMarkerPosition} />
+          )}
+          {markerStartPosition !== null && (
+            <TimelineMarker position={markerStartPosition} color={"slate"} />
+          )}
+          {markerEndPosition !== null && (
+            <TimelineMarker position={markerEndPosition} color={"slate"} />
+          )}
+          {markerStartPosition !== null && markerEndPosition !== null && (
+            <TimelineHighlight
+              start={markerStartPosition}
+              end={markerEndPosition}
+            />
           )}
         </div>
       </div>

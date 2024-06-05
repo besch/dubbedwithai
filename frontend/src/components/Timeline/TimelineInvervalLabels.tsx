@@ -1,11 +1,11 @@
 import { formatTime } from "@/utils/timeline";
 
-interface TimelineMarkersProps {
+interface TimelineInvervalLabelsProps {
   totalDuration: number;
   zoom: number;
 }
 
-const TimelineMarkers: React.FC<TimelineMarkersProps> = ({
+const TimelineInvervalLabels: React.FC<TimelineInvervalLabelsProps> = ({
   totalDuration,
   zoom,
 }) => {
@@ -26,4 +26,4 @@ const TimelineMarkers: React.FC<TimelineMarkersProps> = ({
   );
 };
 
-export default TimelineMarkers;
+export default TimelineInvervalLabels;
