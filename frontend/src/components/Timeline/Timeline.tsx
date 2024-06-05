@@ -12,7 +12,7 @@ import SubtitleItem from "@/components/Timeline/SubtitleItem";
 import TimelineInvervalLabels from "@/components/Timeline/TimelineInvervalLabels";
 import TimelineControls from "@/components/Timeline/TimelineControls";
 import TimelineMarker from "@/components/Timeline/TimelineMarker";
-import TimelineHighlight from "@/components/Timeline/TimelineHighlight";
+import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 
 export interface Subtitle {
   start: string;
@@ -23,9 +23,6 @@ export interface Subtitle {
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
   const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
-  const { markerStartPosition, markerEndPosition } = useSelector(
-    (state: RootState) => state.marker
-  );
   const [zoom, setZoom] = useState<number>(15);
   const [subtitlesWithFaces, setSubtitlesWithFaces] = useState<
     (Subtitle & { faceImage: string | null })[]
@@ -54,7 +51,6 @@ const Timeline: React.FC = () => {
       if (container && timeline) {
         const rect = container.getBoundingClientRect();
         const mouseX = e.clientX - rect.left;
-        const relativeMouseX = mouseX / rect.width;
         const newZoom = Math.max(0, zoom + (e.deltaY < 0 ? 1 : -1));
         setZoom(newZoom);
       }
@@ -210,18 +206,7 @@ const Timeline: React.FC = () => {
           {currentMarkerPosition !== null && (
             <TimelineMarker position={currentMarkerPosition} />
           )}
-          {markerStartPosition !== null && (
-            <TimelineMarker position={markerStartPosition} color={"slate"} />
-          )}
-          {markerEndPosition !== null && (
-            <TimelineMarker position={markerEndPosition} color={"slate"} />
-          )}
-          {markerStartPosition !== null && markerEndPosition !== null && (
-            <TimelineHighlight
-              start={markerStartPosition}
-              end={markerEndPosition}
-            />
-          )}
+          <TimelineEditMarkers />
         </div>
       </div>
     </>
