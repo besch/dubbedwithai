@@ -18,14 +18,15 @@ export default function Home() {
   return (
     <QueryClientProvider client={queryClient}>
       <Provider store={store}>
-        <div className="flex flex-row">
-          <ShowVideo />
-          <ActorList />
-        </div>
-        <Timeline />
-        <div className="flex flex-row">
-          <SubtitleCard />
-          <VoiceGenerator />
+        <div className="flex flex-col min-h-screen">
+          <div className="flex-grow">
+            <div className="flex flex-row">
+              <ShowVideo />
+              <ActorList />
+              <SubtitleCard />
+            </div>
+          </div>
+          <Timeline />
         </div>
       </Provider>
     </QueryClientProvider>
