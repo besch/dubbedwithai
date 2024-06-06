@@ -7,7 +7,7 @@ type SubtitleType = {
   audioFileUrl: string;
 };
 
-type FaceDataType = {
+export type FaceDataType = {
   data: Array<{
     image_name: string;
     subtitle_time_ms: number;

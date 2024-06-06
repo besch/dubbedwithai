@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { setFaceData, setSubtitles } from "@/store/slices/subtitle";
 import { useDispatch } from "react-redux";
 
@@ -33,16 +33,25 @@ const loadInitData = () => {
       }
     };
 
-    fetchSubtitles();
-    fetchFaces();
+    const promises = [fetchSubtitles(), fetchFaces()];
+    Promise.all(promises).catch((error) => console.error(error));
   }, []);
 };
+
+const FallbackUI = () => (
+  <div className="flex items-center justify-center h-screen">
+    <div className="text-center">
+      <h2 className="text-2xl font-bold">Loading...</h2>
+      <p className="text-gray-500">Please wait while we fetch the data.</p>
+    </div>
+  </div>
+);
 
 export default function Container() {
   loadInitData();
 
   return (
-    <>
+    <Suspense fallback={<FallbackUI />}>
       <div className="flex flex-col min-h-screen">
         <div className="flex-grow">
           <div className="flex flex-row">
@@ -53,6 +62,6 @@ export default function Container() {
         </div>
         <Timeline />
       </div>
-    </>
+    </Suspense>
   );
 }
