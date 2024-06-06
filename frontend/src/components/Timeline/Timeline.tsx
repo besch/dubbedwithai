@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { setSubtitle } from "@/store/slices/subtitle";
+import { setSubtitle, setSubtitles } from "@/store/slices/subtitle";
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
@@ -22,13 +22,15 @@ export interface Subtitle {
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const selectedSubtitle = useSelector((state: RootState) => state.subtitle);
+  const {
+    subtitle: selectedSubtitle,
+    subtitles,
+    faceData,
+  } = useSelector((state: RootState) => state.subtitle);
   const [zoom, setZoom] = useState<number>(15);
   const [subtitlesWithFaces, setSubtitlesWithFaces] = useState<
     (Subtitle & { faceImage: string | null })[]
   >([]);
-  const [subtitles, setSubtitles] = useState<Subtitle[]>([]);
-  const [faceData, setFaceData] = useState<any>(null);
   const [currentMarkerPosition, setCurrentMarkerPosition] = useState<
     number | null
   >(null);
@@ -94,34 +96,6 @@ const Timeline: React.FC = () => {
     setCurrentIndex(newIndex);
     dispatch(setSubtitle(subtitles[newIndex]));
   };
-
-  useEffect(() => {
-    const timeline = timelineRef.current;
-    if (timeline) {
-      timeline.scrollLeft = 0;
-    }
-
-    const fetchSubtitles = async () => {
-      try {
-        const response = await fetch("/api/get-subtitles");
-        const { subtitles } = await response.json();
-        setSubtitles(subtitles);
-      } catch (error) {}
-    };
-
-    const fetchFaces = async () => {
-      try {
-        const response = await fetch("/api/get-faces");
-        const data = await response.json();
-        setFaceData(data.jsonData);
-      } catch (error) {
-        console.log(error);
-      }
-    };
-
-    fetchSubtitles();
-    fetchFaces();
-  }, []);
 
   const getFaceImage = useMemo(() => {
     return (subtitle: Subtitle, faceData: any) => {

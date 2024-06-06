@@ -1,27 +1,58 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export interface SubtitleState {
+type SubtitleType = {
   start: string;
   end: string;
   text: string;
   audioFileUrl: string;
-}
+};
+
+type FaceDataType = {
+  data: Array<{
+    image_name: string;
+    subtitle_time_ms: number;
+    subtitle_time_str: string;
+    image_path: string;
+    group_image_name: string;
+    group_image_path: string;
+    group_image_encoded_ref: string;
+  }>;
+  encoded_images: { [key: string]: string };
+};
+export type SubtitleState = {
+  subtitle: SubtitleType;
+  subtitles: SubtitleType[];
+  faceData: FaceDataType;
+};
 
 const initialState: SubtitleState = {
-  start: "",
-  end: "",
-  text: "",
-  audioFileUrl: "",
+  subtitle: {
+    start: "",
+    end: "",
+    text: "",
+    audioFileUrl: "",
+  },
+  subtitles: [],
+  faceData: {
+    data: [],
+    encoded_images: {},
+  },
 };
 
 export const subtitleSlice = createSlice({
   name: "subtitle",
   initialState,
   reducers: {
-    setSubtitle: (state, action: PayloadAction<SubtitleState>) => {
-      return action.payload;
+    setSubtitle: (state, action: PayloadAction<SubtitleType>) => {
+      state.subtitle = action.payload;
+    },
+    setSubtitles: (state, action: PayloadAction<SubtitleType[]>) => {
+      state.subtitles = action.payload;
+    },
+    setFaceData: (state, action: PayloadAction<FaceDataType>) => {
+      state.faceData = action.payload;
     },
   },
 });
 
-export const { setSubtitle } = subtitleSlice.actions;
+export const { setSubtitle, setSubtitles, setFaceData } = subtitleSlice.actions;

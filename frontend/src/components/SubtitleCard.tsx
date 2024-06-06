@@ -10,7 +10,7 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 
 const SubtitleCard = () => {
-  const subtitle = useSelector((state: RootState) => state.subtitle);
+  const subtitle = useSelector((state: RootState) => state.subtitle.subtitle);
   return (
     <Card className="w-[350px] m-10 mr-0">
       <CardHeader>

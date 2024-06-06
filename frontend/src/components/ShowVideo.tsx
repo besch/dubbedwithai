@@ -6,7 +6,7 @@ import { convertToMilliseconds } from "@/utils/timeline";
 export default function ShowVideo() {
   const videoRef = useRef(null);
   const currentSubtitleStartTime = useSelector(
-    (state: RootState) => state.subtitle.start
+    (state: RootState) => state.subtitle.subtitle.start
   );
 
   useEffect(() => {
