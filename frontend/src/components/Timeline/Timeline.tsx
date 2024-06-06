@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useRef, useEffect, useMemo } from "react";
-import { setSubtitle, setSubtitles } from "@/store/slices/subtitle";
+import { setSubtitle } from "@/store/slices/subtitle";
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,

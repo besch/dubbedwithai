@@ -19,6 +19,7 @@ type FaceDataType = {
   }>;
   encoded_images: { [key: string]: string };
 };
+
 export type SubtitleState = {
   subtitle: SubtitleType;
   subtitles: SubtitleType[];
