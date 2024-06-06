@@ -12,3 +12,5 @@ frontend/.env.local
 frontend/node_modules
 
 src/__pycache__
+
+pretrain_TalkSet.model
