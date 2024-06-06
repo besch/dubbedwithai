@@ -33,8 +33,8 @@ const loadInitData = () => {
       }
     };
 
-    const promises = [fetchSubtitles(), fetchFaces()];
-    Promise.all(promises).catch((error) => console.error(error));
+    fetchSubtitles();
+    fetchFaces();
   }, []);
 };
 

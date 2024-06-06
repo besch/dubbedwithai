@@ -86,7 +86,7 @@ export default function ActorList() {
   };
 
   return (
-    <div className="m-5 w-1/2 flex flex-col h-[500px] overflow-y-auto">
+    <div className="m-5 w-1/2 flex flex-col h-[500px] overflow-y-auto bg-slate-500">
       {Object.entries(faceData.encoded_images).map(([key, image], index) => (
         <div className="flex flex-row items-center" key={index}>
           <img

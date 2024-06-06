@@ -1,10 +1,11 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-type SubtitleType = {
+export type SubtitleType = {
   start: string;
   end: string;
   text: string;
   audioFileUrl: string;
+  imageId: string;
 };
 
 export type FaceDataType = {
@@ -32,6 +33,7 @@ const initialState: SubtitleState = {
     end: "",
     text: "",
     audioFileUrl: "",
+    imageId: "",
   },
   subtitles: [],
   faceData: {

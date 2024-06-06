@@ -1,3 +1,5 @@
+import { SubtitleType, FaceDataType } from "@/store/slices/subtitle";
+
 export const convertToMilliseconds = (timeString: string): number => {
   const [hours, minutes, secondsMillis] = timeString.split(":");
   const seconds = secondsMillis.split(",")[0];
@@ -19,4 +21,31 @@ export const formatTime = (milliseconds: number): string => {
 
 const padZero = (num: number): string => {
   return num.toString().padStart(2, "0");
+};
+
+export const getFaceImage = (
+  subtitle: SubtitleType,
+  faceData: FaceDataType
+): string | null => {
+  if (!faceData) return null;
+
+  const foundFace = faceData.data.find((face) => {
+    const subtitleStartMs = convertToMilliseconds(subtitle.start);
+    const subtitleEndMs = convertToMilliseconds(subtitle.end);
+
+    if (
+      subtitleStartMs <= face.subtitle_time_ms &&
+      face.subtitle_time_ms <= subtitleEndMs
+    ) {
+      return true;
+    }
+
+    return false;
+  });
+
+  if (foundFace) {
+    return faceData.encoded_images[foundFace.group_image_encoded_ref];
+  }
+
+  return null;
 };
