@@ -5,7 +5,7 @@ import datetime
 from utils import RESPONSE_DATA
 
 aai.settings.api_key = "ee975ba2774e41b1828863d4778e7ac7"
-FILE_URL = r"C:\Users\user\Desktop\Projects\dubbedwithai\tmp\original\16m.ac3"
+FILE_URL = r"C:\Users\user\Desktop\Projects\dubbedwithai\tmp\original\5m.ac3"
 config = aai.TranscriptionConfig(speaker_labels=True, language_code="pl", entity_detection=True)
 
 request_start_time = datetime.datetime.now()
