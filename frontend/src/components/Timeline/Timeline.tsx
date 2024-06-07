@@ -75,25 +75,11 @@ const Timeline: React.FC = () => {
     }
   };
 
-  const handlePrevSubtitle = () => {
-    const newIndex = Math.max(0, currentIndex - 1);
-    setCurrentIndex(newIndex);
-    // dispatch(setSubtitleIndex(subtitles[newIndex]));
-  };
-
-  const handleNextSubtitle = () => {
-    const newIndex = Math.min(subtitles.length - 1, currentIndex + 1);
-    setCurrentIndex(newIndex);
-    // dispatch(setSubtitleIndex(subtitles[newIndex]));
-  };
-
   return (
     <>
       <TimelineControls
         zoom={zoom}
         setZoom={setZoom}
-        handlePrevSubtitle={handlePrevSubtitle}
-        handleNextSubtitle={handleNextSubtitle}
         currentIndex={currentIndex}
         subtitlesLength={subtitles.length}
       />

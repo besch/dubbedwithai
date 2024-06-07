@@ -65,14 +65,6 @@ export default function Container() {
         ...subtitle,
         image: getFaceImage(subtitle, faceData),
       }));
-      // const updatedSubtitles = subtitles.map((subtitle) => {
-      //   const image = getFaceImage(subtitle, faceData);
-      //   const subtitleTemp = {
-      //     ...subtitle,
-      //     image,
-      //   };
-      //   console.log(image);
-      // });
       dispatch(setSubtitles(updatedSubtitles));
     }
   }, [faceData, getFaceImageMemo, dispatch]);
