@@ -1,15 +1,15 @@
-import { Suspense, useRef, useEffect } from "react";
+import { Suspense, useRef, useEffect, MutableRefObject } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setMarkerStartPosition } from "@/store/slices/marker";
 import { convertToMilliseconds, formatTime } from "@/utils/timeline";
+import { getSelectedSubtitle } from "@/store/slices/subtitle";
 
 export default function ShowVideo() {
   const dispatch = useDispatch();
-  const videoRef = useRef(null);
-  const currentSubtitleStartTime = useSelector(
-    (state: RootState) => state.subtitle.subtitle.start
-  );
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const subtitleState = useSelector((state: RootState) => state.subtitle);
+  const currentSubtitleStartTime = getSelectedSubtitle(subtitleState)?.start;
 
   useEffect(() => {
     if (videoRef.current && currentSubtitleStartTime) {
@@ -22,9 +22,11 @@ export default function ShowVideo() {
     const videoElement = videoRef.current;
 
     const handleTimeUpdate = () => {
-      const currentTime = videoElement.currentTime * 1000; // Convert seconds to milliseconds
-      console.log(currentTime);
-      dispatch(setMarkerStartPosition(formatTime(currentTime)));
+      if (videoElement) {
+        const currentTime = videoElement.currentTime * 1000; // Convert seconds to milliseconds
+        console.log(currentTime);
+        dispatch(setMarkerStartPosition(parseFloat(formatTime(currentTime))));
+      }
     };
 
     if (videoElement) {

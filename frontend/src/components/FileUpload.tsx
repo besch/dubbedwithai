@@ -3,7 +3,7 @@
 import React, { useState, ChangeEvent } from "react";
 import { FaSpinner } from "react-icons/fa";
 import { useDispatch } from "react-redux";
-import { setVideoBlob } from "@/store/store";
+import { setVideoBlob } from "@/store/slices/video";
 
 const FileUpload: React.FC = () => {
   const [file, setFile] = useState<File | null>(null);

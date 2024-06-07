@@ -1,10 +1,11 @@
 "use client";
-import React, { useState, useRef, useEffect, useMemo } from "react";
-import { setSubtitle } from "@/store/slices/subtitle";
+import React, { useState, useRef } from "react";
+import { setSubtitleIndex } from "@/store/slices/subtitle";
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
 } from "@/store/slices/marker";
+import { getSelectedSubtitle } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { convertToMilliseconds } from "@/utils/timeline";
@@ -14,23 +15,12 @@ import TimelineControls from "@/components/Timeline/TimelineControls";
 import TimelineMarker from "@/components/Timeline/TimelineMarker";
 import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 
-export interface Subtitle {
-  start: string;
-  end: string;
-  text: string;
-}
-
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const {
-    subtitle: selectedSubtitle,
-    subtitles,
-    faceData,
-  } = useSelector((state: RootState) => state.subtitle);
+  const { subtitles } = useSelector((state: RootState) => state.subtitle);
+  const subtitleState = useSelector((state: RootState) => state.subtitle);
+  const selectedSubtitle = getSelectedSubtitle(subtitleState);
   const [zoom, setZoom] = useState<number>(15);
-  const [subtitlesWithFaces, setSubtitlesWithFaces] = useState<
-    (Subtitle & { faceImage: string | null })[]
-  >([]);
   const [currentMarkerPosition, setCurrentMarkerPosition] = useState<
     number | null
   >(null);
@@ -88,50 +78,14 @@ const Timeline: React.FC = () => {
   const handlePrevSubtitle = () => {
     const newIndex = Math.max(0, currentIndex - 1);
     setCurrentIndex(newIndex);
-    dispatch(setSubtitle(subtitles[newIndex]));
+    // dispatch(setSubtitleIndex(subtitles[newIndex]));
   };
 
   const handleNextSubtitle = () => {
     const newIndex = Math.min(subtitles.length - 1, currentIndex + 1);
     setCurrentIndex(newIndex);
-    dispatch(setSubtitle(subtitles[newIndex]));
+    // dispatch(setSubtitleIndex(subtitles[newIndex]));
   };
-
-  const getFaceImage = useMemo(() => {
-    return (subtitle: Subtitle, faceData: any) => {
-      if (!faceData) return null;
-
-      const foundFace = faceData.data.find((face) => {
-        const subtitleStartMs = convertToMilliseconds(subtitle.start);
-        const subtitleEndMs = convertToMilliseconds(subtitle.end);
-
-        if (
-          subtitleStartMs <= face.subtitle_time_ms &&
-          face.subtitle_time_ms <= subtitleEndMs
-        ) {
-          return true;
-        }
-
-        return false;
-      });
-
-      if (foundFace) {
-        return faceData.encoded_images[foundFace.group_image_encoded_ref];
-      }
-
-      return null;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (faceData && subtitles.length > 0) {
-      const updatedSubtitles = subtitles.map((subtitle) => ({
-        ...subtitle,
-        faceImage: getFaceImage(subtitle, faceData),
-      }));
-      setSubtitlesWithFaces(updatedSubtitles);
-    }
-  }, [faceData, subtitles, getFaceImage]);
 
   return (
     <>
@@ -154,7 +108,7 @@ const Timeline: React.FC = () => {
         >
           <div ref={timelineRef}>
             <TimelineInvervalLabels totalDuration={totalDuration} zoom={zoom} />
-            {subtitlesWithFaces.map((subtitle, index) => {
+            {subtitles.map((subtitle, index) => {
               const startTime = convertToMilliseconds(subtitle.start);
               const endTime = convertToMilliseconds(subtitle.end);
               const startWidth = (startTime / totalDuration) * 100;
@@ -164,15 +118,17 @@ const Timeline: React.FC = () => {
               return (
                 <SubtitleItem
                   key={index}
-                  subtitle={subtitle}
-                  selected={selectedSubtitle.start === subtitle.start}
+                  selected={
+                    !!selectedSubtitle &&
+                    selectedSubtitle.start === subtitle.start
+                  }
                   onClick={() => {
                     setCurrentIndex(index);
-                    dispatch(setSubtitle(subtitle));
+                    dispatch(setSubtitleIndex(subtitle.index));
                   }}
                   startWidth={startWidth}
                   subtitleWidth={subtitleWidth}
-                  faceImage={subtitle.faceImage}
+                  image={subtitle.image}
                 />
               );
             })}

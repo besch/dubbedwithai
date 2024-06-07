@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useSelector, useDispatch } from "react-redux";
-import { setSubtitle } from "@/store/slices/subtitle";
+// import { setSubtitle } from "@/store/slices/subtitle";
 import { RootState } from "@/store/store";
 
 const VoiceGenerator = () => {
@@ -39,15 +39,15 @@ const VoiceGenerator = () => {
     event.preventDefault();
 
     const formData = new FormData(event.currentTarget);
-    const subtitle_name = `${subtitle.start}__${subtitle.end}`;
+    // const subtitle_name = `${subtitle.start}__${subtitle.end}`;
     const voice_actor = formData.get("voiceactor") as string;
     const voice_style = formData.get("voicestyle") as string;
     const voice_language = formData.get("voicelanguage") as string;
     const voice_speed = formData.get("voicespeed") as string;
 
     const data = JSON.stringify({
-      subtitle_name,
-      subtitle_text: subtitle.text,
+      // subtitle_name,
+      // subtitle_text: subtitle.text,
       voice_actor,
       voice_style,
       voice_language,
@@ -72,7 +72,7 @@ const VoiceGenerator = () => {
   const { mutate, isPending } = useMutation({
     mutationFn: generateVoice,
     onSuccess: (data) => {
-      dispatch(setSubtitle({ ...subtitle, audioFileUrl: data.audioFileUrl }));
+      // dispatch(setSubtitle({ ...subtitle, audioFileUrl: data.audioFileUrl }));
     },
     onError: (error) => {
       console.log(error.message);

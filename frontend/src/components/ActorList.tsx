@@ -1,7 +1,8 @@
 import { setFaceData, FaceDataType } from "@/store/slices/subtitle";
-import { Suspense, lazy, memo } from "react";
+import React, { Suspense, lazy, memo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
+import Image from "next/image";
 import {
   Select,
   SelectItem,
@@ -9,11 +10,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FixedSizeList } from "react-window";
+import { FixedSizeList, ListChildComponentProps } from "react-window";
 
 const LazyLoadedImage = lazy(() => import("next/image"));
 
-const LazyImage = ({ src, width, height, ...props }) => (
+interface LazyImageProps {
+  src: string;
+  width: number;
+  height: number;
+  [key: string]: any;
+}
+
+const LazyImage = ({ src, width, height, ...props }: LazyImageProps) => (
   <Suspense fallback={<div>Loading...</div>}>
     <LazyLoadedImage
       src={src}
@@ -25,24 +33,42 @@ const LazyImage = ({ src, width, height, ...props }) => (
   </Suspense>
 );
 
-const MemoizedSelectItem = memo(({ imageKey, value, className }) => (
-  <Suspense fallback={<div>Loading...</div>}>
-    <SelectItem value={imageKey} className={className}>
-      <LazyImage
-        className="h-60px w-60px p-2"
-        src={`data:image/png;base64,${value}`}
-        width={60}
-        height={60}
-      />
-    </SelectItem>
-  </Suspense>
-));
+interface MemoizedSelectItemProps {
+  imageKey: string;
+  value: string;
+  className?: string;
+}
 
-const useVirtualizedSelectItems = (faceData: FaceDataType) => {
+const MemoizedSelectItem = memo(
+  ({ imageKey, value, className }: MemoizedSelectItemProps) => (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SelectItem value={imageKey} className={className}>
+        <LazyImage
+          className="h-60px w-60px p-2"
+          src={`data:image/png;base64,${value}`}
+          width={60}
+          height={60}
+        />
+      </SelectItem>
+    </Suspense>
+  )
+);
+
+MemoizedSelectItem.displayName = "MemoizedSelectItem";
+
+interface VirtualizedSelectItemsResult {
+  itemCount: number;
+  getItemKey: (index: number) => string;
+  renderItem: (props: ListChildComponentProps) => React.ReactNode;
+}
+
+const useVirtualizedSelectItems = (
+  faceData: FaceDataType
+): VirtualizedSelectItemsResult => {
   const itemData = Object.entries(faceData.encoded_images);
   const itemCount = itemData.length;
-  const getItemKey = (index) => itemData[index][0];
-  const renderItem = ({ index, style }) => {
+  const getItemKey = (index: number) => itemData[index][0];
+  const renderItem = ({ index, style }: ListChildComponentProps) => {
     const [key, image] = itemData[index];
     return (
       <div style={style}>
@@ -93,6 +119,7 @@ export default function ActorList() {
             className="h-60px w-60px p-2"
             key={index}
             src={`data:image/png;base64,${image}`}
+            alt=""
           />
           <span className="mx-10 text-white">{key}</span>
           <Select onValueChange={(e) => handleSelect(key, e)}>

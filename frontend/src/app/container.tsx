@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, Suspense } from "react";
+import { useMemo, useEffect, Suspense } from "react";
 import { setFaceData, setSubtitles } from "@/store/slices/subtitle";
-import { useDispatch } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
+import { RootState } from "@/store/store";
 
 import FileUpload from "@/components/FileUpload";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -11,8 +12,9 @@ import Timeline from "@/components/Timeline/Timeline";
 import SubtitleCard from "@/components/SubtitleCard";
 import ShowVideo from "@/components/ShowVideo";
 import ActorList from "@/components/ActorList";
+import { getFaceImage } from "@/utils/timeline";
 
-const loadInitData = () => {
+const useLoadInitData = () => {
   const dispatch = useDispatch();
   useEffect(() => {
     const fetchSubtitles = async () => {
@@ -48,7 +50,32 @@ const FallbackUI = () => (
 );
 
 export default function Container() {
-  loadInitData();
+  const dispatch = useDispatch();
+  const { subtitles, faceData } = useSelector(
+    (state: RootState) => state.subtitle
+  );
+
+  useLoadInitData();
+
+  const getFaceImageMemo = useMemo(() => getFaceImage, []);
+  useEffect(() => {
+    if (faceData && subtitles.length > 0) {
+      console.log("here");
+      const updatedSubtitles = subtitles.map((subtitle) => ({
+        ...subtitle,
+        image: getFaceImage(subtitle, faceData),
+      }));
+      // const updatedSubtitles = subtitles.map((subtitle) => {
+      //   const image = getFaceImage(subtitle, faceData);
+      //   const subtitleTemp = {
+      //     ...subtitle,
+      //     image,
+      //   };
+      //   console.log(image);
+      // });
+      dispatch(setSubtitles(updatedSubtitles));
+    }
+  }, [faceData, getFaceImageMemo, dispatch]);
 
   return (
     <Suspense fallback={<FallbackUI />}>

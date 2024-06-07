@@ -1,11 +1,12 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction, createSelector } from "@reduxjs/toolkit";
 
 export type SubtitleType = {
+  index: string;
   start: string;
   end: string;
   text: string;
   audioFileUrl: string;
-  imageId: string;
+  image: string | null;
 };
 
 export type FaceDataType = {
@@ -22,19 +23,13 @@ export type FaceDataType = {
 };
 
 export type SubtitleState = {
-  subtitle: SubtitleType;
+  subtitleIndex: string;
   subtitles: SubtitleType[];
   faceData: FaceDataType;
 };
 
 const initialState: SubtitleState = {
-  subtitle: {
-    start: "",
-    end: "",
-    text: "",
-    audioFileUrl: "",
-    imageId: "",
-  },
+  subtitleIndex: "",
   subtitles: [],
   faceData: {
     data: [],
@@ -46,8 +41,8 @@ export const subtitleSlice = createSlice({
   name: "subtitle",
   initialState,
   reducers: {
-    setSubtitle: (state, action: PayloadAction<SubtitleType>) => {
-      state.subtitle = action.payload;
+    setSubtitleIndex: (state, action: PayloadAction<string>) => {
+      state.subtitleIndex = action.payload;
     },
     setSubtitles: (state, action: PayloadAction<SubtitleType[]>) => {
       state.subtitles = action.payload;
@@ -58,4 +53,14 @@ export const subtitleSlice = createSlice({
   },
 });
 
-export const { setSubtitle, setSubtitles, setFaceData } = subtitleSlice.actions;
+export const { setSubtitleIndex, setSubtitles, setFaceData } =
+  subtitleSlice.actions;
+
+export const getSelectedSubtitle = createSelector(
+  (state: SubtitleState) => state.subtitles,
+  (state: SubtitleState) => state.subtitleIndex,
+  (subtitles, subtitleIndex) => {
+    if (subtitles.length === 0 || !subtitleIndex) return null;
+    return subtitles.find((subtitle) => subtitle.index === subtitleIndex);
+  }
+);

@@ -3,7 +3,7 @@ interface SubtitleItemProps {
   onClick: () => void;
   startWidth: number;
   subtitleWidth: number;
-  faceImage: string | null;
+  image: string | null;
 }
 
 const SubtitleItem: React.FC<SubtitleItemProps> = ({
@@ -11,7 +11,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({
   onClick,
   startWidth,
   subtitleWidth,
-  faceImage,
+  image,
 }) => {
   return (
     <div className="relative">
@@ -22,7 +22,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({
         }`}
         style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
       ></div>
-      {faceImage && (
+      {image && (
         <div
           className="absolute flex justify-center"
           style={{
@@ -32,7 +32,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({
           }}
         >
           <img
-            src={`data:image/jpeg;base64,${faceImage}`}
+            src={`data:image/jpeg;base64,${image}`}
             className="w-10 h-10 top-10"
             alt="Face"
           />
