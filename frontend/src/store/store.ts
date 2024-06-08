@@ -1,5 +1,5 @@
 // store.ts
-import { configureStore, createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { configureStore } from "@reduxjs/toolkit";
 import { videoSlice } from "./slices/video";
 import { subtitleSlice } from "./slices/subtitle";
 import { markerSlice } from "./slices/marker";

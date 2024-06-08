@@ -9,6 +9,7 @@ import {
 import { Tooltip } from "react-tooltip";
 import { Button } from "@/components/ui/button";
 import { getSelectedSubtitle } from "@/store/slices/subtitle";
+import { setPlayVideoChunk, setIsPlaying } from "@/store/slices/video";
 import {
   FaRegClone,
   FaVolumeUp,
@@ -18,25 +19,56 @@ import {
   FaSyncAlt,
 } from "react-icons/fa";
 
-import { useSelector } from "react-redux";
+import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 
 const SubtitleCard = () => {
+  const dispatch = useDispatch();
   const subtitleState = useSelector((state: RootState) => state.subtitle);
+  const isPlaying = useSelector((state: RootState) => state.video.isPlaying);
   const selectedSubtitle = getSelectedSubtitle(subtitleState);
+
+  const handlePlayPause = () => {
+    if (selectedSubtitle) {
+      const { start, end } = selectedSubtitle;
+      const startTime = parseFloat(start);
+      const endTime = parseFloat(end);
+      dispatch(setPlayVideoChunk({ start: startTime, end: endTime }));
+      dispatch(setIsPlaying(!isPlaying));
+    }
+  };
 
   return (
     <>
       {selectedSubtitle && (
-        <Card className="w-[350px] m-10 mr-0">
+        <Card className="w-[350px] m-5">
           <CardHeader>
-            <CardTitle>Subtitle {selectedSubtitle.index}</CardTitle>
+            <CardTitle>
+              <div className="flex flex-row justify-between">
+                <div>Subtitle {selectedSubtitle.index}</div>
+                <div>
+                  {isPlaying ? (
+                    <FaPause
+                      onClick={handlePlayPause}
+                      data-tooltip-id="dubbedWithAITooltip"
+                      data-tooltip-content="Pause subtitle audio"
+                    />
+                  ) : (
+                    <FaPlay
+                      onClick={handlePlayPause}
+                      data-tooltip-id="dubbedWithAITooltip"
+                      data-tooltip-content="Play subtitle audio"
+                    />
+                  )}
+                </div>
+              </div>
+            </CardTitle>
             <CardDescription>Description</CardDescription>
           </CardHeader>
           <CardContent>
             {selectedSubtitle.image && (
               <img
-                className="h-60px w-60px p-2"
+                className="h-60px w-60px"
                 src={`data:image/png;base64,${selectedSubtitle.image}`}
                 alt=""
               />
@@ -54,12 +86,12 @@ const SubtitleCard = () => {
               <div className="mt-5">
                 <FaPlay
                   className="cursor-pointer"
-                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-id="dubbedWithAITooltip"
                   data-tooltip-content="Play audio"
                 />
                 <FaPause
                   className="cursor-pointer"
-                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-id="dubbedWithAITooltip"
                   data-tooltip-content="Pause audio"
                 />
                 <audio controls>
@@ -75,7 +107,7 @@ const SubtitleCard = () => {
               <FaRegClone
                 size={20}
                 className="cursor-pointer"
-                data-tooltip-id="subtitle-tooltip"
+                data-tooltip-id="dubbedWithAITooltip"
                 data-tooltip-content="Clone Voice"
               />
 
@@ -83,24 +115,23 @@ const SubtitleCard = () => {
                 <FaVolumeUp
                   size={20}
                   className="cursor-pointer"
-                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-id="dubbedWithAITooltip"
                   data-tooltip-content="Generate Voice"
                 />
               ) : (
                 <FaSyncAlt
                   size={20}
                   className="cursor-pointer"
-                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-id="dubbedWithAITooltip"
                   data-tooltip-content="Regenerate Voice"
                 />
               )}
               <FaWhmcs
                 size={20}
                 className="cursor-pointer"
-                data-tooltip-id="subtitle-tooltip"
+                data-tooltip-id="dubbedWithAITooltip"
                 data-tooltip-content="Voice Style"
               />
-              <Tooltip id="subtitle-tooltip" />
             </div>
           </CardContent>
         </Card>

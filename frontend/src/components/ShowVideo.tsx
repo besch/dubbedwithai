@@ -1,7 +1,8 @@
-import { Suspense, useRef, useEffect, MutableRefObject } from "react";
+import { Suspense, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setMarkerStartPosition } from "@/store/slices/marker";
+import { setIsPlaying } from "@/store/slices/video";
 import { convertToMilliseconds, formatTime } from "@/utils/timeline";
 import { getSelectedSubtitle } from "@/store/slices/subtitle";
 
@@ -9,36 +10,55 @@ export default function ShowVideo() {
   const dispatch = useDispatch();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const subtitleState = useSelector((state: RootState) => state.subtitle);
-  const currentSubtitleStartTime = getSelectedSubtitle(subtitleState)?.start;
-
-  useEffect(() => {
-    if (videoRef.current && currentSubtitleStartTime) {
-      const startTime = convertToMilliseconds(currentSubtitleStartTime);
-      videoRef.current.currentTime = startTime / 1000; // Convert milliseconds to seconds
-    }
-  }, [currentSubtitleStartTime]);
+  const { isPlaying, playVideoChunk } = useSelector(
+    (state: RootState) => state.video
+  );
+  const selectedSubtitle = getSelectedSubtitle(subtitleState);
 
   useEffect(() => {
     const videoElement = videoRef.current;
 
-    const handleTimeUpdate = () => {
-      if (videoElement) {
+    if (videoElement && selectedSubtitle) {
+      const handleTimeUpdate = () => {
         const currentTime = videoElement.currentTime * 1000; // Convert seconds to milliseconds
-        console.log(currentTime);
         dispatch(setMarkerStartPosition(parseFloat(formatTime(currentTime))));
-      }
-    };
 
-    if (videoElement) {
-      videoElement.addEventListener("timeupdate", handleTimeUpdate);
-    }
+        if (currentTime >= convertToMilliseconds(selectedSubtitle.end)) {
+          videoElement.pause();
+          dispatch(setIsPlaying(false));
+          videoElement.removeEventListener("timeupdate", handleTimeUpdate);
+        }
+      };
 
-    return () => {
-      if (videoElement) {
+      const handlePlayPause = () => {
+        if (isPlaying) {
+          videoElement.currentTime =
+            convertToMilliseconds(selectedSubtitle.start) / 1000; // Convert milliseconds to seconds
+          videoElement.play();
+          videoElement.addEventListener("timeupdate", handleTimeUpdate);
+        } else {
+          videoElement.pause();
+          dispatch(setIsPlaying(false));
+          videoElement.removeEventListener("timeupdate", handleTimeUpdate);
+        }
+      };
+
+      const handlePlayVideoChunk = () => {
+        if (playVideoChunk.start !== 0 && playVideoChunk.end !== 0) {
+          videoElement.currentTime = playVideoChunk.start / 1000; // Convert milliseconds to seconds
+          videoElement.play();
+          videoElement.addEventListener("timeupdate", handleTimeUpdate);
+        }
+      };
+
+      handlePlayPause();
+      handlePlayVideoChunk();
+
+      return () => {
         videoElement.removeEventListener("timeupdate", handleTimeUpdate);
-      }
-    };
-  }, [dispatch]);
+      };
+    }
+  }, [dispatch, selectedSubtitle, isPlaying, playVideoChunk]);
 
   return (
     <div className="m-5 w-2/3">

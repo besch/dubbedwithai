@@ -75,11 +75,11 @@ export default function Container() {
         <div className="flex-grow">
           <div className="flex flex-row">
             <ShowVideo />
-            <ActorList />
-          </div>
-          <div className="flex flex-row">
+            {/* <ActorList /> */}
             <SubtitleCard />
           </div>
+          {/* <div className="flex flex-row">
+          </div> */}
         </div>
         <Timeline />
       </div>
