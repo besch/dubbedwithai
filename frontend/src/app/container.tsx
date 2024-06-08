@@ -76,6 +76,8 @@ export default function Container() {
           <div className="flex flex-row">
             <ShowVideo />
             <ActorList />
+          </div>
+          <div className="flex flex-row">
             <SubtitleCard />
           </div>
         </div>

@@ -6,6 +6,8 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Tooltip } from "react-tooltip";
+import { Button } from "@/components/ui/button";
 import { getSelectedSubtitle } from "@/store/slices/subtitle";
 import {
   FaRegClone,
@@ -28,7 +30,7 @@ const SubtitleCard = () => {
       {selectedSubtitle && (
         <Card className="w-[350px] m-10 mr-0">
           <CardHeader>
-            <CardTitle>Subtitle</CardTitle>
+            <CardTitle>Subtitle {selectedSubtitle.index}</CardTitle>
             <CardDescription>Description</CardDescription>
           </CardHeader>
           <CardContent>
@@ -50,8 +52,16 @@ const SubtitleCard = () => {
             </p>
             {selectedSubtitle.audioFileUrl && (
               <div className="mt-5">
-                <FaPlay /> Play audio
-                <FaPause /> Pause audio
+                <FaPlay
+                  className="cursor-pointer"
+                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-content="Play audio"
+                />
+                <FaPause
+                  className="cursor-pointer"
+                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-content="Pause audio"
+                />
                 <audio controls>
                   <source
                     src={selectedSubtitle.audioFileUrl}
@@ -61,37 +71,36 @@ const SubtitleCard = () => {
                 </audio>
               </div>
             )}
-            <div className="flex flex-col space-y-2 mt-5">
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => {}}
-              >
-                <FaRegClone />
-                <span>Clone voice</span>
-              </div>
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => {}}
-              >
-                {selectedSubtitle.audioFileUrl ? (
-                  <>
-                    <FaVolumeUp />
-                    <span>Generate voice</span>
-                  </>
-                ) : (
-                  <>
-                    <FaSyncAlt />
-                    <span>Regenerate voice</span>
-                  </>
-                )}
-              </div>
-              <div
-                className="flex items-center space-x-2 cursor-pointer"
-                onClick={() => {}}
-              >
-                <FaWhmcs />
-                <span>Voice style</span>
-              </div>
+            <div className="flex flex-row items-center space-x-3 mt-5">
+              <FaRegClone
+                size={20}
+                className="cursor-pointer"
+                data-tooltip-id="subtitle-tooltip"
+                data-tooltip-content="Clone Voice"
+              />
+
+              {selectedSubtitle.audioFileUrl ? (
+                <FaVolumeUp
+                  size={20}
+                  className="cursor-pointer"
+                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-content="Generate Voice"
+                />
+              ) : (
+                <FaSyncAlt
+                  size={20}
+                  className="cursor-pointer"
+                  data-tooltip-id="subtitle-tooltip"
+                  data-tooltip-content="Regenerate Voice"
+                />
+              )}
+              <FaWhmcs
+                size={20}
+                className="cursor-pointer"
+                data-tooltip-id="subtitle-tooltip"
+                data-tooltip-content="Voice Style"
+              />
+              <Tooltip id="subtitle-tooltip" />
             </div>
           </CardContent>
         </Card>
