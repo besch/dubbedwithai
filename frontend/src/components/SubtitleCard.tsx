@@ -21,6 +21,7 @@ import {
 
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
+import SelectActor from "./SelectActor";
 
 const SubtitleCard = () => {
   const dispatch = useDispatch();
@@ -133,6 +134,7 @@ const SubtitleCard = () => {
                 data-tooltip-content="Voice Style"
               />
             </div>
+            <SelectActor />
           </CardContent>
         </Card>
       )}

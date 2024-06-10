@@ -83,9 +83,9 @@ const Timeline: React.FC = () => {
         currentIndex={currentIndex}
         subtitlesLength={subtitles.length}
       />
-      <div className="relative w-full h-40 overflow-x-auto overflow-y-hidden p-4 sticky bottom-0">
+      <div className="relative w-full h-60 overflow-x-auto overflow-y-hidden p-4 sticky bottom-0">
         <div
-          className="h-32 bg-gray-200 rounded-md relative"
+          className="h-52 bg-gray-200 rounded-md relative"
           style={{ width: timelineWidth }}
           onWheel={handleWheel}
           onMouseMove={handleTimelineMouseMove}
