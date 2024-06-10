@@ -134,7 +134,7 @@ const SubtitleCard = () => {
                 data-tooltip-content="Voice Style"
               />
             </div>
-            <SelectActor />
+            <SelectActor subtitleIndex={selectedSubtitle.index} />
           </CardContent>
         </Card>
       )}

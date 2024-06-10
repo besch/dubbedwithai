@@ -1,4 +1,9 @@
-import { setFaceData, FaceDataType } from "@/store/slices/subtitle";
+import {
+  setFaceData,
+  FaceDataType,
+  SubtitleType,
+  setSubtitles,
+} from "@/store/slices/subtitle";
 import React, { Suspense, lazy, memo } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
@@ -33,101 +38,52 @@ const LazyImage = ({ src, width, height, ...props }: LazyImageProps) => (
   </Suspense>
 );
 
-interface MemoizedSelectItemProps {
-  imageKey: string;
-  value: string;
-  className?: string;
-}
-
-const MemoizedSelectItem = memo(
-  ({ imageKey, value, className }: MemoizedSelectItemProps) => (
-    <Suspense fallback={<div>Loading...</div>}>
-      <SelectItem value={imageKey} className={className}>
-        <LazyImage
-          className=""
-          src={`data:image/png;base64,${value}`}
-          width={60}
-          height={60}
-        />
-        <div className="ml-2">{imageKey}</div>
-      </SelectItem>
-    </Suspense>
-  )
-);
-
-MemoizedSelectItem.displayName = "MemoizedSelectItem";
-
-interface VirtualizedSelectItemsResult {
-  itemCount: number;
-  getItemKey: (index: number) => string;
-  renderItem: (props: ListChildComponentProps) => React.ReactNode;
-}
-
-const useVirtualizedSelectItems = (
-  faceData: FaceDataType
-): VirtualizedSelectItemsResult => {
-  const itemData = Object.entries(faceData.encoded_images);
-  const itemCount = itemData.length;
-  const getItemKey = (index: number) => itemData[index][0];
-  const renderItem = ({ index, style }: ListChildComponentProps) => {
-    const [key, image] = itemData[index];
-    return (
-      <div style={style}>
-        <MemoizedSelectItem
-          key={key}
-          imageKey={key}
-          value={image}
-          className="capitalize flex align-center flex-row"
-        />
-      </div>
-    );
-  };
-  return { itemCount, getItemKey, renderItem };
-};
-
-const SelectActor = () => {
+const SelectActor = ({ subtitleIndex }: { subtitleIndex: string }) => {
   const dispatch = useDispatch();
-  const faceData = useSelector((state: RootState) => state.subtitle.faceData);
-  const { itemCount, getItemKey, renderItem } =
-    useVirtualizedSelectItems(faceData);
+  const { faceData, subtitles } = useSelector(
+    (state: RootState) => state.subtitle
+  );
 
-  const handleSelect = (oldFace: string, newFace: string) => {
-    const updatedFaceData = {
-      ...faceData,
-      encoded_images: Object.fromEntries(
-        Object.entries(faceData.encoded_images).filter(
-          ([key]) => key !== oldFace
-        )
-      ),
-      data: faceData.data.map((item) => {
-        if (item.group_image_encoded_ref === oldFace) {
-          return {
-            ...item,
-            group_image_encoded_ref: newFace,
-          };
-        }
-        return item;
-      }),
-    };
-    dispatch(setFaceData(updatedFaceData));
+  const handleSelect = (newFace: string) => {
+    const cloneSubtitles = subtitles.map((subtitle, index) => {
+      if (index === parseInt(subtitleIndex) - 1) {
+        return {
+          ...subtitle,
+          image: faceData.encoded_images[newFace],
+        };
+      }
+      return subtitle;
+    });
+    dispatch(setSubtitles(cloneSubtitles));
   };
 
   return (
-    <div className="my-4 w">
+    <div className="my-4 w-[300px]">
       <Select onValueChange={handleSelect}>
-        <SelectTrigger>
+        <SelectTrigger className="h-[100px]">
           <SelectValue placeholder="Select Actor" />
         </SelectTrigger>
         <SelectContent position="popper">
-          <FixedSizeList
-            height={200}
-            itemCount={itemCount}
-            itemKey={getItemKey}
-            itemSize={60}
-            width={200}
-          >
-            {renderItem}
-          </FixedSizeList>
+          {Object.entries(faceData.encoded_images).map(
+            ([key, image], index) => (
+              <div
+                className="flex flex-row items-center cursor-pointer"
+                key={index}
+              >
+                <SelectItem value={key}>
+                  <div className="flex items-center cursor-pointer w-full">
+                    <LazyImage
+                      className=""
+                      src={`data:image/png;base64,${image}`}
+                      width={60}
+                      height={60}
+                    />
+                    <div className="ml-6">{key}</div>
+                  </div>
+                </SelectItem>
+              </div>
+            )
+          )}
         </SelectContent>
       </Select>
     </div>

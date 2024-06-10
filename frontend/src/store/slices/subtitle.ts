@@ -7,6 +7,7 @@ export type SubtitleType = {
   text: string;
   audioFileUrl: string;
   image: string | null;
+  actorName: string;
 };
 
 export type FaceDataType = {
