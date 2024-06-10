@@ -105,19 +105,23 @@ const Timeline: React.FC = () => {
     const isCtrlPressed = event.ctrlKey;
 
     if (isCtrlPressed) {
-      dispatch(
-        setSelectedSubtitleIndexes([...selectedSubtitleIndexes, subtitleIndex])
-      );
-    } else {
       if (selectedSubtitleIndexes.includes(subtitleIndex)) {
+        if (selectedSubtitles.length === 1) return;
         dispatch(
           setSelectedSubtitleIndexes(
             selectedSubtitleIndexes.filter((i) => i !== subtitleIndex)
           )
         );
       } else {
-        dispatch(setSelectedSubtitleIndexes([subtitleIndex]));
+        dispatch(
+          setSelectedSubtitleIndexes([
+            ...selectedSubtitleIndexes,
+            subtitleIndex,
+          ])
+        );
       }
+    } else {
+      dispatch(setSelectedSubtitleIndexes([subtitleIndex]));
     }
   };
 
