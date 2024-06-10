@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { setSubtitleIndex, getSelectedSubtitle } from "@/store/slices/subtitle";
+import { setSelectedSubtitleIndex } from "@/store/slices/subtitle";
 
 interface TimelineControlsProps {
   zoom: number;
@@ -23,30 +23,18 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
   subtitlesLength,
 }) => {
   const dispatch = useDispatch();
-  const { subtitles } = useSelector((state: RootState) => state.subtitle);
-  const subtitleState = useSelector((state: RootState) => state.subtitle);
-  const selectedSubtitle = getSelectedSubtitle(subtitleState);
+  const { subtitles, selectedSubtitleIndex } = useSelector(
+    (state: RootState) => state.subtitle
+  );
   const selectPrevSubtitle = () => {
-    if (
-      selectedSubtitle &&
-      selectedSubtitle.index &&
-      parseInt(selectedSubtitle.index) > 0
-    ) {
-      const index = parseInt(selectedSubtitle?.index);
-      const prevIndexString = (index - 1).toString();
-      dispatch(setSubtitleIndex(prevIndexString));
+    if (selectedSubtitleIndex && selectedSubtitleIndex > 0) {
+      dispatch(setSelectedSubtitleIndex(selectedSubtitleIndex - 1));
     }
   };
 
   const selectNextSubtitle = () => {
-    if (
-      selectedSubtitle &&
-      selectedSubtitle.index &&
-      parseInt(selectedSubtitle.index) < subtitles.length - 1
-    ) {
-      const index = parseInt(selectedSubtitle?.index);
-      const prevIndexString = (index + 1).toString();
-      dispatch(setSubtitleIndex(prevIndexString));
+    if (selectedSubtitleIndex && selectedSubtitleIndex < subtitles.length - 1) {
+      dispatch(setSelectedSubtitleIndex(selectedSubtitleIndex + 1));
     }
   };
 

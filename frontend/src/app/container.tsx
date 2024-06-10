@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useEffect, Suspense } from "react";
-import { setFaceData, setSubtitles } from "@/store/slices/subtitle";
+import {
+  SubtitleType,
+  setFaceData,
+  setSubtitles,
+} from "@/store/slices/subtitle";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 
@@ -21,7 +25,11 @@ const useLoadInitData = () => {
       try {
         const response = await fetch("/api/get-subtitles");
         const { subtitles } = await response.json();
-        dispatch(setSubtitles(subtitles));
+        const subs = subtitles.map((subtitle: SubtitleType, index: number) => {
+          subtitle.index = index;
+          return subtitle;
+        });
+        dispatch(setSubtitles(subs));
       } catch (error) {}
     };
 

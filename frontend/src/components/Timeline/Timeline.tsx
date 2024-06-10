@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { setSubtitleIndex } from "@/store/slices/subtitle";
+import { setSelectedSubtitleIndex } from "@/store/slices/subtitle";
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
@@ -110,7 +110,7 @@ const Timeline: React.FC = () => {
                   }
                   onClick={() => {
                     setCurrentIndex(index);
-                    dispatch(setSubtitleIndex(subtitle.index));
+                    dispatch(setSelectedSubtitleIndex(subtitle.index));
                   }}
                   startWidth={startWidth}
                   subtitleWidth={subtitleWidth}

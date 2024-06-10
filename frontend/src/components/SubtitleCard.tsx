@@ -8,7 +8,10 @@ import {
 } from "@/components/ui/card";
 import { Tooltip } from "react-tooltip";
 import { Button } from "@/components/ui/button";
-import { getSelectedSubtitle } from "@/store/slices/subtitle";
+import {
+  getSelectedSubtitle,
+  getImageByActorName,
+} from "@/store/slices/subtitle";
 import { setPlayVideoChunk, setIsPlaying } from "@/store/slices/video";
 import {
   FaRegClone,
@@ -17,6 +20,7 @@ import {
   FaPlay,
   FaPause,
   FaSyncAlt,
+  FaUserTie,
 } from "react-icons/fa";
 
 import { useSelector, useDispatch } from "react-redux";
@@ -28,6 +32,7 @@ const SubtitleCard = () => {
   const subtitleState = useSelector((state: RootState) => state.subtitle);
   const isPlaying = useSelector((state: RootState) => state.video.isPlaying);
   const selectedSubtitle = getSelectedSubtitle(subtitleState);
+  const getActorImage = getImageByActorName(subtitleState);
 
   const handlePlayPause = () => {
     if (selectedSubtitle) {
@@ -67,13 +72,29 @@ const SubtitleCard = () => {
             <CardDescription>Description</CardDescription>
           </CardHeader>
           <CardContent>
-            {selectedSubtitle.image && (
-              <img
-                className="h-60px w-60px"
-                src={`data:image/png;base64,${selectedSubtitle.image}`}
-                alt=""
-              />
-            )}
+            <div className="mb-5 flex flex-row items-center">
+              {selectedSubtitle.actorName ? (
+                <>
+                  <img
+                    className="h-[60px] w-[60px]"
+                    src={`data:image/png;base64,${getActorImage(
+                      selectedSubtitle.actorName
+                    )}`}
+                    alt=""
+                  />
+                  <div className="ml-5 flex items-center">
+                    {selectedSubtitle.actorName}
+                  </div>
+                </>
+              ) : (
+                <>
+                  <FaUserTie size={60} />
+                  <div className="ml-5 flex items-center">
+                    Unidentified Actor
+                  </div>
+                </>
+              )}
+            </div>
             <p>
               <span className="font-bold">Start:</span> {selectedSubtitle.start}
             </p>
@@ -134,7 +155,7 @@ const SubtitleCard = () => {
                 data-tooltip-content="Voice Style"
               />
             </div>
-            <SelectActor subtitleIndex={selectedSubtitle.index} />
+            <SelectActor />
           </CardContent>
         </Card>
       )}

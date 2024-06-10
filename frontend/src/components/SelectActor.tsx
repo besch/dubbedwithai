@@ -1,13 +1,11 @@
 import {
-  setFaceData,
-  FaceDataType,
-  SubtitleType,
   setSubtitles,
+  getSelectedSubtitle,
+  getImageByActorName,
 } from "@/store/slices/subtitle";
-import React, { Suspense, lazy, memo } from "react";
+import React, { Suspense, lazy } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
-import Image from "next/image";
 import {
   Select,
   SelectItem,
@@ -15,7 +13,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { FixedSizeList, ListChildComponentProps } from "react-window";
 
 const LazyLoadedImage = lazy(() => import("next/image"));
 
@@ -38,18 +35,19 @@ const LazyImage = ({ src, width, height, ...props }: LazyImageProps) => (
   </Suspense>
 );
 
-const SelectActor = ({ subtitleIndex }: { subtitleIndex: string }) => {
+const SelectActor = () => {
   const dispatch = useDispatch();
-  const { faceData, subtitles } = useSelector(
-    (state: RootState) => state.subtitle
-  );
+  const subtitleState = useSelector((state: RootState) => state.subtitle);
+  const { faceData, subtitles } = subtitleState;
+  const selectedSubtitle = getSelectedSubtitle(subtitleState);
+  const getActorImage = getImageByActorName(subtitleState);
 
   const handleSelect = (newFace: string) => {
     const cloneSubtitles = subtitles.map((subtitle, index) => {
-      if (index === parseInt(subtitleIndex) - 1) {
+      if (selectedSubtitle && index === selectedSubtitle.index) {
         return {
           ...subtitle,
-          image: faceData.encoded_images[newFace],
+          actorName: newFace,
         };
       }
       return subtitle;
@@ -59,7 +57,14 @@ const SelectActor = ({ subtitleIndex }: { subtitleIndex: string }) => {
 
   return (
     <div className="my-4 w-[300px]">
-      <Select onValueChange={handleSelect}>
+      <Select
+        onValueChange={handleSelect}
+        value={
+          !selectedSubtitle || !selectedSubtitle.actorName
+            ? undefined
+            : selectedSubtitle.actorName
+        }
+      >
         <SelectTrigger className="h-[100px]">
           <SelectValue placeholder="Select Actor" />
         </SelectTrigger>
