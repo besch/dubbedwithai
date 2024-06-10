@@ -61,7 +61,7 @@ const SelectActor = () => {
         onValueChange={handleSelect}
         value={
           !selectedSubtitle || !selectedSubtitle.actorName
-            ? undefined
+            ? ""
             : selectedSubtitle.actorName
         }
       >

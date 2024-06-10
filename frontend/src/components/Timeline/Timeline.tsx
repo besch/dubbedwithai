@@ -1,6 +1,9 @@
 "use client";
 import React, { useState, useRef } from "react";
-import { setSelectedSubtitleIndex } from "@/store/slices/subtitle";
+import {
+  getImageByActorName,
+  setSelectedSubtitleIndex,
+} from "@/store/slices/subtitle";
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
@@ -20,6 +23,7 @@ const Timeline: React.FC = () => {
   const { subtitles } = useSelector((state: RootState) => state.subtitle);
   const subtitleState = useSelector((state: RootState) => state.subtitle);
   const selectedSubtitle = getSelectedSubtitle(subtitleState);
+  const getActorImage = getImageByActorName(subtitleState);
   const [zoom, setZoom] = useState<number>(15);
   const [currentMarkerPosition, setCurrentMarkerPosition] = useState<
     number | null
@@ -114,7 +118,7 @@ const Timeline: React.FC = () => {
                   }}
                   startWidth={startWidth}
                   subtitleWidth={subtitleWidth}
-                  image={subtitle.image}
+                  image={getActorImage(subtitle.actorName)}
                 />
               );
             })}
