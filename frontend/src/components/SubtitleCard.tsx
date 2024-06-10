@@ -9,7 +9,7 @@ import {
 import { Tooltip } from "react-tooltip";
 import { Button } from "@/components/ui/button";
 import {
-  getSelectedSubtitle,
+  getSelectedSubtitles,
   getImageByActorName,
 } from "@/store/slices/subtitle";
 import { setPlayVideoChunk, setIsPlaying } from "@/store/slices/video";
@@ -31,12 +31,12 @@ const SubtitleCard = () => {
   const dispatch = useDispatch();
   const subtitleState = useSelector((state: RootState) => state.subtitle);
   const isPlaying = useSelector((state: RootState) => state.video.isPlaying);
-  const selectedSubtitle = getSelectedSubtitle(subtitleState);
+  const selectedSubtitles = getSelectedSubtitles(subtitleState);
   const getActorImage = getImageByActorName(subtitleState);
 
   const handlePlayPause = () => {
-    if (selectedSubtitle) {
-      const { start, end } = selectedSubtitle;
+    if (selectedSubtitles && selectedSubtitles.length === 1) {
+      const { start, end } = selectedSubtitles[0];
       const startTime = parseFloat(start);
       const endTime = parseFloat(end);
       dispatch(setPlayVideoChunk({ start: startTime, end: endTime }));
@@ -46,12 +46,14 @@ const SubtitleCard = () => {
 
   return (
     <>
-      {selectedSubtitle && (
+      {selectedSubtitles.length > 0 && (
         <Card className="w-[350px] m-5">
           <CardHeader>
             <CardTitle>
               <div className="flex flex-row justify-between">
-                <div>Subtitle {selectedSubtitle.index}</div>
+                <div>
+                  Subtitle {selectedSubtitles.map((s) => s.index).join(", ")}
+                </div>
                 <div>
                   {isPlaying ? (
                     <FaPause
@@ -64,6 +66,7 @@ const SubtitleCard = () => {
                       onClick={handlePlayPause}
                       data-tooltip-id="dubbedWithAITooltip"
                       data-tooltip-content="Play subtitle audio"
+                      aria-disabled={selectedSubtitles.length !== 1}
                     />
                   )}
                 </div>
@@ -73,17 +76,17 @@ const SubtitleCard = () => {
           </CardHeader>
           <CardContent>
             <div className="mb-5 flex flex-row items-center">
-              {selectedSubtitle.actorName ? (
+              {selectedSubtitles[0].actorName ? (
                 <>
                   <img
                     className="h-[60px] w-[60px]"
                     src={`data:image/png;base64,${getActorImage(
-                      selectedSubtitle.actorName
+                      selectedSubtitles[0].actorName
                     )}`}
                     alt=""
                   />
                   <div className="ml-5 flex items-center">
-                    {selectedSubtitle.actorName}
+                    {selectedSubtitles[0].actorName}
                   </div>
                 </>
               ) : (
@@ -96,15 +99,17 @@ const SubtitleCard = () => {
               )}
             </div>
             <p>
-              <span className="font-bold">Start:</span> {selectedSubtitle.start}
+              <span className="font-bold">Start:</span>{" "}
+              {selectedSubtitles[0].start}
             </p>
             <p>
-              <span className="font-bold">End:</span> {selectedSubtitle.end}
+              <span className="font-bold">End:</span> {selectedSubtitles[0].end}
             </p>
             <p>
-              <span className="font-bold">Text:</span> {selectedSubtitle.text}
+              <span className="font-bold">Text:</span>{" "}
+              {selectedSubtitles[0].text}
             </p>
-            {selectedSubtitle.audioFileUrl && (
+            {selectedSubtitles[0].audioFileUrl && (
               <div className="mt-5">
                 <FaPlay
                   className="cursor-pointer"
@@ -118,7 +123,7 @@ const SubtitleCard = () => {
                 />
                 <audio controls>
                   <source
-                    src={selectedSubtitle.audioFileUrl}
+                    src={selectedSubtitles[0].audioFileUrl}
                     type="audio/wav"
                   />
                   Your browser does not support the audio element.
@@ -133,7 +138,7 @@ const SubtitleCard = () => {
                 data-tooltip-content="Clone Voice"
               />
 
-              {selectedSubtitle.audioFileUrl ? (
+              {selectedSubtitles[0].audioFileUrl ? (
                 <FaVolumeUp
                   size={20}
                   className="cursor-pointer"

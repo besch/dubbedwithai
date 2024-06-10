@@ -24,13 +24,13 @@ export type FaceDataType = {
 };
 
 export type SubtitleState = {
-  selectedSubtitleIndex: number | null;
+  selectedSubtitleIndexes: number[];
   subtitles: SubtitleType[];
   faceData: FaceDataType;
 };
 
 const initialState: SubtitleState = {
-  selectedSubtitleIndex: null,
+  selectedSubtitleIndexes: [],
   subtitles: [],
   faceData: {
     data: [],
@@ -42,8 +42,8 @@ export const subtitleSlice = createSlice({
   name: "subtitle",
   initialState,
   reducers: {
-    setSelectedSubtitleIndex: (state, action: PayloadAction<number | null>) => {
-      state.selectedSubtitleIndex = action.payload;
+    setSelectedSubtitleIndexes: (state, action: PayloadAction<number[]>) => {
+      state.selectedSubtitleIndexes = action.payload;
     },
     setSubtitles: (state, action: PayloadAction<SubtitleType[]>) => {
       state.subtitles = action.payload;
@@ -54,15 +54,17 @@ export const subtitleSlice = createSlice({
   },
 });
 
-export const { setSelectedSubtitleIndex, setSubtitles, setFaceData } =
+export const { setSelectedSubtitleIndexes, setSubtitles, setFaceData } =
   subtitleSlice.actions;
 
-export const getSelectedSubtitle = createSelector(
+export const getSelectedSubtitles = createSelector(
   (state: SubtitleState) => state.subtitles,
-  (state: SubtitleState) => state.selectedSubtitleIndex,
-  (subtitles, selectedSubtitleIndex) => {
-    if (subtitles.length === 0 || selectedSubtitleIndex === null) return null;
-    return subtitles[selectedSubtitleIndex];
+  (state: SubtitleState) => state.selectedSubtitleIndexes,
+  (subtitles, selectedSubtitleIndexes) => {
+    if (subtitles.length === 0 || selectedSubtitleIndexes.length === 0)
+      return [];
+
+    return selectedSubtitleIndexes.map((index) => subtitles[index]);
   }
 );
 

@@ -1,8 +1,4 @@
-import {
-  setSubtitles,
-  getSelectedSubtitle,
-  getImageByActorName,
-} from "@/store/slices/subtitle";
+import { setSubtitles } from "@/store/slices/subtitle";
 import React, { Suspense, lazy } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
@@ -38,13 +34,11 @@ const LazyImage = ({ src, width, height, ...props }: LazyImageProps) => (
 const SelectActor = () => {
   const dispatch = useDispatch();
   const subtitleState = useSelector((state: RootState) => state.subtitle);
-  const { faceData, subtitles } = subtitleState;
-  const selectedSubtitle = getSelectedSubtitle(subtitleState);
-  const getActorImage = getImageByActorName(subtitleState);
+  const { faceData, subtitles, selectedSubtitleIndexes } = subtitleState;
 
   const handleSelect = (newFace: string) => {
-    const cloneSubtitles = subtitles.map((subtitle, index) => {
-      if (selectedSubtitle && index === selectedSubtitle.index) {
+    const cloneSubtitles = subtitles.map((subtitle) => {
+      if (selectedSubtitleIndexes.includes(subtitle.index)) {
         return {
           ...subtitle,
           actorName: newFace,
@@ -55,16 +49,19 @@ const SelectActor = () => {
     dispatch(setSubtitles(cloneSubtitles));
   };
 
+  const getValue = () => {
+    if (selectedSubtitleIndexes.length > 1) {
+      return "";
+    } else if (selectedSubtitleIndexes.length === 1) {
+      return subtitles[selectedSubtitleIndexes[0]].actorName;
+    } else {
+      return "";
+    }
+  };
+
   return (
     <div className="my-4 w-[300px]">
-      <Select
-        onValueChange={handleSelect}
-        value={
-          !selectedSubtitle || !selectedSubtitle.actorName
-            ? ""
-            : selectedSubtitle.actorName
-        }
-      >
+      <Select onValueChange={handleSelect} value={getValue()}>
         <SelectTrigger className="h-[100px]">
           <SelectValue placeholder="Select Actor" />
         </SelectTrigger>

@@ -1,6 +1,6 @@
 interface SubtitleItemProps {
   selected: boolean;
-  onClick: () => void;
+  onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   startWidth: number;
   subtitleWidth: number;
   image: string | null;

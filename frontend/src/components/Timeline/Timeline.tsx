@@ -2,13 +2,13 @@
 import React, { useState, useRef } from "react";
 import {
   getImageByActorName,
-  setSelectedSubtitleIndex,
+  setSelectedSubtitleIndexes,
 } from "@/store/slices/subtitle";
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
 } from "@/store/slices/marker";
-import { getSelectedSubtitle } from "@/store/slices/subtitle";
+import { getSelectedSubtitles } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { convertToMilliseconds } from "@/utils/timeline";
@@ -20,9 +20,11 @@ import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const { subtitles } = useSelector((state: RootState) => state.subtitle);
+  const { subtitles, selectedSubtitleIndexes } = useSelector(
+    (state: RootState) => state.subtitle
+  );
   const subtitleState = useSelector((state: RootState) => state.subtitle);
-  const selectedSubtitle = getSelectedSubtitle(subtitleState);
+  const selectedSubtitles = getSelectedSubtitles(subtitleState);
   const getActorImage = getImageByActorName(subtitleState);
   const [zoom, setZoom] = useState<number>(15);
   const [currentMarkerPosition, setCurrentMarkerPosition] = useState<
@@ -78,6 +80,29 @@ const Timeline: React.FC = () => {
     }
   };
 
+  const handleSubtitleClick = (
+    event: React.MouseEvent<HTMLDivElement>,
+    subtitleIndex: number
+  ) => {
+    const isCtrlPressed = event.ctrlKey;
+
+    if (isCtrlPressed) {
+      dispatch(
+        setSelectedSubtitleIndexes([...selectedSubtitleIndexes, subtitleIndex])
+      );
+    } else {
+      if (selectedSubtitleIndexes.includes(subtitleIndex)) {
+        dispatch(
+          setSelectedSubtitleIndexes(
+            selectedSubtitleIndexes.filter((i) => i !== subtitleIndex)
+          )
+        );
+      } else {
+        dispatch(setSelectedSubtitleIndexes([subtitleIndex]));
+      }
+    }
+  };
+
   return (
     <>
       <TimelineControls zoom={zoom} setZoom={setZoom} />
@@ -103,12 +128,11 @@ const Timeline: React.FC = () => {
                 <SubtitleItem
                   key={index}
                   selected={
-                    !!selectedSubtitle &&
-                    selectedSubtitle.index === subtitle.index
+                    selectedSubtitles?.some(
+                      (s) => s.index === subtitle.index
+                    ) ?? false
                   }
-                  onClick={() => {
-                    dispatch(setSelectedSubtitleIndex(subtitle.index));
-                  }}
+                  onClick={(e) => handleSubtitleClick(e, subtitle.index)}
                   startWidth={startWidth}
                   subtitleWidth={subtitleWidth}
                   image={getActorImage(subtitle.actorName)}

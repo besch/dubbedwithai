@@ -7,7 +7,7 @@ import {
 } from "react-icons/fa";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { setSelectedSubtitleIndex } from "@/store/slices/subtitle";
+import { setSelectedSubtitleIndexes } from "@/store/slices/subtitle";
 
 interface TimelineControlsProps {
   zoom: number;
@@ -19,21 +19,21 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
   setZoom,
 }) => {
   const dispatch = useDispatch();
-  const { subtitles, selectedSubtitleIndex } = useSelector(
+  const { subtitles, selectedSubtitleIndexes } = useSelector(
     (state: RootState) => state.subtitle
   );
   const selectPrevSubtitle = () => {
-    if (selectedSubtitleIndex !== null && selectedSubtitleIndex > 0) {
-      dispatch(setSelectedSubtitleIndex(selectedSubtitleIndex - 1));
+    if (selectedSubtitleIndexes.length > 1 && selectedSubtitleIndexes[0] > 0) {
+      dispatch(setSelectedSubtitleIndexes([selectedSubtitleIndexes[0] - 1]));
     }
   };
 
   const selectNextSubtitle = () => {
     if (
-      selectedSubtitleIndex !== null &&
-      selectedSubtitleIndex < subtitles.length - 1
+      selectedSubtitleIndexes.length > 1 &&
+      selectedSubtitleIndexes[0] < subtitles.length - 1
     ) {
-      dispatch(setSelectedSubtitleIndex(selectedSubtitleIndex + 1));
+      dispatch(setSelectedSubtitleIndexes([selectedSubtitleIndexes[0] + 1]));
     }
   };
 
@@ -43,14 +43,14 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
         <button
           className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l mr-1"
           onClick={selectPrevSubtitle}
-          disabled={selectedSubtitleIndex === 0}
+          disabled={selectedSubtitleIndexes[0] === 0}
         >
           <FaArrowLeft className="w-4 h-4" />
         </button>
         <button
           className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r"
           onClick={selectNextSubtitle}
-          disabled={selectedSubtitleIndex === subtitles.length - 1}
+          disabled={selectedSubtitleIndexes[0] === subtitles.length - 1}
         >
           <FaArrowRight className="w-4 h-4" />
         </button>

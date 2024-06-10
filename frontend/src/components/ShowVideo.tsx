@@ -4,7 +4,7 @@ import { RootState } from "@/store/store";
 import { setMarkerStartPosition } from "@/store/slices/marker";
 import { setIsPlaying } from "@/store/slices/video";
 import { convertToMilliseconds, formatTime } from "@/utils/timeline";
-import { getSelectedSubtitle } from "@/store/slices/subtitle";
+import { getSelectedSubtitles } from "@/store/slices/subtitle";
 
 export default function ShowVideo() {
   const dispatch = useDispatch();
@@ -13,17 +13,18 @@ export default function ShowVideo() {
   const { isPlaying, playVideoChunk } = useSelector(
     (state: RootState) => state.video
   );
-  const selectedSubtitle = getSelectedSubtitle(subtitleState);
+  const selectedSubtitles = getSelectedSubtitles(subtitleState);
+  const { selectedSubtitleIndexes } = subtitleState;
 
   useEffect(() => {
     const videoElement = videoRef.current;
 
-    if (videoElement && selectedSubtitle) {
+    if (videoElement && selectedSubtitles.length === 1) {
       const handleTimeUpdate = () => {
         const currentTime = videoElement.currentTime * 1000; // Convert seconds to milliseconds
         dispatch(setMarkerStartPosition(parseFloat(formatTime(currentTime))));
 
-        if (currentTime >= convertToMilliseconds(selectedSubtitle.end)) {
+        if (currentTime >= convertToMilliseconds(selectedSubtitles[0].end)) {
           videoElement.pause();
           dispatch(setIsPlaying(false));
           videoElement.removeEventListener("timeupdate", handleTimeUpdate);
@@ -33,7 +34,7 @@ export default function ShowVideo() {
       const handlePlayPause = () => {
         if (isPlaying) {
           videoElement.currentTime =
-            convertToMilliseconds(selectedSubtitle.start) / 1000; // Convert milliseconds to seconds
+            convertToMilliseconds(selectedSubtitles[0].start) / 1000; // Convert milliseconds to seconds
           videoElement.play();
           videoElement.addEventListener("timeupdate", handleTimeUpdate);
         } else {
@@ -58,7 +59,7 @@ export default function ShowVideo() {
         videoElement.removeEventListener("timeupdate", handleTimeUpdate);
       };
     }
-  }, [dispatch, selectedSubtitle, isPlaying, playVideoChunk]);
+  }, [dispatch, selectedSubtitleIndexes, isPlaying, playVideoChunk]);
 
   return (
     <div className="m-5 w-2/3">
