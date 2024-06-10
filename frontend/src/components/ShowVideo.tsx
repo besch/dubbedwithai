@@ -3,7 +3,7 @@ import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setMarkerStartPosition } from "@/store/slices/marker";
 import { setIsPlaying } from "@/store/slices/video";
-import { convertToMilliseconds, formatTime } from "@/utils/timeline";
+import { formatTime } from "@/utils/timeline";
 import { getSelectedSubtitles } from "@/store/slices/subtitle";
 
 export default function ShowVideo() {
@@ -24,7 +24,7 @@ export default function ShowVideo() {
         const currentTime = videoElement.currentTime * 1000; // Convert seconds to milliseconds
         dispatch(setMarkerStartPosition(parseFloat(formatTime(currentTime))));
 
-        if (currentTime >= convertToMilliseconds(selectedSubtitles[0].end)) {
+        if (currentTime >= selectedSubtitles[0].endMs) {
           videoElement.pause();
           dispatch(setIsPlaying(false));
           videoElement.removeEventListener("timeupdate", handleTimeUpdate);
@@ -33,8 +33,7 @@ export default function ShowVideo() {
 
       const handlePlayPause = () => {
         if (isPlaying) {
-          videoElement.currentTime =
-            convertToMilliseconds(selectedSubtitles[0].start) / 1000; // Convert milliseconds to seconds
+          videoElement.currentTime = selectedSubtitles[0].startMs / 1000; // Convert milliseconds to seconds
           videoElement.play();
           videoElement.addEventListener("timeupdate", handleTimeUpdate);
         } else {

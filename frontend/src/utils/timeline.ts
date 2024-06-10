@@ -30,8 +30,8 @@ export const getFaceImage = (
   if (!faceData) return null;
 
   const foundFace = faceData.data.find((face) => {
-    const subtitleStartMs = convertToMilliseconds(subtitle.start);
-    const subtitleEndMs = convertToMilliseconds(subtitle.end);
+    const subtitleStartMs = subtitle.startMs;
+    const subtitleEndMs = subtitle.endMs;
 
     if (
       subtitleStartMs <= face.subtitle_time_ms &&

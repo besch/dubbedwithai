@@ -11,7 +11,6 @@ import {
 import { getSelectedSubtitles } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import { convertToMilliseconds } from "@/utils/timeline";
 import SubtitleItem from "@/components/Timeline/SubtitleItem";
 import TimelineInvervalLabels from "@/components/Timeline/TimelineInvervalLabels";
 import TimelineControls from "@/components/Timeline/TimelineControls";
@@ -20,6 +19,9 @@ import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
+  const { markerStartPosition, markerEndPosition } = useSelector(
+    (state: RootState) => state.marker
+  );
   const { subtitles, selectedSubtitleIndexes } = useSelector(
     (state: RootState) => state.subtitle
   );
@@ -35,8 +37,8 @@ const Timeline: React.FC = () => {
 
   let totalDuration = 0;
   if (subtitles.length) {
-    const lastSubtitleEndTime = subtitles[subtitles.length - 1].end;
-    totalDuration = convertToMilliseconds(lastSubtitleEndTime);
+    const lastSubtitleEndTime = subtitles[subtitles.length - 1].endMs;
+    totalDuration = lastSubtitleEndTime;
   }
   const timelineWidth = `${100 + zoom * 500}%`;
 
@@ -70,9 +72,25 @@ const Timeline: React.FC = () => {
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const position = (mouseX / rect.width) * 100;
+      const positionInMs = (position / 100) * totalDuration;
 
       if (e.shiftKey) {
         dispatch(setMarkerEndPosition(position));
+        if (markerStartPosition !== null) {
+          const markerStartPositionInMs =
+            (markerStartPosition / 100) * totalDuration;
+          const selectedIndexes = subtitles
+            .filter(
+              (subtitle) =>
+                (subtitle.startMs >= markerStartPositionInMs &&
+                  subtitle.endMs <= positionInMs) ||
+                (subtitle.startMs <= markerStartPositionInMs &&
+                  subtitle.endMs >= positionInMs)
+            )
+            .map((subtitle) => subtitle.index);
+
+          dispatch(setSelectedSubtitleIndexes(selectedIndexes));
+        }
       } else {
         dispatch(setMarkerStartPosition(position));
         dispatch(setMarkerEndPosition(null));
@@ -117,16 +135,14 @@ const Timeline: React.FC = () => {
         >
           <div ref={timelineRef}>
             <TimelineInvervalLabels totalDuration={totalDuration} zoom={zoom} />
-            {subtitles.map((subtitle, index) => {
-              const startTime = convertToMilliseconds(subtitle.start);
-              const endTime = convertToMilliseconds(subtitle.end);
-              const startWidth = (startTime / totalDuration) * 100;
+            {subtitles.map((subtitle) => {
+              const startWidth = (subtitle.startMs / totalDuration) * 100;
               const subtitleWidth =
-                ((endTime - startTime) / totalDuration) * 100;
+                ((subtitle.endMs - subtitle.startMs) / totalDuration) * 100;
 
               return (
                 <SubtitleItem
-                  key={index}
+                  key={subtitle.index}
                   selected={
                     selectedSubtitles?.some(
                       (s) => s.index === subtitle.index

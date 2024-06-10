@@ -8,6 +8,7 @@ import {
 } from "@/store/slices/subtitle";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
+import { convertToMilliseconds, getFaceImage } from "@/utils/timeline";
 
 import FileUpload from "@/components/FileUpload";
 import VideoPlayer from "@/components/VideoPlayer";
@@ -16,7 +17,6 @@ import Timeline from "@/components/Timeline/Timeline";
 import SubtitleCard from "@/components/SubtitleCard";
 import ShowVideo from "@/components/ShowVideo";
 import ActorList from "@/components/ActorList";
-import { getFaceImage } from "@/utils/timeline";
 
 const useLoadInitData = () => {
   const dispatch = useDispatch();
@@ -27,6 +27,8 @@ const useLoadInitData = () => {
         const { subtitles } = await response.json();
         const subs = subtitles.map((subtitle: SubtitleType, index: number) => {
           subtitle.index = index;
+          subtitle.startMs = convertToMilliseconds(subtitle.start);
+          subtitle.endMs = convertToMilliseconds(subtitle.end);
           return subtitle;
         });
         dispatch(setSubtitles(subs));

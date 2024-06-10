@@ -4,6 +4,8 @@ export type SubtitleType = {
   index: number;
   start: string;
   end: string;
+  startMs: number;
+  endMs: number;
   text: string;
   audioFileUrl: string;
   image: string | null;
