@@ -23,14 +23,17 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
     (state: RootState) => state.subtitle
   );
   const selectPrevSubtitle = () => {
-    if (selectedSubtitleIndexes.length > 1 && selectedSubtitleIndexes[0] > 0) {
+    if (
+      selectedSubtitleIndexes.length === 1 &&
+      selectedSubtitleIndexes[0] > 0
+    ) {
       dispatch(setSelectedSubtitleIndexes([selectedSubtitleIndexes[0] - 1]));
     }
   };
 
   const selectNextSubtitle = () => {
     if (
-      selectedSubtitleIndexes.length > 1 &&
+      selectedSubtitleIndexes.length === 1 &&
       selectedSubtitleIndexes[0] < subtitles.length - 1
     ) {
       dispatch(setSelectedSubtitleIndexes([selectedSubtitleIndexes[0] + 1]));
