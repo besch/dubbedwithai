@@ -82,8 +82,8 @@ const Timeline: React.FC = () => {
           const selectedIndexes = subtitles
             .filter(
               (subtitle) =>
-                (subtitle.startMs >= markerStartPositionInMs &&
-                  subtitle.endMs <= positionInMs) ||
+                (subtitle.endMs >= markerStartPositionInMs &&
+                  subtitle.startMs <= positionInMs) ||
                 (subtitle.startMs <= markerStartPositionInMs &&
                   subtitle.endMs >= positionInMs)
             )
