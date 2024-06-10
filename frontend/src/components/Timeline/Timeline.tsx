@@ -28,7 +28,6 @@ const Timeline: React.FC = () => {
   const [currentMarkerPosition, setCurrentMarkerPosition] = useState<
     number | null
   >(null);
-  const [currentIndex, setCurrentIndex] = useState<number>(0);
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -81,12 +80,7 @@ const Timeline: React.FC = () => {
 
   return (
     <>
-      <TimelineControls
-        zoom={zoom}
-        setZoom={setZoom}
-        currentIndex={currentIndex}
-        subtitlesLength={subtitles.length}
-      />
+      <TimelineControls zoom={zoom} setZoom={setZoom} />
       <div className="relative w-full h-60 overflow-x-auto overflow-y-hidden p-4 sticky bottom-0">
         <div
           className="h-52 bg-gray-200 rounded-md relative"
@@ -110,10 +104,9 @@ const Timeline: React.FC = () => {
                   key={index}
                   selected={
                     !!selectedSubtitle &&
-                    selectedSubtitle.start === subtitle.start
+                    selectedSubtitle.index === subtitle.index
                   }
                   onClick={() => {
-                    setCurrentIndex(index);
                     dispatch(setSelectedSubtitleIndex(subtitle.index));
                   }}
                   startWidth={startWidth}

@@ -18,7 +18,7 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({
       <div
         onClick={onClick}
         className={`absolute h-16 rounded-md mt-2 cursor-pointer ${
-          selected ? "bg-green-500" : "bg-blue-500"
+          selected ? "bg-green-500" : "bg-blue-400"
         }`}
         style={{ left: `${startWidth}%`, width: `${subtitleWidth}%` }}
       ></div>
