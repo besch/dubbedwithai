@@ -22,23 +22,25 @@ const AddNewActor = () => {
 
   const handleAddNewActor = (e) => {
     const randomKey = Math.floor(100000 + Math.random() * 900000);
-    const faceDataClone = {};
-    Object.assign(faceDataClone, faceData);
-    faceDataClone.encoded_images = { ...faceData.encoded_images };
-    faceDataClone.encoded_images[randomKey.toString()] = canvasImage;
+    const faceDataClone = JSON.parse(JSON.stringify(faceData));
+
+    faceDataClone.encoded_images = {
+      ...faceData.encoded_images,
+      [randomKey]: canvasImage,
+    };
     dispatch(setFaceData(faceDataClone));
-    const cloneSubs = subtitles.map((subtitle) => {
+
+    const updatedSubtitles = subtitles.map((subtitle) => {
       if (subtitle.index === selectedSubtitleIndexes[0]) {
         return {
           ...subtitle,
           actorName: randomKey.toString(),
         };
-      } else {
-        return subtitle;
       }
+      return subtitle;
     });
 
-    dispatch(setSubtitles(cloneSubs));
+    dispatch(setSubtitles(updatedSubtitles));
     dispatch(setCanvasImage(null));
   };
 

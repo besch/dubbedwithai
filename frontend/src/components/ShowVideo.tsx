@@ -14,8 +14,10 @@ export default function ShowVideo() {
   const { isPlaying, playVideoChunk, isCanvasActive } = useSelector(
     (state: RootState) => state.video
   );
+  const { markerStartPositionMs } = useSelector(
+    (state: RootState) => state.marker
+  );
   const selectedSubtitles = getSelectedSubtitles(subtitleState);
-  const { selectedSubtitleIndexes } = subtitleState;
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -34,7 +36,7 @@ export default function ShowVideo() {
 
       const handlePlayPause = () => {
         if (isPlaying) {
-          videoElement.currentTime = selectedSubtitles[0].startMs / 1000; // Convert milliseconds to seconds
+          videoElement.currentTime = selectedSubtitles[0].startMs / 1000;
           videoElement.play();
           videoElement.addEventListener("timeupdate", handleTimeUpdate);
         } else {
@@ -46,7 +48,7 @@ export default function ShowVideo() {
 
       const handlePlayVideoChunk = () => {
         if (playVideoChunk.start !== 0 && playVideoChunk.end !== 0) {
-          videoElement.currentTime = playVideoChunk.start / 1000; // Convert milliseconds to seconds
+          videoElement.currentTime = playVideoChunk.start / 1000;
           videoElement.play();
           videoElement.addEventListener("timeupdate", handleTimeUpdate);
         }
@@ -59,7 +61,20 @@ export default function ShowVideo() {
         videoElement.removeEventListener("timeupdate", handleTimeUpdate);
       };
     }
-  }, [dispatch, selectedSubtitleIndexes, isPlaying, playVideoChunk]);
+  }, [
+    dispatch,
+    selectedSubtitles,
+    markerStartPositionMs,
+    isPlaying,
+    playVideoChunk,
+  ]);
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement && markerStartPositionMs) {
+      videoElement.currentTime = markerStartPositionMs / 1000;
+    }
+  }, [markerStartPositionMs]);
 
   return (
     <div className="m-5 w-2/3">

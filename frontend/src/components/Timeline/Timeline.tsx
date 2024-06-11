@@ -7,6 +7,7 @@ import {
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
+  setMarkerStartPositionMs,
 } from "@/store/slices/marker";
 import { getSelectedSubtitles } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
@@ -19,7 +20,7 @@ import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const { markerStartPosition, markerEndPosition } = useSelector(
+  const { markerStartPosition } = useSelector(
     (state: RootState) => state.marker
   );
   const { subtitles, selectedSubtitleIndexes } = useSelector(
@@ -92,6 +93,7 @@ const Timeline: React.FC = () => {
           dispatch(setSelectedSubtitleIndexes(selectedIndexes));
         }
       } else {
+        dispatch(setMarkerStartPositionMs(positionInMs));
         dispatch(setMarkerStartPosition(position));
         dispatch(setMarkerEndPosition(null));
       }
