@@ -59,12 +59,14 @@ const SubtitleCard = () => {
                 <div>
                   {isPlaying ? (
                     <FaPause
+                      className="cursor-pointer"
                       onClick={handlePlayPause}
                       data-tooltip-id="dubbedWithAITooltip"
                       data-tooltip-content="Pause subtitle audio"
                     />
                   ) : (
                     <FaPlay
+                      className="cursor-pointer"
                       onClick={handlePlayPause}
                       data-tooltip-id="dubbedWithAITooltip"
                       data-tooltip-content="Play subtitle audio"
