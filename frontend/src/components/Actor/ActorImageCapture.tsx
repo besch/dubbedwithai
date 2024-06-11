@@ -13,14 +13,11 @@ interface RectDimensions {
 
 interface ActorImageCaptureProps {
   videoRef: React.RefObject<HTMLVideoElement>;
-  isCanvasActive: boolean;
 }
 
-const ActorImageCapture: React.FC<ActorImageCaptureProps> = ({
-  videoRef,
-  isCanvasActive,
-}) => {
+const ActorImageCapture: React.FC<ActorImageCaptureProps> = ({ videoRef }) => {
   const dispatch = useDispatch();
+  const { isCanvasActive } = useSelector((state: RootState) => state.video);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [rectDimensions, setRectDimensions] = useState<RectDimensions>({
     x: 0,
@@ -102,12 +99,10 @@ const ActorImageCapture: React.FC<ActorImageCaptureProps> = ({
       };
 
       const handleMouseMove = (e: MouseEvent) => {
-        console.log("move", isDrawing);
         if (isDrawing) {
           const rect = canvas.getBoundingClientRect();
           const width = e.clientX - rect.left - startX;
           const height = e.clientY - rect.top - startY;
-          //   console.log(width, height);
           setRectDimensions({
             x: startX,
             y: startY,
@@ -135,7 +130,7 @@ const ActorImageCapture: React.FC<ActorImageCaptureProps> = ({
         window.removeEventListener("mouseup", handleMouseUp);
       };
     }
-  }, [videoRef, isDrawing, rectDimensions]);
+  }, [videoRef, rectDimensions]);
 
   return (
     <div>
