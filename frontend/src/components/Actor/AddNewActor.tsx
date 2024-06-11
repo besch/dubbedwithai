@@ -5,26 +5,30 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
 import { useState } from "react";
+import { setCanvasImage, setIsCanvasActive } from "@/store/slices/video";
+import { setFaceData, setSubtitles } from "@/store/slices/subtitle";
 
 const AddNewActor = () => {
   const dispatch = useDispatch();
   const [showForm, setShowForm] = useState<boolean>(false);
-  const subtitleState = useSelector((state: RootState) => state.subtitle);
-  const { faceData, subtitles, selectedSubtitleIndexes } = subtitleState;
+  const subtitle = useSelector((state: RootState) => state.subtitle);
+  const video = useSelector((state: RootState) => state.video);
+  const { faceData, subtitles, selectedSubtitleIndexes } = subtitle;
+  const { isCanvasActive, canvasImage } = video;
 
   const handleAddNewName = (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    // const newSubtitles = subtitles.map((subtitle) => {
-    //   if (selectedSubtitleIndexes.includes(subtitle.index)) {
-    //     return {
-    //       ...subtitle,
-    //       actorName: event.currentTarget.elements.actor.value,
-    //     };
-    //   }
-    //   return subtitle;
-    // });
-    // dispatch(setSubtitles(newSubtitles));
-    setShowForm(false);
+    dispatch(setIsCanvasActive(true));
+    // setShowForm(false);
+  };
+
+  const handleAddNewActor = () => {
+    const randomKey = Math.floor(100000 + Math.random() * 900000);
+    setFaceData({ ...faceData, [randomKey]: canvasImage });
+    const cloneSubs = [...subtitles];
+    cloneSubs[selectedSubtitleIndexes[0]].actorName = randomKey.toString();
+    setSubtitles(cloneSubs);
+    setCanvasImage(null);
   };
 
   return (
@@ -47,18 +51,36 @@ const AddNewActor = () => {
                   className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
                   type="submit"
                 >
-                  Add
+                  Capture Image
                 </Button>
                 <Button
                   className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                   onClick={(e) => {
                     e.preventDefault();
-                    setShowForm(false);
+                    dispatch(setIsCanvasActive(false));
                   }}
                 >
                   Cancel
                 </Button>
+                {canvasImage && (
+                  <Button
+                    className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleAddNewActor();
+                    }}
+                  >
+                    Apply
+                  </Button>
+                )}
               </div>
+              {canvasImage && (
+                <img
+                  alt="canvas"
+                  className="p-2 w-[80px] h-[80px]"
+                  src={`data:image/png;base64,${canvasImage}`}
+                />
+              )}
             </div>
           </div>
         </form>

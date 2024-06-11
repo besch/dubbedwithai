@@ -44,7 +44,7 @@ const MemoizedSelectItem = memo(
     <Suspense fallback={<div>Loading...</div>}>
       <SelectItem value={imageKey} className={className}>
         <LazyImage
-          className="h-60px w-60px p-2"
+          className="p-2"
           src={`data:image/png;base64,${value}`}
           width={60}
           height={60}

@@ -5,12 +5,13 @@ import { setMarkerStartPosition } from "@/store/slices/marker";
 import { setIsPlaying } from "@/store/slices/video";
 import { formatTime } from "@/utils/timeline";
 import { getSelectedSubtitles } from "@/store/slices/subtitle";
+import ActorImageCapture from "./Actor/ActorImageCapture";
 
 export default function ShowVideo() {
   const dispatch = useDispatch();
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const subtitleState = useSelector((state: RootState) => state.subtitle);
-  const { isPlaying, playVideoChunk } = useSelector(
+  const { isPlaying, playVideoChunk, isCanvasActive } = useSelector(
     (state: RootState) => state.video
   );
   const selectedSubtitles = getSelectedSubtitles(subtitleState);
@@ -64,6 +65,9 @@ export default function ShowVideo() {
     <div className="m-5 w-2/3">
       <Suspense fallback={<p>Loading video...</p>}>
         <video ref={videoRef} src="/chlopaki_nie_placza.mp4" controls />
+        {isCanvasActive && (
+          <ActorImageCapture videoRef={videoRef} isCanvasActive={true} />
+        )}
       </Suspense>
     </div>
   );
