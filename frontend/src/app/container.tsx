@@ -16,7 +16,7 @@ import VoiceGenerator from "@/components/VoiceGenerator";
 import Timeline from "@/components/Timeline/Timeline";
 import SubtitleCard from "@/components/SubtitleCard";
 import ShowVideo from "@/components/ShowVideo";
-import ActorList from "@/components/ActorList";
+import ActorList from "@/components/Actor/ActorList";
 
 const useLoadInitData = () => {
   const dispatch = useDispatch();

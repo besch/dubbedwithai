@@ -21,11 +21,13 @@ import {
   FaPause,
   FaSyncAlt,
   FaUserTie,
+  FaDivide,
 } from "react-icons/fa";
 
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
-import SelectActor from "./SelectActor";
+import SelectActor from "./Actor/SelectActor";
+import AddNewActor from "./Actor/AddNewActor";
 
 const SubtitleCard = () => {
   const dispatch = useDispatch();
@@ -159,8 +161,15 @@ const SubtitleCard = () => {
                 data-tooltip-id="dubbedWithAITooltip"
                 data-tooltip-content="Voice Style"
               />
+              <FaDivide
+                size={20}
+                className="cursor-pointer"
+                data-tooltip-id="dubbedWithAITooltip"
+                data-tooltip-content="Remove Vocals"
+              />
             </div>
             <SelectActor />
+            <AddNewActor />
           </CardContent>
         </Card>
       )}
