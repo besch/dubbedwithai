@@ -20,7 +20,7 @@ import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const { markerStartPosition, markerStartPositionMs } = useSelector(
+  const { markerStartPosition } = useSelector(
     (state: RootState) => state.marker
   );
   const { videoTime } = useSelector((state: RootState) => state.video);

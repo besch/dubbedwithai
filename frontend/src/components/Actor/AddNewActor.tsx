@@ -1,10 +1,10 @@
+import { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
-import { useState } from "react";
 import { setCanvasImage, setIsCanvasActive } from "@/store/slices/video";
 import { setFaceData, setSubtitles } from "@/store/slices/subtitle";
 
@@ -20,18 +20,18 @@ const AddNewActor = () => {
     dispatch(setIsCanvasActive(true));
   };
 
-  const handleAddNewActor = (e) => {
+  const handleAddNewActor = () => {
     const randomKey = Math.floor(100000 + Math.random() * 900000);
     const faceDataClone = JSON.parse(JSON.stringify(faceData));
 
     faceDataClone.encoded_images = {
       ...faceData.encoded_images,
-      [randomKey]: canvasImage,
+      [randomKey.toString()]: canvasImage,
     };
     dispatch(setFaceData(faceDataClone));
 
     const updatedSubtitles = subtitles.map((subtitle) => {
-      if (subtitle.index === selectedSubtitleIndexes[0]) {
+      if (selectedSubtitleIndexes.includes(subtitle.index)) {
         return {
           ...subtitle,
           actorName: randomKey.toString(),
@@ -69,16 +69,20 @@ const AddNewActor = () => {
                 className="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded"
                 onClick={() => {
                   dispatch(setIsCanvasActive(false));
+                  dispatch(setCanvasImage(null));
+                  setShowForm(false);
                 }}
               >
                 Cancel
               </Button>
-              <Button
-                className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-                onClick={handleAddNewActor}
-              >
-                Apply
-              </Button>
+              {canvasImage && (
+                <Button
+                  className="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
+                  onClick={handleAddNewActor}
+                >
+                  Apply
+                </Button>
+              )}
             </div>
             {canvasImage && (
               <img

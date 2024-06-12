@@ -77,7 +77,7 @@ const ActorImageCapture: React.FC<ActorImageCaptureProps> = ({ videoRef }) => {
 
         // Draw the rectangle after drawing the video frame
         if (isDrawing) {
-          ctx.strokeStyle = "green";
+          ctx.strokeStyle = "white";
           ctx.lineWidth = 3;
           ctx.strokeRect(
             rectDimensions.x,
@@ -103,18 +103,34 @@ const ActorImageCapture: React.FC<ActorImageCaptureProps> = ({ videoRef }) => {
           const rect = canvas.getBoundingClientRect();
           const width = e.clientX - rect.left - startX;
           const height = e.clientY - rect.top - startY;
+          const minDimension = Math.min(Math.abs(width), Math.abs(height));
           setRectDimensions({
             x: startX,
             y: startY,
-            width: Math.abs(width),
-            height: Math.abs(height),
+            width: minDimension,
+            height: minDimension,
           });
         }
       };
 
-      const handleMouseUp = () => {
-        setIsDrawing(false);
-        captureImage(); // Call captureImage when the user releases the mouse button
+      const handleMouseUp = (e: MouseEvent) => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        const rect = canvas.getBoundingClientRect();
+        const isInsideCanvas =
+          e.clientX >= rect.left &&
+          e.clientX <= rect.right &&
+          e.clientY >= rect.top &&
+          e.clientY <= rect.bottom;
+
+        if (isInsideCanvas) {
+          setIsDrawing(false);
+          captureImage();
+        } else {
+          setIsDrawing(false);
+          setRectDimensions({ x: 0, y: 0, width: 0, height: 0 });
+        }
       };
 
       // Call renderFrame initially to start the animation loop
@@ -136,9 +152,8 @@ const ActorImageCapture: React.FC<ActorImageCaptureProps> = ({ videoRef }) => {
     <div>
       <canvas
         ref={canvasRef}
-        className="absolute top-0 left-0"
+        className="absolute top-[18px] left-[18px] cursor-crosshair border-dashed border-[2px] border-white"
         style={{
-          cursor: "crosshair",
           display: isCanvasActive ? "block" : "none",
         }}
       />
