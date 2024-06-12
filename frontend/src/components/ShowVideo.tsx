@@ -2,7 +2,7 @@ import { Suspense, useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setMarkerStartPosition } from "@/store/slices/marker";
-import { setIsPlaying } from "@/store/slices/video";
+import { setIsPlaying, setVideoTime } from "@/store/slices/video";
 import { formatTime } from "@/utils/timeline";
 import { getSelectedSubtitles } from "@/store/slices/subtitle";
 import ActorImageCapture from "./Actor/ActorImageCapture";
@@ -61,27 +61,36 @@ export default function ShowVideo() {
         videoElement.removeEventListener("timeupdate", handleTimeUpdate);
       };
     }
-  }, [
-    dispatch,
-    selectedSubtitles,
-    markerStartPositionMs,
-    isPlaying,
-    playVideoChunk,
-  ]);
+  }, [dispatch, selectedSubtitles, isPlaying, playVideoChunk]);
 
   useEffect(() => {
     const videoElement = videoRef.current;
-    if (videoElement && markerStartPositionMs) {
+    const handleTimeUpdate = () => {
+      const currentTime = videoElement!.currentTime * 1000;
+      dispatch(setVideoTime(currentTime));
+    };
+
+    if (videoElement) {
+      videoElement.addEventListener("timeupdate", handleTimeUpdate);
+      return () => {
+        videoElement.removeEventListener("timeupdate", handleTimeUpdate);
+      };
+    }
+  }, [videoRef]);
+
+  useEffect(() => {
+    const videoElement = videoRef.current;
+    if (videoElement && markerStartPositionMs !== null) {
       videoElement.currentTime = markerStartPositionMs / 1000;
     }
   }, [markerStartPositionMs]);
 
   return (
     <div className="m-5 w-2/3">
-      <Suspense fallback={<p>Loading video...</p>}>
-        <video ref={videoRef} src="/chlopaki_nie_placza.mp4" controls />
-        {isCanvasActive && <ActorImageCapture videoRef={videoRef} />}
-      </Suspense>
+      {/* <Suspense fallback={<p>Loading video...</p>}> */}
+      <video ref={videoRef} src="/chlopaki_nie_placza.mp4" controls />
+      {isCanvasActive && <ActorImageCapture videoRef={videoRef} />}
+      {/* </Suspense> */}
     </div>
   );
 }

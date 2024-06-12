@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   getImageByActorName,
   setSelectedSubtitleIndexes,
@@ -20,9 +20,10 @@ import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const { markerStartPosition } = useSelector(
+  const { markerStartPosition, markerStartPositionMs } = useSelector(
     (state: RootState) => state.marker
   );
+  const { videoTime } = useSelector((state: RootState) => state.video);
   const { subtitles, selectedSubtitleIndexes } = useSelector(
     (state: RootState) => state.subtitle
   );
@@ -126,6 +127,13 @@ const Timeline: React.FC = () => {
       dispatch(setSelectedSubtitleIndexes([subtitleIndex]));
     }
   };
+
+  useEffect(() => {
+    if (videoTime !== null) {
+      const position = (videoTime / totalDuration) * 100;
+      dispatch(setMarkerStartPosition(position));
+    }
+  }, [videoTime]);
 
   return (
     <>

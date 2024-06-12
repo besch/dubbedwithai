@@ -6,6 +6,7 @@ interface VideoState {
   isPlaying: boolean;
   isCanvasActive: boolean;
   canvasImage: string | null;
+  videoTime: number | null;
 }
 
 const initialState: VideoState = {
@@ -14,6 +15,7 @@ const initialState: VideoState = {
   isPlaying: false,
   isCanvasActive: false,
   canvasImage: null,
+  videoTime: null,
 };
 
 export const videoSlice = createSlice({
@@ -38,6 +40,9 @@ export const videoSlice = createSlice({
     setCanvasImage: (state, action: PayloadAction<string | null>) => {
       state.canvasImage = action.payload;
     },
+    setVideoTime: (state, action: PayloadAction<number>) => {
+      state.videoTime = action.payload;
+    },
   },
 });
 
@@ -47,4 +52,5 @@ export const {
   setIsPlaying,
   setIsCanvasActive,
   setCanvasImage,
+  setVideoTime,
 } = videoSlice.actions;
