@@ -3,13 +3,13 @@ import React, { useState, useRef, useEffect } from "react";
 import {
   getImageByActorName,
   setSelectedSubtitleIndexes,
+  getSelectedSubtitles,
 } from "@/store/slices/subtitle";
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
   setMarkerStartPositionMs,
 } from "@/store/slices/marker";
-import { getSelectedSubtitles } from "@/store/slices/subtitle";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import SubtitleItem from "@/components/Timeline/SubtitleItem";
@@ -69,6 +69,14 @@ const Timeline: React.FC = () => {
   };
 
   const handleTimelineClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const isSubtitleClick =
+      e.target instanceof HTMLDivElement &&
+      e.target.classList.contains("subtitle-item");
+
+    if (!isSubtitleClick) {
+      dispatch(setSelectedSubtitleIndexes([]));
+    }
+
     const container = containerRef.current;
     if (container) {
       const rect = container.getBoundingClientRect();
