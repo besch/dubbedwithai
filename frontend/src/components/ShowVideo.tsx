@@ -76,7 +76,7 @@ export default function ShowVideo() {
         videoElement.removeEventListener("timeupdate", handleTimeUpdate);
       };
     }
-  }, [videoRef]);
+  }, [playVideoChunk]);
 
   useEffect(() => {
     const videoElement = videoRef.current;
@@ -87,10 +87,8 @@ export default function ShowVideo() {
 
   return (
     <div className="m-5 w-2/3">
-      {/* <Suspense fallback={<p>Loading video...</p>}> */}
       <video ref={videoRef} src="/chlopaki_nie_placza.mp4" controls />
       {isCanvasActive && <ActorImageCapture videoRef={videoRef} />}
-      {/* </Suspense> */}
     </div>
   );
 }

@@ -37,7 +37,7 @@ const SubtitleCard = () => {
   const getActorImage = getImageByActorName(subtitleState);
 
   const handlePlayPause = () => {
-    if (selectedSubtitles && selectedSubtitles.length === 1) {
+    if (selectedSubtitles.length === 1) {
       const { start, end } = selectedSubtitles[0];
       const startTime = parseFloat(start);
       const endTime = parseFloat(end);

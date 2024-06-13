@@ -1,7 +1,10 @@
-const TimelineMarker: React.FC<{ position: number; color?: string }> = ({
-  position,
-  color = "red",
-}) => {
+import { formatTime } from "@/utils/timeline";
+
+const TimelineMarker: React.FC<{
+  position: number;
+  color?: string;
+  positionMs?: number | null;
+}> = ({ position, positionMs, color = "red" }) => {
   return (
     <div
       className="absolute top-0 bottom-0 pointer-events-none"
@@ -20,6 +23,11 @@ const TimelineMarker: React.FC<{ position: number; color?: string }> = ({
       <div
         className={`absolute top-0 bottom-0 left-1/2 transform -translate-x-1/2 w-0.5 bg-${color}-500`}
       ></div>
+      {positionMs && (
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 text-xs">
+          {formatTime(positionMs)}
+        </div>
+      )}
     </div>
   );
 };

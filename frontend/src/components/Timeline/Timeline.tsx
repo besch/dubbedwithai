@@ -9,6 +9,7 @@ import {
   setMarkerStartPosition,
   setMarkerEndPosition,
   setMarkerStartPositionMs,
+  setMarkerEndPositionMs,
 } from "@/store/slices/marker";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
@@ -86,6 +87,7 @@ const Timeline: React.FC = () => {
 
       if (e.shiftKey) {
         dispatch(setMarkerEndPosition(position));
+        dispatch(setMarkerEndPositionMs(positionInMs));
         if (markerStartPosition !== null) {
           const markerStartPositionInMs =
             (markerStartPosition / 100) * totalDuration;

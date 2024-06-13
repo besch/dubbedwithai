@@ -5,17 +5,28 @@ import TimelineMarker from "@/components/Timeline/TimelineMarker";
 import TimelineHighlight from "@/components/Timeline/TimelineHighlight";
 
 const TimelineEditMarkers: React.FC = () => {
-  const { markerStartPosition, markerEndPosition } = useSelector(
-    (state: RootState) => state.marker
-  );
+  const {
+    markerStartPosition,
+    markerEndPosition,
+    markerStartPositionMs,
+    markerEndPositionMs,
+  } = useSelector((state: RootState) => state.marker);
 
   return (
     <>
       {markerStartPosition !== null && (
-        <TimelineMarker position={markerStartPosition} color={"slate"} />
+        <TimelineMarker
+          position={markerStartPosition}
+          positionMs={markerStartPositionMs}
+          color={"slate"}
+        />
       )}
       {markerEndPosition !== null && (
-        <TimelineMarker position={markerEndPosition} color={"slate"} />
+        <TimelineMarker
+          position={markerEndPosition}
+          positionMs={markerEndPositionMs}
+          color={"slate"}
+        />
       )}
       {markerStartPosition !== null && markerEndPosition !== null && (
         <TimelineHighlight
