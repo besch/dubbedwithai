@@ -1,8 +1,0 @@
-{
-  "devDependencies": {
-    "@types/react-lazyload": "^3.2.3"
-  },
-  "dependencies": {
-    "react-virtualized": "^9.22.5"
-  }
-}

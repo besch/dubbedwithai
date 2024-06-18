@@ -47,7 +47,6 @@ const Timeline: React.FC = () => {
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
     if (e.altKey) {
-      e.preventDefault();
       const container = containerRef.current;
       const timeline = timelineRef.current;
       if (container && timeline) {

@@ -28,7 +28,6 @@ export const markerSlice = createSlice({
       state.markerStartPositionMs = action.payload;
     },
     setMarkerEndPositionMs: (state, action: PayloadAction<number | null>) => {
-      console.log("setMarkerEndPositionMs", action.payload);
       state.markerEndPositionMs = action.payload;
     },
   },
