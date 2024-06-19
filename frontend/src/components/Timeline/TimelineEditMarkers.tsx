@@ -4,7 +4,9 @@ import { RootState } from "@/store/store";
 import TimelineMarker from "@/components/Timeline/TimelineMarker";
 import TimelineHighlight from "@/components/Timeline/TimelineHighlight";
 
-const TimelineEditMarkers: React.FC = () => {
+const TimelineEditMarkers: React.FC<{
+  currentMarkerPosition: number | null;
+}> = ({ currentMarkerPosition }) => {
   const {
     markerStartPosition,
     markerEndPosition,
@@ -13,7 +15,10 @@ const TimelineEditMarkers: React.FC = () => {
   } = useSelector((state: RootState) => state.marker);
 
   return (
-    <>
+    <div className="relative h-[90%]">
+      {currentMarkerPosition !== null && (
+        <TimelineMarker position={currentMarkerPosition} />
+      )}
       {markerStartPosition !== null && (
         <TimelineMarker
           position={markerStartPosition}
@@ -34,7 +39,7 @@ const TimelineEditMarkers: React.FC = () => {
           end={markerEndPosition}
         />
       )}
-    </>
+    </div>
   );
 };
 

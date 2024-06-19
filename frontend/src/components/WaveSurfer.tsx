@@ -1,21 +1,42 @@
 import { useState, useRef } from "react";
 import { useWavesurfer } from "@wavesurfer/react";
-import { FaPlay, FaPause } from "react-icons/fa";
+import { FaPlay, FaPause, FaSyncAlt } from "react-icons/fa";
+import { getSelectedSubtitles } from "@/store/slices/subtitle";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 
 const WaveSurfer = () => {
+  const subtitleState = useSelector((state: RootState) => state.subtitle);
+  const selectedSubtitles = getSelectedSubtitles(subtitleState);
   const containerRef = useRef();
 
   const { wavesurfer, isReady, isPlaying, currentTime } = useWavesurfer({
     container: containerRef,
     url: "./3a2f1027-f9b2-4a21-9cbb-bc83eb9fb05e.mp3",
-    waveColor: "#ff4e00",
-    progressColor: "#dd5e98",
-    height: 50,
+    waveColor: "rgb(96 165 250)",
+    progressColor: "rgb(34 197 94)",
+    height: 30,
     normalize: true,
   });
 
   const onPlayPause = () => {
     wavesurfer && wavesurfer.playPause();
+  };
+
+  const generateAudio = async () => {
+    try {
+      const response = await fetch("/api/elevenlabs/generate-voice", {
+        method: "POST",
+        body: JSON.stringify({ text: selectedSubtitles[0].text }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const audioBlob = await response.blob();
+    } catch (error) {
+      console.error("Error generating audio:", error);
+    }
   };
 
   return (
@@ -26,14 +47,14 @@ const WaveSurfer = () => {
             className="cursor-pointer"
             onClick={onPlayPause}
             size={25}
-            color="dd5e98"
+            color="rgb(96 165 250)"
           />
         ) : (
           <FaPlay
             className="cursor-pointer"
             onClick={onPlayPause}
             size={25}
-            color="dd5e98"
+            color="rgb(96 165 250)"
           />
         )}
       </div>

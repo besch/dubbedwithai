@@ -181,10 +181,7 @@ const Timeline: React.FC = () => {
               );
             })}
           </div>
-          {currentMarkerPosition !== null && (
-            <TimelineMarker position={currentMarkerPosition} />
-          )}
-          <TimelineEditMarkers />
+          <TimelineEditMarkers currentMarkerPosition={currentMarkerPosition} />
         </div>
       </div>
     </>
