@@ -24,11 +24,31 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import SelectActor from "./Actor/SelectActor";
 import AddNewActor from "./Actor/AddNewActor";
+import { useRef, useState } from "react";
 
 const SubtitleCard = () => {
+  const [audio, setAudio] = useState<Blob | null>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
   const subtitleState = useSelector((state: RootState) => state.subtitle);
   const selectedSubtitles = getSelectedSubtitles(subtitleState);
   const getActorImage = getImageByActorName(subtitleState);
+
+  const generateAudio = async () => {
+    try {
+      const response = await fetch("/api/elevenlabs/generate-voice", {
+        method: "POST",
+        body: JSON.stringify({ text: selectedSubtitles[0].text }),
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const audioBlob = await response.blob();
+      setAudio(audioBlob);
+    } catch (error) {
+      console.error("Error generating audio:", error);
+    }
+  };
 
   return (
     <>
@@ -99,28 +119,19 @@ const SubtitleCard = () => {
               </div>
             )}
             <div className="flex flex-row items-center space-x-3 mt-5">
+              <FaVolumeUp
+                size={20}
+                className="cursor-pointer"
+                data-tooltip-id="dubbedWithAITooltip"
+                data-tooltip-content="Generate Voice"
+                onClick={generateAudio}
+              />
               <FaRegClone
                 size={20}
                 className="cursor-pointer"
                 data-tooltip-id="dubbedWithAITooltip"
                 data-tooltip-content="Clone Voice"
               />
-
-              {selectedSubtitles[0].audioFileUrl ? (
-                <FaVolumeUp
-                  size={20}
-                  className="cursor-pointer"
-                  data-tooltip-id="dubbedWithAITooltip"
-                  data-tooltip-content="Generate Voice"
-                />
-              ) : (
-                <FaSyncAlt
-                  size={20}
-                  className="cursor-pointer"
-                  data-tooltip-id="dubbedWithAITooltip"
-                  data-tooltip-content="Regenerate Voice"
-                />
-              )}
               <FaWhmcs
                 size={20}
                 className="cursor-pointer"
@@ -136,6 +147,12 @@ const SubtitleCard = () => {
             </div>
             <SelectActor />
             <AddNewActor />
+            {audio && (
+              <audio ref={audioRef} controls>
+                <source src={URL.createObjectURL(audio)} type="audio/wav" />
+                Your browser does not support the audio element.
+              </audio>
+            )}
           </CardContent>
         </Card>
       )}

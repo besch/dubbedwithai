@@ -9,7 +9,7 @@ const TimelinePlayPause: React.FC = ({}) => {
   const isPlaying = useSelector((state: RootState) => state.video.isPlaying);
 
   return (
-    <div className="flex justify-center items-center h-[40px] bg-gray-200 cursor-pointer">
+    <div className="flex justify-center items-center h-[40px] bg-gray-200 cursor-pointer border-b-2 border-gray-300">
       {isPlaying ? (
         <FaPause onClick={() => dispatch(setIsPlaying(false))} />
       ) : (
