@@ -5,6 +5,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import WaveSurfer from "@/components/WaveSurfer";
 import {
   getSelectedSubtitles,
   getImageByActorName,
@@ -24,11 +25,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import SelectActor from "./Actor/SelectActor";
 import AddNewActor from "./Actor/AddNewActor";
-import { useRef, useState } from "react";
 
 const SubtitleCard = () => {
-  const [audio, setAudio] = useState<Blob | null>(null);
-  const audioRef = useRef<HTMLAudioElement>(null);
   const subtitleState = useSelector((state: RootState) => state.subtitle);
   const selectedSubtitles = getSelectedSubtitles(subtitleState);
   const getActorImage = getImageByActorName(subtitleState);
@@ -44,7 +42,6 @@ const SubtitleCard = () => {
       });
 
       const audioBlob = await response.blob();
-      setAudio(audioBlob);
     } catch (error) {
       console.error("Error generating audio:", error);
     }
@@ -97,27 +94,6 @@ const SubtitleCard = () => {
               <span className="font-bold">Text:</span>{" "}
               {selectedSubtitles[0].text}
             </p>
-            {selectedSubtitles[0].audioFileUrl && (
-              <div className="mt-5">
-                <FaPlay
-                  className="cursor-pointer"
-                  data-tooltip-id="dubbedWithAITooltip"
-                  data-tooltip-content="Play audio"
-                />
-                <FaPause
-                  className="cursor-pointer"
-                  data-tooltip-id="dubbedWithAITooltip"
-                  data-tooltip-content="Pause audio"
-                />
-                <audio controls>
-                  <source
-                    src={selectedSubtitles[0].audioFileUrl}
-                    type="audio/wav"
-                  />
-                  Your browser does not support the audio element.
-                </audio>
-              </div>
-            )}
             <div className="flex flex-row items-center space-x-3 mt-5">
               <FaVolumeUp
                 size={20}
