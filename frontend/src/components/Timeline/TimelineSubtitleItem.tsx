@@ -1,4 +1,4 @@
-interface SubtitleItemProps {
+interface TimelineSubtitleItemProps {
   selected: boolean;
   onClick: (e: React.MouseEvent<HTMLDivElement>) => void;
   startWidth: number;
@@ -6,7 +6,7 @@ interface SubtitleItemProps {
   image: string | null;
 }
 
-const SubtitleItem: React.FC<SubtitleItemProps> = ({
+const TimelineSubtitleItem: React.FC<TimelineSubtitleItemProps> = ({
   selected,
   onClick,
   startWidth,
@@ -42,4 +42,4 @@ const SubtitleItem: React.FC<SubtitleItemProps> = ({
   );
 };
 
-export default SubtitleItem;
+export default TimelineSubtitleItem;

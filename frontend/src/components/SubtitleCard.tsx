@@ -1,4 +1,3 @@
-import Image from "next/image";
 import {
   Card,
   CardContent,
@@ -6,13 +5,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Tooltip } from "react-tooltip";
-import { Button } from "@/components/ui/button";
 import {
   getSelectedSubtitles,
   getImageByActorName,
 } from "@/store/slices/subtitle";
-import { setPlayVideoChunk, setIsPlaying } from "@/store/slices/video";
 import {
   FaRegClone,
   FaVolumeUp,
@@ -24,27 +20,15 @@ import {
   FaDivide,
 } from "react-icons/fa";
 
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import SelectActor from "./Actor/SelectActor";
 import AddNewActor from "./Actor/AddNewActor";
 
 const SubtitleCard = () => {
-  const dispatch = useDispatch();
   const subtitleState = useSelector((state: RootState) => state.subtitle);
-  const isPlaying = useSelector((state: RootState) => state.video.isPlaying);
   const selectedSubtitles = getSelectedSubtitles(subtitleState);
   const getActorImage = getImageByActorName(subtitleState);
-
-  const handlePlayPause = () => {
-    if (selectedSubtitles.length === 1) {
-      const { start, end } = selectedSubtitles[0];
-      const startTime = parseFloat(start);
-      const endTime = parseFloat(end);
-      dispatch(setPlayVideoChunk({ start: startTime, end: endTime }));
-      dispatch(setIsPlaying(!isPlaying));
-    }
-  };
 
   return (
     <>
@@ -52,28 +36,8 @@ const SubtitleCard = () => {
         <Card className="w-[350px] m-5">
           <CardHeader>
             <CardTitle>
-              <div className="flex flex-row justify-between">
-                <div>
-                  Subtitle {selectedSubtitles.map((s) => s.index).join(", ")}
-                </div>
-                <div>
-                  {isPlaying ? (
-                    <FaPause
-                      className="cursor-pointer"
-                      onClick={handlePlayPause}
-                      data-tooltip-id="dubbedWithAITooltip"
-                      data-tooltip-content="Pause subtitle audio"
-                    />
-                  ) : (
-                    <FaPlay
-                      className="cursor-pointer"
-                      onClick={handlePlayPause}
-                      data-tooltip-id="dubbedWithAITooltip"
-                      data-tooltip-content="Play subtitle audio"
-                      aria-disabled={selectedSubtitles.length !== 1}
-                    />
-                  )}
-                </div>
+              <div>
+                Subtitle {selectedSubtitles.map((s) => s.index).join(", ")}
               </div>
             </CardTitle>
             <CardDescription>Description</CardDescription>

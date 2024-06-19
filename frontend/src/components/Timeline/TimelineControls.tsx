@@ -63,7 +63,7 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
           <span className="ml-2 pr-5 text-white">Current Zoom: {zoom}</span>
           <input
             type="range"
-            min="5"
+            min="0"
             max="40"
             value={zoom}
             onChange={(e) => setZoom(Number(e.target.value))}

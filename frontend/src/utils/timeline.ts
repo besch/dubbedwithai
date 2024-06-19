@@ -13,10 +13,14 @@ export const convertToMilliseconds = (timeString: string): number => {
 };
 
 export const formatTime = (milliseconds: number): string => {
-  const totalSeconds = milliseconds / 1000;
+  const totalSeconds = Math.floor(milliseconds / 1000);
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
-  return `${minutes.toFixed(0)}:${seconds.toFixed(3)}`;
+  return `${padZero(minutes)}:${padZero(seconds)}`;
+};
+
+const padZero = (num: number): string => {
+  return num.toString().padStart(2, "0");
 };
 
 export const getFaceImage = (

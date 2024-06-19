@@ -13,11 +13,12 @@ import {
 } from "@/store/slices/marker";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
-import SubtitleItem from "@/components/Timeline/SubtitleItem";
+import TimelineSubtitleItem from "@/components/Timeline/TimelineSubtitleItem";
 import TimelineInvervalLabels from "@/components/Timeline/TimelineInvervalLabels";
 import TimelineControls from "@/components/Timeline/TimelineControls";
 import TimelineMarker from "@/components/Timeline/TimelineMarker";
 import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
+import TimelinePlayPause from "@/components/Timeline/TimelinePlayPause";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
@@ -147,7 +148,8 @@ const Timeline: React.FC = () => {
   return (
     <>
       <TimelineControls zoom={zoom} setZoom={setZoom} />
-      <div className="relative w-full h-60 overflow-x-auto overflow-y-hidden p-4 sticky bottom-0">
+      <TimelinePlayPause />
+      <div className="relative w-full h-50 overflow-x-auto overflow-y-hidden sticky bottom-0">
         <div
           className="h-52 bg-gray-200 rounded-md relative"
           style={{ width: timelineWidth }}
@@ -164,7 +166,7 @@ const Timeline: React.FC = () => {
                 ((subtitle.endMs - subtitle.startMs) / totalDuration) * 100;
 
               return (
-                <SubtitleItem
+                <TimelineSubtitleItem
                   key={subtitle.index}
                   selected={
                     selectedSubtitles?.some(
