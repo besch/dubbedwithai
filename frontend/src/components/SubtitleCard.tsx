@@ -147,12 +147,7 @@ const SubtitleCard = () => {
             </div>
             <SelectActor />
             <AddNewActor />
-            {audio && (
-              <audio ref={audioRef} controls>
-                <source src={URL.createObjectURL(audio)} type="audio/wav" />
-                Your browser does not support the audio element.
-              </audio>
-            )}
+            <WaveSurfer />
           </CardContent>
         </Card>
       )}
