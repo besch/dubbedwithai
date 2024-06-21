@@ -15,7 +15,7 @@ const TimelineEditMarkers: React.FC<{
   } = useSelector((state: RootState) => state.marker);
 
   return (
-    <div className="relative h-[90%]">
+    <>
       {currentMarkerPosition !== null && (
         <TimelineMarker position={currentMarkerPosition} />
       )}
@@ -39,7 +39,7 @@ const TimelineEditMarkers: React.FC<{
           end={markerEndPosition}
         />
       )}
-    </div>
+    </>
   );
 };
 

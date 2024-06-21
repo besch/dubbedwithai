@@ -1,6 +1,7 @@
 import type { Config } from "tailwindcss";
 
 const config = {
+  safelist: ["border-b-red-500", "border-b-slate-500"],
   darkMode: ["class"],
   content: [
     "./pages/**/*.{ts,tsx}",
