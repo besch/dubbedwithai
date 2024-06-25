@@ -92,3 +92,7 @@ def cut_in_chunks(input_video, subtitle_file, output_dir, chunk_duration=600):
 
             os.rename(os.path.join(output_dir, video_chunk),
                       os.path.join(chunk_dir, video_chunk))
+
+
+
+# cut_in_chunks(r"C:\Users\user\Downloads\chlopaki_nie_placza.mp4", r"C:\Users\user\Downloads\subtitles.srt", r"C:\Users\user\Downloads\chunks")
