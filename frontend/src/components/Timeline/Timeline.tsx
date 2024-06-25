@@ -16,7 +16,6 @@ import { RootState } from "@/store/store";
 import TimelineSubtitleItem from "@/components/Timeline/TimelineSubtitleItem";
 import TimelineInvervalLabels from "@/components/Timeline/TimelineInvervalLabels";
 import TimelineControls from "@/components/Timeline/TimelineControls";
-import TimelineMarker from "@/components/Timeline/TimelineMarker";
 import TimelineEditMarkers from "@/components/Timeline/TimelineEditMarkers";
 import TimelinePlayPause from "@/components/Timeline/TimelinePlayPause";
 

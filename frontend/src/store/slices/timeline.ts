@@ -5,6 +5,8 @@ export type TimelineState = {
   markerEndPosition: number | null;
   markerStartPositionMs: number | null;
   markerEndPositionMs: number | null;
+  zoom: number | null;
+  timelineDuration: number | null;
 };
 
 const initialState: TimelineState = {
@@ -12,6 +14,8 @@ const initialState: TimelineState = {
   markerEndPosition: null,
   markerStartPositionMs: null,
   markerEndPositionMs: null,
+  zoom: null,
+  timelineDuration: null,
 };
 
 export const timelineSlice = createSlice({
@@ -30,6 +34,12 @@ export const timelineSlice = createSlice({
     setMarkerEndPositionMs: (state, action: PayloadAction<number | null>) => {
       state.markerEndPositionMs = action.payload;
     },
+    setZoom: (state, action: PayloadAction<number | null>) => {
+      state.zoom = action.payload;
+    },
+    setTimelineDuration: (state, action: PayloadAction<number | null>) => {
+      state.timelineDuration = action.payload;
+    },
   },
 });
 
@@ -38,4 +48,6 @@ export const {
   setMarkerEndPosition,
   setMarkerStartPositionMs,
   setMarkerEndPositionMs,
+  setZoom,
+  setTimelineDuration,
 } = timelineSlice.actions;
