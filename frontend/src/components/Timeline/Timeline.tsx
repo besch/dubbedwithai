@@ -10,7 +10,7 @@ import {
   setMarkerEndPosition,
   setMarkerStartPositionMs,
   setMarkerEndPositionMs,
-} from "@/store/slices/marker";
+} from "@/store/slices/timeline";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import TimelineSubtitleItem from "@/components/Timeline/TimelineSubtitleItem";
@@ -23,7 +23,7 @@ import TimelinePlayPause from "@/components/Timeline/TimelinePlayPause";
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
   const { markerStartPosition } = useSelector(
-    (state: RootState) => state.marker
+    (state: RootState) => state.timeline
   );
   const { videoTime } = useSelector((state: RootState) => state.video);
   const { subtitles, selectedSubtitleIndexes } = useSelector(
@@ -142,6 +142,7 @@ const Timeline: React.FC = () => {
     if (videoTime !== null) {
       const position = (videoTime / totalDuration) * 100;
       dispatch(setMarkerStartPosition(position));
+      dispatch(setMarkerStartPositionMs(videoTime));
     }
   }, [videoTime]);
 

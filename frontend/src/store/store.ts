@@ -2,13 +2,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { videoSlice } from "./slices/video";
 import { subtitleSlice } from "./slices/subtitle";
-import { markerSlice } from "./slices/marker";
+import { timelineSlice } from "./slices/timeline";
 
 const store = configureStore({
   reducer: {
     video: videoSlice.reducer,
     subtitle: subtitleSlice.reducer,
-    marker: markerSlice.reducer,
+    timeline: timelineSlice.reducer,
   },
 });
 

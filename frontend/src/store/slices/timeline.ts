@@ -1,21 +1,21 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
-export type MarkerState = {
+export type TimelineState = {
   markerStartPosition: number | null;
   markerEndPosition: number | null;
   markerStartPositionMs: number | null;
   markerEndPositionMs: number | null;
 };
 
-const initialState: MarkerState = {
+const initialState: TimelineState = {
   markerStartPosition: null,
   markerEndPosition: null,
   markerStartPositionMs: null,
   markerEndPositionMs: null,
 };
 
-export const markerSlice = createSlice({
-  name: "marker",
+export const timelineSlice = createSlice({
+  name: "timeline",
   initialState,
   reducers: {
     setMarkerStartPosition: (state, action: PayloadAction<number | null>) => {
@@ -38,4 +38,4 @@ export const {
   setMarkerEndPosition,
   setMarkerStartPositionMs,
   setMarkerEndPositionMs,
-} = markerSlice.actions;
+} = timelineSlice.actions;

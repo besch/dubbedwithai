@@ -11,7 +11,7 @@ const ShowVideo = () => {
     (state: RootState) => state.video
   );
   const { markerStartPositionMs } = useSelector(
-    (state: RootState) => state.marker
+    (state: RootState) => state.timeline
   );
 
   useEffect(() => {

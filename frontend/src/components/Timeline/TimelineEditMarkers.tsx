@@ -12,7 +12,7 @@ const TimelineEditMarkers: React.FC<{
     markerEndPosition,
     markerStartPositionMs,
     markerEndPositionMs,
-  } = useSelector((state: RootState) => state.marker);
+  } = useSelector((state: RootState) => state.timeline);
 
   return (
     <>
