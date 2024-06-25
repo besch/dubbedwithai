@@ -2,6 +2,7 @@ import { useRef, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import { RootState } from "@/store/store";
 import { setVideoTime } from "@/store/slices/video";
+import { setTotalDuration } from "@/store/slices/timeline";
 import ActorImageCapture from "./Actor/ActorImageCapture";
 
 const ShowVideo = () => {
@@ -10,7 +11,7 @@ const ShowVideo = () => {
   const { isPlaying, playVideoChunk, isCanvasActive } = useSelector(
     (state: RootState) => state.video
   );
-  const { markerStartPositionMs } = useSelector(
+  const { markerStartPositionMs, totalDuration } = useSelector(
     (state: RootState) => state.timeline
   );
 
@@ -23,11 +24,12 @@ const ShowVideo = () => {
 
     if (videoElement) {
       videoElement.addEventListener("timeupdate", handleTimeUpdate);
+      dispatch(setTotalDuration(videoElement.duration * 1000));
       return () => {
         videoElement.removeEventListener("timeupdate", handleTimeUpdate);
       };
     }
-  }, [playVideoChunk]);
+  }, [playVideoChunk, dispatch]);
 
   useEffect(() => {
     const videoElement = videoRef.current;

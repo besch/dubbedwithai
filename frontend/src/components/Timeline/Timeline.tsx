@@ -8,8 +8,8 @@ import {
 import {
   setMarkerStartPosition,
   setMarkerEndPosition,
-  setMarkerStartPositionMs,
-  setMarkerEndPositionMs,
+  setZoom,
+  setTotalDuration,
 } from "@/store/slices/timeline";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
@@ -21,7 +21,7 @@ import TimelinePlayPause from "@/components/Timeline/TimelinePlayPause";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const { markerStartPosition } = useSelector(
+  const { markerStartPosition, zoom, totalDuration } = useSelector(
     (state: RootState) => state.timeline
   );
   const { videoTime } = useSelector((state: RootState) => state.video);
@@ -31,18 +31,19 @@ const Timeline: React.FC = () => {
   const subtitleState = useSelector((state: RootState) => state.subtitle);
   const selectedSubtitles = getSelectedSubtitles(subtitleState);
   const getActorImage = getImageByActorName(subtitleState);
-  const [zoom, setZoom] = useState<number>(15);
   const [currentMarkerPosition, setCurrentMarkerPosition] = useState<
     number | null
   >(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  let totalDuration = 0;
-  if (subtitles.length) {
-    const lastSubtitleEndTime = subtitles[subtitles.length - 1].endMs;
-    totalDuration = lastSubtitleEndTime;
-  }
+  useEffect(() => {
+    if (subtitles.length) {
+      const lastSubtitleEndTime = subtitles[subtitles.length - 1].endMs;
+      dispatch(setTotalDuration(lastSubtitleEndTime));
+    }
+  }, [subtitles, dispatch]);
+
   const timelineWidth = `${100 + zoom * 500}%`;
 
   const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
@@ -50,10 +51,8 @@ const Timeline: React.FC = () => {
       const container = containerRef.current;
       const timeline = timelineRef.current;
       if (container && timeline) {
-        const rect = container.getBoundingClientRect();
-        const mouseX = e.clientX - rect.left;
         const newZoom = Math.max(0, zoom + (e.deltaY < 0 ? 1 : -1));
-        setZoom(newZoom);
+        dispatch(setZoom(newZoom));
       }
     }
   };
@@ -82,14 +81,13 @@ const Timeline: React.FC = () => {
       const rect = container.getBoundingClientRect();
       const mouseX = e.clientX - rect.left;
       const position = (mouseX / rect.width) * 100;
-      const positionInMs = (position / 100) * totalDuration;
 
       if (e.shiftKey) {
-        dispatch(setMarkerEndPosition(position));
-        dispatch(setMarkerEndPositionMs(positionInMs));
+        dispatch(setMarkerEndPosition({ position, totalDuration }));
         if (markerStartPosition !== null) {
           const markerStartPositionInMs =
             (markerStartPosition / 100) * totalDuration;
+          const positionInMs = (position / 100) * totalDuration;
           const selectedIndexes = subtitles
             .filter(
               (subtitle) =>
@@ -103,9 +101,8 @@ const Timeline: React.FC = () => {
           dispatch(setSelectedSubtitleIndexes(selectedIndexes));
         }
       } else {
-        dispatch(setMarkerStartPositionMs(positionInMs));
-        dispatch(setMarkerStartPosition(position));
-        dispatch(setMarkerEndPosition(null));
+        dispatch(setMarkerStartPosition({ position, totalDuration }));
+        dispatch(setMarkerEndPosition({ position: null, totalDuration }));
       }
     }
   };
@@ -140,14 +137,13 @@ const Timeline: React.FC = () => {
   useEffect(() => {
     if (videoTime !== null) {
       const position = (videoTime / totalDuration) * 100;
-      dispatch(setMarkerStartPosition(position));
-      dispatch(setMarkerStartPositionMs(videoTime));
+      dispatch(setMarkerStartPosition({ position, totalDuration }));
     }
-  }, [videoTime]);
+  }, [videoTime, totalDuration, dispatch]);
 
   return (
     <>
-      <TimelineControls zoom={zoom} setZoom={setZoom} />
+      <TimelineControls />
       <TimelinePlayPause />
       <div className="relative w-full h-50 overflow-x-auto overflow-y-hidden sticky bottom-0">
         <div
@@ -159,7 +155,7 @@ const Timeline: React.FC = () => {
           ref={containerRef}
         >
           <div ref={timelineRef}>
-            <TimelineInvervalLabels totalDuration={totalDuration} zoom={zoom} />
+            <TimelineInvervalLabels />
             {subtitles.map((subtitle) => {
               const startWidth = (subtitle.startMs / totalDuration) * 100;
               const subtitleWidth =

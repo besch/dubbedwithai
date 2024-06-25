@@ -8,20 +8,15 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/store/store";
 import { setSelectedSubtitleIndexes } from "@/store/slices/subtitle";
+import { setZoom } from "@/store/slices/timeline";
 
-interface TimelineControlsProps {
-  zoom: number;
-  setZoom: (zoom: number) => void;
-}
-
-const TimelineControls: React.FC<TimelineControlsProps> = ({
-  zoom,
-  setZoom,
-}) => {
+const TimelineControls: React.FC = () => {
   const dispatch = useDispatch();
   const { subtitles, selectedSubtitleIndexes } = useSelector(
     (state: RootState) => state.subtitle
   );
+  const { zoom } = useSelector((state: RootState) => state.timeline);
+
   const selectPrevSubtitle = () => {
     if (
       selectedSubtitleIndexes.length === 1 &&
@@ -38,6 +33,10 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
     ) {
       dispatch(setSelectedSubtitleIndexes([selectedSubtitleIndexes[0] + 1]));
     }
+  };
+
+  const handleZoomChange = (newZoom: number) => {
+    dispatch(setZoom(newZoom));
   };
 
   return (
@@ -66,18 +65,18 @@ const TimelineControls: React.FC<TimelineControlsProps> = ({
             min="0"
             max="40"
             value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
+            onChange={(e) => handleZoomChange(Number(e.target.value))}
             className="w-40 mr-2"
           />
           <button
             className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-l mr-1"
-            onClick={() => setZoom(Math.min(10, zoom + 1))}
+            onClick={() => handleZoomChange(Math.min(40, zoom + 1))}
           >
             <FaSearchPlus className="w-4 h-4" />
           </button>
           <button
             className="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold py-2 px-4 rounded-r"
-            onClick={() => setZoom(Math.max(0, zoom - 1))}
+            onClick={() => handleZoomChange(Math.max(0, zoom - 1))}
           >
             <FaSearchMinus className="w-4 h-4" />
           </button>

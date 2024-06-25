@@ -1,14 +1,13 @@
+import React from "react";
+import { useSelector } from "react-redux";
+import { RootState } from "@/store/store";
 import { formatTime } from "@/utils/timeline";
 
-interface TimelineInvervalLabelsProps {
-  totalDuration: number;
-  zoom: number;
-}
+const TimelineInvervalLabels: React.FC = () => {
+  const { zoom, totalDuration } = useSelector(
+    (state: RootState) => state.timeline
+  );
 
-const TimelineInvervalLabels: React.FC<TimelineInvervalLabelsProps> = ({
-  totalDuration,
-  zoom,
-}) => {
   const baseInterval = zoom <= 2 ? 300 * 1000 : 30 * 1000;
   const numLabels = Math.ceil(totalDuration / baseInterval);
 
