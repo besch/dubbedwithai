@@ -6,7 +6,8 @@ import TimelineHighlight from "@/components/Timeline/TimelineHighlight";
 
 const TimelineEditMarkers: React.FC<{
   currentMarkerPosition: number | null;
-}> = ({ currentMarkerPosition }) => {
+  videoMarkerPosition: number | null;
+}> = ({ currentMarkerPosition, videoMarkerPosition }) => {
   const {
     markerStartPosition,
     markerEndPosition,
@@ -38,6 +39,9 @@ const TimelineEditMarkers: React.FC<{
           start={markerStartPosition}
           end={markerEndPosition}
         />
+      )}
+      {videoMarkerPosition !== null && (
+        <TimelineMarker position={videoMarkerPosition} color={"blue"} />
       )}
     </>
   );

@@ -21,9 +21,8 @@ import TimelinePlayPause from "@/components/Timeline/TimelinePlayPause";
 
 const Timeline: React.FC = () => {
   const dispatch = useDispatch();
-  const { markerStartPosition, zoom, totalDuration } = useSelector(
-    (state: RootState) => state.timeline
-  );
+  const { markerStartPosition, zoom, totalDuration, videoMarkerPosition } =
+    useSelector((state: RootState) => state.timeline);
   const { videoTime } = useSelector((state: RootState) => state.video);
   const { subtitles, selectedSubtitleIndexes } = useSelector(
     (state: RootState) => state.subtitle
@@ -177,7 +176,10 @@ const Timeline: React.FC = () => {
               );
             })}
           </div>
-          <TimelineEditMarkers currentMarkerPosition={currentMarkerPosition} />
+          <TimelineEditMarkers
+            currentMarkerPosition={currentMarkerPosition}
+            videoMarkerPosition={videoMarkerPosition}
+          />
         </div>
       </div>
     </>

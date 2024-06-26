@@ -40,9 +40,6 @@ export const videoSlice = createSlice({
     setCanvasImage: (state, action: PayloadAction<string | null>) => {
       state.canvasImage = action.payload;
     },
-    setVideoTime: (state, action: PayloadAction<number>) => {
-      state.videoTime = action.payload;
-    },
   },
 });
 
@@ -52,5 +49,4 @@ export const {
   setIsPlaying,
   setIsCanvasActive,
   setCanvasImage,
-  setVideoTime,
 } = videoSlice.actions;
