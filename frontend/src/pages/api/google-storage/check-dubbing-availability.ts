@@ -1,27 +1,37 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
+import { Storage } from "@google-cloud/storage";
+
+const storage = new Storage();
 
 const checkDubbingAvailability = async (
   req: NextApiRequest,
   res: NextApiResponse
 ) => {
+  const { imdbID, language } = req.body;
   await runMiddleware(req, res, cors);
+  const bucketName = "dubbed_with_ai";
+  const folderName = `${imdbID}/${language}/`;
 
   try {
-    const response = await fetch(
-      `https://storage.googleapis.com/dubbed_with_ai/${req.body.imdbID}/${req.body.language}`
-    );
+    const [files] = await storage.bucket(bucketName).getFiles({
+      prefix: folderName,
+      delimiter: "/",
+      maxResults: 1,
+    });
 
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    if (files.length > 0) {
+      console.log(`Folder ${folderName} exists in bucket ${bucketName}.`);
+      res.status(200).json({ exists: true });
+    } else {
+      console.log(
+        `Folder ${folderName} does not exist in bucket ${bucketName}.`
+      );
+      res.status(200).json({ exists: false });
     }
-
-    const data = await response.json();
-
-    res.status(200).json(data);
-  } catch (err) {
-    console.error("Error fetching subtitle languages:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+  } catch (error) {
+    console.error("Error checking if folder exists:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 };
 

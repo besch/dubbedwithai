@@ -41,13 +41,17 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
 
   try {
     const response = await fetch(
-      `https://api.opensubtitles.com/api/v1/download?imdb_id=${req.body.imdbID}&language=${req.body.language}`,
+      `https://api.opensubtitles.com/api/v1/download`,
       {
+        method: "POST",
         headers: {
           "User-Agent": "ANYDUB v0.1",
           "Api-Key": "StgOyEOSf17htjjIp7JrjDtK1DhT6tSC",
           "Content-Type": "application/json",
         },
+        body: JSON.stringify({
+          file_id: req.body.fileId,
+        }),
       }
     );
 
