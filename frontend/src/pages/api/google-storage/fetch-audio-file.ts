@@ -1,15 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 
-const checkDubbingAvailability = async (
-  req: NextApiRequest,
-  res: NextApiResponse
-) => {
+const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
 
   try {
     const response = await fetch(
-      `https://storage.googleapis.com/dubbed_with_ai/${req.body.imdbID}/${req.body.language}`
+      `https://storage.googleapis.com/dubbed_with_ai/${req.body.movieId}/${req.body.language}/${req.body.fileName}`
     );
 
     if (!response.ok) {
@@ -25,4 +22,4 @@ const checkDubbingAvailability = async (
   }
 };
 
-export default checkDubbingAvailability;
+export default fetchAudioFile;
