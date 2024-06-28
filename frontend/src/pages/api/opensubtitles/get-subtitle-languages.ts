@@ -26,7 +26,30 @@ const getSubtitleLanguages = async (
 
     const data = await response.json();
 
-    res.status(200).json(data);
+    // Process the data to get unique languages sorted by rating
+    const languageMap = new Map();
+
+    data.data.forEach((subtitle: any) => {
+      const language = subtitle.attributes.language;
+      const rating = subtitle.attributes.ratings;
+
+      if (
+        !languageMap.has(language) ||
+        rating > languageMap.get(language).attributes.ratings
+      ) {
+        languageMap.set(language, subtitle);
+      }
+    });
+
+    const uniqueLanguages = Array.from(languageMap.values());
+
+    // Sort languages by rating in descending order
+    uniqueLanguages.sort((a, b) => b.attributes.ratings - a.attributes.ratings);
+
+    res.status(200).json({
+      total_count: uniqueLanguages.length,
+      data: uniqueLanguages,
+    });
   } catch (err) {
     console.error("Error fetching subtitle languages:", err);
     res.status(500).json({ error: "Internal Server Error" });
