@@ -1,71 +1,47 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
+import srtToObject from "@/lib/srtParser";
 
-export interface Subtitle {
-  start: string;
-  end: string;
-  text: string;
-}
-
-function srtToObject(srtContent: string): Subtitle[] {
-  const subtitles: Subtitle[] = [];
-  const lines = srtContent.split("\n");
-  let subtitle: Partial<Subtitle> = {};
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    if (!isNaN(Number(line))) {
-      if (Object.keys(subtitle).length > 0) {
-        subtitles.push(subtitle as Subtitle);
-        subtitle = {};
-      }
-    } else if (line.includes("-->")) {
-      const [start, end] = line.split("-->").map((time) => time.trim());
-      subtitle.start = start;
-      subtitle.end = end;
-    } else if (line !== "") {
-      subtitle.text = (subtitle.text ? subtitle.text + " " : "") + line;
-    }
-  }
-
-  if (Object.keys(subtitle).length > 0) {
-    subtitles.push(subtitle as Subtitle);
-  }
-
-  return subtitles;
-}
-
-const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
+export default async function handler(
+  req: NextApiRequest,
+  res: NextApiResponse
+) {
   await runMiddleware(req, res, cors);
 
+  const { fileId } = req.body;
+
+  if (!fileId) {
+    return res.status(400).json({ error: "Missing fileId parameter" });
+  }
+
   try {
-    const response = await fetch(
-      `https://api.opensubtitles.com/api/v1/download`,
-      {
-        method: "POST",
-        headers: {
-          "User-Agent": "ANYDUB v0.1",
-          "Api-Key": "StgOyEOSf17htjjIp7JrjDtK1DhT6tSC",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          file_id: req.body.fileId,
-        }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    res.status(200).json(srtToObject(data.srt_content));
-  } catch (err) {
-    console.error("Error fetching subtitle languages:", err);
+    const subtitles = await fetchSubtitles(fileId);
+    const parsedSubtitles = srtToObject(subtitles);
+    res.status(200).json(parsedSubtitles);
+  } catch (error) {
+    console.error("Error fetching subtitles:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
-};
+}
 
-export default fetchSubtitles;
+async function fetchSubtitles(fileId: string): Promise<string> {
+  const response = await fetch(
+    `https://api.opensubtitles.com/api/v1/download`,
+    {
+      method: "POST",
+      headers: {
+        "User-Agent": "ANYDUB v0.1",
+        "Api-Key": "StgOyEOSf17htjjIp7JrjDtK1DhT6tSC",
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ file_id: fileId }),
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  const data = await response.json();
+  return data.srt_content;
+}
