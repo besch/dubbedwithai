@@ -15,13 +15,23 @@ export default async function handler(
   }
 
   try {
-    const subtitles = await fetchSubtitles(fileId);
-    const parsedSubtitles = srtToObject(subtitles);
+    const downloadLink = await fetchSubtitles(fileId);
+    const srtContent = await downloadSrtContent(downloadLink);
+    const parsedSubtitles = srtToObject(srtContent);
+    console.log("parsedSubtitles", parsedSubtitles);
     res.status(200).json(parsedSubtitles);
   } catch (error) {
     console.error("Error fetching subtitles:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
+}
+
+async function downloadSrtContent(link: string): Promise<string> {
+  const response = await fetch(link);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+  return await response.text();
 }
 
 async function fetchSubtitles(fileId: string): Promise<string> {
@@ -31,7 +41,7 @@ async function fetchSubtitles(fileId: string): Promise<string> {
       method: "POST",
       headers: {
         "User-Agent": "ANYDUB v0.1",
-        "Api-Key": "StgOyEOSf17htjjIp7JrjDtK1DhT6tSC",
+        "Api-Key": process.env.NEXT_PUBLIC_OPENSUBTITLES_API_KEY!,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ file_id: fileId }),
@@ -43,5 +53,5 @@ async function fetchSubtitles(fileId: string): Promise<string> {
   }
 
   const data = await response.json();
-  return data.srt_content;
+  return data.link;
 }

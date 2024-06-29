@@ -20,9 +20,11 @@ export default async function handler(
   }
 
   try {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
     // 1. Fetch and parse subtitles
     const subtitlesResponse = await fetch(
-      "/api/opensubtitles/fetch-subtitles",
+      `${baseUrl}/api/opensubtitles/fetch-subtitles`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -31,23 +33,41 @@ export default async function handler(
     );
     const parsedSubtitles = await subtitlesResponse.json();
 
-    // 2. Filter subtitles for first 3 minutes
-    const threeMinutesInMs = 3 * 60 * 1000;
+    if (!Array.isArray(parsedSubtitles)) {
+      return res.status(500).json({ error: "Invalid subtitle format" });
+    }
+
+    // 2. Filter subtitles for first 1 minutes
+    const oneMinuteInMs = 1 * 60 * 1000;
     const filteredSubtitles = parsedSubtitles.filter((sub: Subtitle) => {
       const startTime = timeToMs(sub.start);
-      return startTime < threeMinutesInMs;
+      return startTime < oneMinuteInMs;
     });
 
     // 3. Generate and upload audio for each subtitle
     for (const sub of filteredSubtitles) {
-      const audioFileName = `dubbed_with_ai/${imdbID}/${subtitleID}/${timeToMs(
+      const audioFileName = `${imdbID}/${subtitleID}/${timeToMs(
         sub.start
       )}-${timeToMs(sub.end)}.mp3`;
-      await fetch("/api/openai/generate-audio", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: sub.text, fileName: audioFileName }),
-      });
+
+      // Check if the file exists
+      const fileExistsResponse = await fetch(
+        `${baseUrl}/api/google-storage/check-file-exists`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: audioFileName }),
+        }
+      );
+      const { exists } = await fileExistsResponse.json();
+
+      if (!exists) {
+        await fetch(`${baseUrl}/api/openai/generate-audio`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ text: sub.text, fileName: audioFileName }),
+        });
+      }
     }
 
     res.status(200).json({ message: "Dubbing completed successfully" });

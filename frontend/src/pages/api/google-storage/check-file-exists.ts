@@ -10,23 +10,27 @@ export default async function handler(
 ) {
   await runMiddleware(req, res, cors);
 
-  const { imdbID, subtitleId } = req.body;
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method Not Allowed" });
+  }
+
+  const { fileName } = req.body;
+
+  if (!fileName) {
+    return res.status(400).json({ error: "Missing fileName parameter" });
+  }
+
   const bucketName = "dubbed_with_ai";
-  const filePath = `${imdbID}/${subtitleId}/${subtitleId}.srt`;
 
   try {
     const [fileExists] = await storage
       .bucket(bucketName)
-      .file(filePath)
+      .file(fileName)
       .exists();
 
-    if (fileExists) {
-      res.status(200).json({ dubbingPath: filePath });
-    } else {
-      res.status(404).json({ error: "Dubbing not found" });
-    }
+    res.status(200).json({ exists: fileExists });
   } catch (error) {
-    console.error("Error checking dubbing availability:", error);
+    console.error("Error checking file existence:", error);
     res.status(500).json({ error: "Internal Server Error" });
   }
 }

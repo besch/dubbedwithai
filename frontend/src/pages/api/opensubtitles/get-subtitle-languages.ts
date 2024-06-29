@@ -13,7 +13,7 @@ const getSubtitleLanguages = async (
       {
         headers: {
           "User-Agent": "ANYDUB v0.1",
-          "Api-Key": "StgOyEOSf17htjjIp7JrjDtK1DhT6tSC",
+          "Api-Key": process.env.NEXT_PUBLIC_OPENSUBTITLES_API_KEY!,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
