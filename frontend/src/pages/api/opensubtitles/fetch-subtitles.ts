@@ -1,6 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import srtToObject from "@/lib/srtParser";
 
 export default async function handler(
   req: NextApiRequest,
@@ -17,9 +16,7 @@ export default async function handler(
   try {
     const downloadLink = await fetchSubtitles(fileId);
     const srtContent = await downloadSrtContent(downloadLink);
-    const parsedSubtitles = srtToObject(srtContent);
-    console.log("parsedSubtitles", parsedSubtitles);
-    res.status(200).json(parsedSubtitles);
+    res.status(200).json({ srtContent });
   } catch (error) {
     console.error("Error fetching subtitles:", error);
     res.status(500).json({ error: "Internal Server Error" });

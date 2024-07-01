@@ -1,11 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
+import srtToObject, { SrtObject } from "@/lib/srtParser";
+import { Storage } from "@google-cloud/storage";
 
-interface Subtitle {
-  start: string;
-  end: string;
-  text: string;
-}
+const storage = new Storage();
 
 export default async function handler(
   req: NextApiRequest,
@@ -22,7 +20,7 @@ export default async function handler(
   try {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    // 1. Fetch and parse subtitles
+    // 1. Fetch subtitles
     const subtitlesResponse = await fetch(
       `${baseUrl}/api/opensubtitles/fetch-subtitles`,
       {
@@ -31,42 +29,48 @@ export default async function handler(
         body: JSON.stringify({ fileId }),
       }
     );
-    const parsedSubtitles = await subtitlesResponse.json();
+    const { srtContent } = await subtitlesResponse.json();
 
-    if (!Array.isArray(parsedSubtitles)) {
-      return res.status(500).json({ error: "Invalid subtitle format" });
-    }
+    // 2. Save SRT content to Google Storage
+    const bucketName = "dubbed_with_ai";
+    const fileName = `${imdbID}/${subtitleID}/subtitles.srt`;
+    await storage.bucket(bucketName).file(fileName).save(srtContent);
 
-    // 2. Filter subtitles for first 1 minutes
+    // 3. Parse subtitles
+    const parsedSubtitles = srtToObject(srtContent);
+
+    // 4. Filter subtitles for first 1 minute
     const oneMinuteInMs = 1 * 60 * 1000;
-    const filteredSubtitles = parsedSubtitles.filter((sub: Subtitle) => {
-      const startTime = timeToMs(sub.start);
+    const filteredSubtitles = parsedSubtitles.filter((sub: SrtObject) => {
+      const startTime = timeToMs(sub.start || "");
       return startTime < oneMinuteInMs;
     });
 
-    // 3. Generate and upload audio for each subtitle
+    // 5. Generate and upload audio for each subtitle
     for (const sub of filteredSubtitles) {
-      const audioFileName = `${imdbID}/${subtitleID}/${timeToMs(
-        sub.start
-      )}-${timeToMs(sub.end)}.mp3`;
+      if (sub.start && sub.end && sub.text) {
+        const audioFileName = `${imdbID}/${subtitleID}/${timeToMs(
+          sub.start
+        )}-${timeToMs(sub.end)}.mp3`;
 
-      // Check if the file exists
-      const fileExistsResponse = await fetch(
-        `${baseUrl}/api/google-storage/check-file-exists`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ fileName: audioFileName }),
+        // Check if the file exists
+        const fileExistsResponse = await fetch(
+          `${baseUrl}/api/google-storage/check-file-exists`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileName: audioFileName }),
+          }
+        );
+        const { exists } = await fileExistsResponse.json();
+
+        if (!exists) {
+          await fetch(`${baseUrl}/api/openai/generate-audio`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text: sub.text, fileName: audioFileName }),
+          });
         }
-      );
-      const { exists } = await fileExistsResponse.json();
-
-      if (!exists) {
-        await fetch(`${baseUrl}/api/openai/generate-audio`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ text: sub.text, fileName: audioFileName }),
-        });
       }
     }
 

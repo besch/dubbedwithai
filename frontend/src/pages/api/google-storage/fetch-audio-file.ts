@@ -9,8 +9,8 @@ const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
 
   try {
     const bucketName = "dubbed_with_ai";
-    const { movieId, language, fileName } = req.body;
-    const filePath = `${movieId}/${language}/${fileName}`;
+    const { movieId, subtitleId, fileName } = req.body;
+    const filePath = `${movieId}/${subtitleId}/${fileName}`;
 
     const [fileExists] = await storage
       .bucket(bucketName)

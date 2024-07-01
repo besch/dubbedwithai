@@ -7,24 +7,32 @@ const storage = new Storage();
 const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
 
-  const { movieId, language } = req.body;
-
-  // Define the bucket name and file path
-  const bucketName = "dubbed_with_ai";
-  const filePath = `${movieId}/${language}/subtitles.srt`;
-  console.log("filePath", filePath);
-
   try {
-    const file = storage.bucket(bucketName).file(filePath);
+    const bucketName = "dubbed_with_ai";
+    const { movieId, subtitleId } = req.body;
+    const filePath = `${movieId}/${subtitleId}/subtitles.srt`;
 
-    // Download the file
-    const [contents] = await file.download();
+    const [fileExists] = await storage
+      .bucket(bucketName)
+      .file(filePath)
+      .exists();
 
-    // Send the file contents as the response
+    if (!fileExists) {
+      throw new Error(`File not found: ${filePath}`);
+    }
 
-    res.status(200).json(contents.toString());
+    const [fileContents] = await storage
+      .bucket(bucketName)
+      .file(filePath)
+      .download();
+
+    // Set the appropriate content type for the audio file
+    res.setHeader("Content-Type", "application/x-subrip");
+
+    // Send the audio file contents as the response
+    res.status(200).send(fileContents);
   } catch (err) {
-    console.error("Error fetching subtitle languages:", err);
+    console.error("Error fetching audio file:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
