@@ -7,6 +7,8 @@ const nextConfig = {
   //   // !! WARN !!
   //   ignoreBuildErrors: true,
   // },
+  reactStrictMode: true,
+  swcMinify: true,
   rewrites: () => [
     {
       source: "/api/:path*",

@@ -27,6 +27,7 @@
     "firebase": "^10.11.1",
     "formidable": "^3.5.1",
     "formidable-serverless": "^1.1.1",
+    "google-auth-library": "^9.11.0",
     "lodash": "^4.17.21",
     "lucide-react": "^0.373.0",
     "next": "14.2.2",
