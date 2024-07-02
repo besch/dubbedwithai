@@ -1,15 +1,18 @@
 import Cors from "cors";
 
-const allowedOrigins = [
-  "http://localhost:3001",
-  "http://localhost:3000",
-  "chrome-extension://cbkcjmkilcamnjjlnahjicgcegmfhfmi",
-];
+const getAllowedOrigins = () => {
+  const origins = [
+    process.env.NEXT_PUBLIC_API_URL,
+    `chrome-extension://${process.env.NEXT_PUBLIC_CHROME_EXTENSION_ID}`,
+  ];
+  return origins.filter((origin) => origin !== undefined);
+};
 
 // Initializing the cors middleware
 const cors = Cors({
   methods: ["GET", "HEAD", "POST"],
   origin: function (origin, callback) {
+    const allowedOrigins = getAllowedOrigins();
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       var msg =
