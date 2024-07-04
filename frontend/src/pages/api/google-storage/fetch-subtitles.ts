@@ -6,6 +6,22 @@ import { OAuth2Client } from "google-auth-library";
 const storage = new Storage();
 const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
+// At the top of your file, make sure you have this interface defined:
+interface Language {
+  id: string;
+  attributes: {
+    language: string;
+    ratings: number;
+    download_count: number;
+    subtitle_id: string;
+    files: Array<{
+      file_id: string;
+      format: string;
+      download_count: number;
+    }>;
+  };
+}
+
 const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
 
@@ -54,7 +70,91 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
       .exists();
 
     if (!fileExists) {
-      return res.status(404).json({ error: `File not found: ${filePath}` });
+      // File not found, get subtitle languages and find the correct fileId
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const getSubtitleLanguagesResponse = await fetch(
+        `${baseUrl}/api/opensubtitles/get-subtitle-languages`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ imdbID: movieId }),
+        }
+      );
+
+      if (!getSubtitleLanguagesResponse.ok) {
+        const responseText = await getSubtitleLanguagesResponse.text();
+        console.error(
+          "Error response from get-subtitle-languages:",
+          responseText
+        );
+        return res.status(getSubtitleLanguagesResponse.status).json({
+          error: "Error fetching subtitle languages",
+          details: responseText.substring(0, 200), // Include the first 200 characters of the response
+        });
+      }
+
+      let subtitleLanguages;
+      try {
+        subtitleLanguages = await getSubtitleLanguagesResponse.json();
+      } catch (error) {
+        console.error("Error parsing JSON from get-subtitle-languages:", error);
+        const responseText = await getSubtitleLanguagesResponse.text();
+        return res.status(500).json({
+          error: "Error parsing subtitle languages response",
+          details: responseText.substring(0, 200), // Include the first 200 characters of the response
+        });
+      }
+      const selectedLanguage = subtitleLanguages.data.find(
+        (lang: Language) => lang.attributes.subtitle_id === subtitleId
+      );
+
+      if (!selectedLanguage) {
+        return res.status(404).json({
+          error: `Language ${subtitleId} not found for movie ${movieId}`,
+        });
+      }
+
+      const fileId = selectedLanguage.attributes.files[0]?.file_id;
+
+      if (!fileId) {
+        return res.status(404).json({
+          error: `No file found for language ${subtitleId} and movie ${movieId}`,
+        });
+      }
+
+      // Trigger generate-dub
+      const generateDubResponse = await fetch(`${baseUrl}/api/generate-dub`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          imdbID: movieId,
+          subtitleID: subtitleId,
+          fileId,
+        }),
+      });
+
+      if (!generateDubResponse.ok) {
+        const errorData = await generateDubResponse.json();
+        return res.status(generateDubResponse.status).json(errorData);
+      }
+
+      // After generate-dub is complete, try to fetch the file again
+      const [newFileExists] = await storage
+        .bucket(bucketName)
+        .file(filePath)
+        .exists();
+
+      if (!newFileExists) {
+        return res
+          .status(404)
+          .json({ error: `File not found after generation: ${filePath}` });
+      }
     }
 
     const [fileContents] = await storage

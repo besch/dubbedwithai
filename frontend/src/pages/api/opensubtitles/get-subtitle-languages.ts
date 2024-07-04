@@ -64,7 +64,7 @@ const getSubtitleLanguages = async (
     // Process the data to get unique languages sorted by rating
     const languageMap = new Map();
 
-    console.log(data.data);
+    // console.log(data.data);
 
     data.data.forEach((subtitle: any) => {
       const language = subtitle.attributes.language;
