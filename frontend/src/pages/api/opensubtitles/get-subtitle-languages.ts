@@ -81,11 +81,17 @@ const getSubtitleLanguages = async (
     const uniqueLanguages = Array.from(languageMap.values());
 
     // Sort languages by rating in descending order
-    uniqueLanguages.sort((a, b) => b.attributes.ratings - a.attributes.ratings);
+    uniqueLanguages.sort(
+      (a, b) => b.attributes.download_count - a.attributes.download_count
+    );
+
+    const languagesWithProperlySetLanguageCode = uniqueLanguages.filter(
+      (language: any) => language.attributes.language
+    );
 
     return res.status(200).json({
-      total_count: uniqueLanguages.length,
-      data: uniqueLanguages,
+      total_count: languagesWithProperlySetLanguageCode.length,
+      data: languagesWithProperlySetLanguageCode,
     });
   } catch (err) {
     console.error("Error:", err);
