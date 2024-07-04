@@ -5,6 +5,8 @@ import { Storage } from "@google-cloud/storage";
 
 const storage = new Storage();
 
+const GENERATE_SUBTITLE_AUDIO_FILE_FOR_HOW_MANY_MINUTES = 1 * 60 * 1000;
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -40,10 +42,9 @@ export default async function handler(
     const parsedSubtitles = srtToObject(srtContent);
 
     // 4. Filter subtitles for first 1 minute
-    const oneMinuteInMs = 1 * 60 * 1000;
     const filteredSubtitles = parsedSubtitles.filter((sub: SrtObject) => {
       const startTime = timeToMs(sub.start || "");
-      return startTime < oneMinuteInMs;
+      return startTime < GENERATE_SUBTITLE_AUDIO_FILE_FOR_HOW_MANY_MINUTES;
     });
 
     // 5. Generate and upload audio for each subtitle
