@@ -5,7 +5,11 @@ import { Storage } from "@google-cloud/storage";
 
 const storage = new Storage();
 
-const GENERATE_SUBTITLE_AUDIO_FILE_FOR_HOW_MANY_MINUTES = 1 * 60 * 1000;
+const GENERATE_SUBTITLE_AUDIO_FILE_FOR_HOW_MANY_MINUTES = 3 * 60 * 1000;
+
+function stripHtmlTags(str: string): string {
+  return str.replace(/<[^>]*>/g, "");
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,14 +36,15 @@ export default async function handler(
       }
     );
     const { srtContent } = await subtitlesResponse.json();
+    const cleanedSrtContent = stripHtmlTags(srtContent);
 
     // 2. Save SRT content to Google Storage
     const bucketName = "dubbed_with_ai";
     const fileName = `${imdbID}/${subtitleID}/subtitles.srt`;
-    await storage.bucket(bucketName).file(fileName).save(srtContent);
+    await storage.bucket(bucketName).file(fileName).save(cleanedSrtContent);
 
     // 3. Parse subtitles
-    const parsedSubtitles = srtToObject(srtContent);
+    const parsedSubtitles = srtToObject(cleanedSrtContent);
 
     // 4. Filter subtitles for first 1 minute
     const filteredSubtitles = parsedSubtitles.filter((sub: SrtObject) => {
