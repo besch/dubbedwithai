@@ -8,7 +8,7 @@ import { RootState } from "@/store/store";
 const WaveSurfer = () => {
   const subtitleState = useSelector((state: RootState) => state.subtitle);
   const selectedSubtitles = getSelectedSubtitles(subtitleState);
-  const containerRef = useRef();
+  const containerRef = useRef<HTMLDivElement>(null);
 
   const { wavesurfer, isReady, isPlaying, currentTime } = useWavesurfer({
     container: containerRef,
