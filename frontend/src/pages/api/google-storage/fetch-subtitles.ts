@@ -140,6 +140,8 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         }),
       });
 
+      console.log("generateDubResponse", generateDubResponse);
+
       if (!generateDubResponse.ok) {
         const errorData = await generateDubResponse.json();
         return res.status(generateDubResponse.status).json(errorData);
