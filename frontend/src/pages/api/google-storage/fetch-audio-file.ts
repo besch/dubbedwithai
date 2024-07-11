@@ -1,9 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import { Storage } from "@google-cloud/storage";
+import storage from "./google-storage-config";
 import { OAuth2Client } from "google-auth-library";
 
-const storage = new Storage();
 const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
 
 const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {

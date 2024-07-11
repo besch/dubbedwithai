@@ -1,8 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import { Storage } from "@google-cloud/storage";
-
-const storage = new Storage();
+import storage from "./google-storage-config";
 
 export default async function handler(
   req: NextApiRequest,
