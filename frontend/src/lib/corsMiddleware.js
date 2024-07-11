@@ -13,7 +13,6 @@ const cors = Cors({
   methods: ["GET", "HEAD", "POST"],
   origin: function (origin, callback) {
     const allowedOrigins = getAllowedOrigins();
-    console.log("allowedOrigins", allowedOrigins);
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
       var msg =

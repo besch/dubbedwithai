@@ -71,7 +71,6 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
     if (!fileExists) {
       // File not found, get subtitle languages and find the correct fileId
       const baseUrl = process.env.NEXT_PUBLIC_API_URL;
-      console.log("!!!!!!!!!!!!", baseUrl);
       const getSubtitleLanguagesResponse = await fetch(
         `${baseUrl}/api/opensubtitles/get-subtitle-languages`,
         {
