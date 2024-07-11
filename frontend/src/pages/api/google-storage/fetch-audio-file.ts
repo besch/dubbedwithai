@@ -3,7 +3,7 @@ import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "./google-storage-config";
 import { OAuth2Client } from "google-auth-library";
 
-const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
@@ -23,7 +23,7 @@ const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const ticket = await client.verifyIdToken({
         idToken: token,
-        audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
       userId = payload?.sub;

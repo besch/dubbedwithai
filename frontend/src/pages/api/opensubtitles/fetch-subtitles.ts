@@ -38,7 +38,7 @@ async function fetchSubtitles(fileId: string): Promise<string> {
       method: "POST",
       headers: {
         "User-Agent": "ANYDUB v0.1",
-        "Api-Key": process.env.NEXT_PUBLIC_OPENSUBTITLES_API_KEY!,
+        "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ file_id: fileId }),

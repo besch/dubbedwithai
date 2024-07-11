@@ -3,7 +3,7 @@ import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "./google-storage-config";
 import { OAuth2Client } from "google-auth-library";
 
-const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 // At the top of your file, make sure you have this interface defined:
 interface Language {
@@ -39,7 +39,7 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
     try {
       const ticket = await client.verifyIdToken({
         idToken: token,
-        audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
       userId = payload?.sub;
@@ -70,7 +70,7 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
 
     if (!fileExists) {
       // File not found, get subtitle languages and find the correct fileId
-      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      const baseUrl = process.env.API_URL;
       const getSubtitleLanguagesResponse = await fetch(
         `${baseUrl}/api/opensubtitles/get-subtitle-languages`,
         {

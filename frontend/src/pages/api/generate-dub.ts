@@ -24,7 +24,7 @@ export default async function handler(
   }
 
   try {
-    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+    const baseUrl = process.env.API_URL;
 
     // 1. Fetch subtitles
     const subtitlesResponse = await fetch(

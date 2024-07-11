@@ -4,7 +4,7 @@ import { Storage } from "@google-cloud/storage";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
-  apiKey: process.env.NEXT_PUBLIC_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 const storage = new Storage();
 const bucketName = "dubbed_with_ai";

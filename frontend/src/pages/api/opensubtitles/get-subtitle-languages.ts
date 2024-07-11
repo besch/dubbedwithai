@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import { OAuth2Client } from "google-auth-library";
 
-const client = new OAuth2Client(process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID);
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const getSubtitleLanguages = async (
   req: NextApiRequest,
@@ -23,7 +23,7 @@ const getSubtitleLanguages = async (
     try {
       const ticket = await client.verifyIdToken({
         idToken: token,
-        audience: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
+        audience: process.env.GOOGLE_CLIENT_ID,
       });
       const payload = ticket.getPayload();
       userId = payload?.sub;
@@ -48,7 +48,7 @@ const getSubtitleLanguages = async (
       {
         headers: {
           "User-Agent": "ANYDUB v0.1",
-          "Api-Key": process.env.NEXT_PUBLIC_OPENSUBTITLES_API_KEY!,
+          "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
           "Content-Type": "application/json",
           Accept: "application/json",
         },
