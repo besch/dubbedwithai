@@ -20,6 +20,11 @@ const config = {
     },
     extend: {
       colors: {
+        dubbing: {
+          primary: "#3f3cbb",
+          secondary: "#ff77e9",
+          accent: "#78dcca",
+        },
         purple: "#3f3cbb",
         midnight: "#121063",
         metal: "#565584",
