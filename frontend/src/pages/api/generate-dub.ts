@@ -41,7 +41,6 @@ export default async function handler(
     const fileName = `${imdbID}/${subtitleID}/subtitles.srt`;
     await storage.bucket(bucketName).file(fileName).save(cleanedSrtContent);
 
-    // Send 200 response to frontend
     res
       .status(200)
       .json({ message: "SRT content saved, audio generation in progress" });
