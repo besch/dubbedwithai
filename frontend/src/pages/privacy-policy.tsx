@@ -10,10 +10,10 @@ export default function PrivacyPolicy() {
           1. Introduction
         </h2>
         <p className="mb-4">
-          Dubabase ("we", "our", or "us") is committed to protecting your
-          privacy. This Privacy Policy explains how we collect, use, and share
-          information about you when you use our Dubabase Chrome extension ("the
-          Extension").
+          Dubabase (&ldquo;we&rdquo;, &ldquo;our&rdquo;, or &ldquo;us&rdquo;) is
+          committed to protecting your privacy. This Privacy Policy explains how
+          we collect, use, and share information about you when you use our
+          Dubabase Chrome extension (&ldquo;the Extension&rdquo;).
         </p>
 
         <h2 className="text-2xl font-semibold mb-4 text-dubbing-secondary">
