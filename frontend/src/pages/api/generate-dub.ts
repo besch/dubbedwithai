@@ -1,9 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import srtToObject, { SrtObject } from "@/lib/srtParser";
-import { Storage } from "@google-cloud/storage";
-
-const storage = new Storage();
+import storage from "./google-storage/google-storage-config";
 
 const GENERATE_SUBTITLE_AUDIO_FILE_FOR_HOW_MANY_MINUTES = 3 * 60 * 1000;
 
@@ -36,7 +34,6 @@ export default async function handler(
       }
     );
     const { srtContent } = await subtitlesResponse.json();
-    console.log("srtContent", srtContent);
     const cleanedSrtContent = stripHtmlTags(srtContent);
 
     // 2. Save SRT content to Google Storage
