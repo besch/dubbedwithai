@@ -36,7 +36,7 @@ export default async function handler(
       }
     );
     const { srtContent } = await subtitlesResponse.json();
-    console.log("srtContent", srtContent.clice(0, 100));
+    console.log("srtContent", srtContent);
     const cleanedSrtContent = stripHtmlTags(srtContent);
 
     // 2. Save SRT content to Google Storage
