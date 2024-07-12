@@ -1,12 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import { Storage } from "@google-cloud/storage";
+import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-const storage = new Storage();
 const bucketName = "dubbed_with_ai";
 
 export default async function handler(
