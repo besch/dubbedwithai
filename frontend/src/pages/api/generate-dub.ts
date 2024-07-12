@@ -23,6 +23,8 @@ export default async function handler(
     return res.status(400).json({ error: "Missing required parameters" });
   }
 
+  console.log("baseUrl", process.env.API_URL);
+
   try {
     const baseUrl = process.env.API_URL;
 
