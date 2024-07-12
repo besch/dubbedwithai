@@ -41,23 +41,25 @@ export default async function handler(
     const fileName = `${imdbID}/${subtitleID}/subtitles.srt`;
     await storage.bucket(bucketName).file(fileName).save(cleanedSrtContent);
 
-    // 3. Parse subtitles
+    // Send 200 response to frontend
+    res
+      .status(200)
+      .json({ message: "SRT content saved, audio generation in progress" });
+
+    // Continue with audio generation process
     const parsedSubtitles = srtToObject(cleanedSrtContent);
 
-    // 4. Filter subtitles for first 1 minute
     const filteredSubtitles = parsedSubtitles.filter((sub: SrtObject) => {
       const startTime = timeToMs(sub.start || "");
       return startTime < GENERATE_SUBTITLE_AUDIO_FILE_FOR_HOW_MANY_MINUTES;
     });
 
-    // 5. Generate and upload audio for each subtitle
     for (const sub of filteredSubtitles) {
       if (sub.start && sub.end && sub.text) {
         const audioFileName = `${imdbID}/${subtitleID}/${timeToMs(
           sub.start
         )}-${timeToMs(sub.end)}.mp3`;
 
-        // Check if the file exists
         const fileExistsResponse = await fetch(
           `${baseUrl}/api/google-storage/check-file-exists`,
           {
@@ -78,10 +80,11 @@ export default async function handler(
       }
     }
 
-    res.status(200).json({ message: "Dubbing completed successfully" });
+    console.log("Audio generation completed");
   } catch (error) {
     console.error("Error in generate-dub:", error);
-    res.status(500).json({ error: "Internal Server Error" });
+    // Note: We can't send an error response here as we've already sent a 200 response
+    // You might want to implement a separate error logging or notification system
   }
 }
 
