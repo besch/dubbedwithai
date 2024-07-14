@@ -5,7 +5,6 @@ import { OAuth2Client } from "google-auth-library";
 
 const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-// At the top of your file, make sure you have this interface defined:
 interface Language {
   id: string;
   attributes: {
@@ -21,10 +20,28 @@ interface Language {
   };
 }
 
+function cleanSrtContent(srtContent: string): string {
+  // Remove HTML tags
+  let cleaned = srtContent.replace(/<[^>]*>/g, "");
+
+  // Remove bracketed descriptions like [Phone ringing] or [Sigh]
+  cleaned = cleaned.replace(/\[.*?\]/g, "");
+
+  // Trim whitespace from each line
+  cleaned = cleaned
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n");
+
+  // Remove empty lines (keeping newlines for SRT format)
+  cleaned = cleaned.replace(/^\s*[\r\n]/gm, "");
+
+  return cleaned;
+}
+
 const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
 
-  // Check for authentication token
   const token = req.headers.authorization?.split(" ")[1];
 
   if (!token) {
@@ -32,10 +49,8 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
   }
 
   try {
-    // Verify the token
     let userId: string | undefined;
 
-    // Try to verify as ID token first
     try {
       const ticket = await client.verifyIdToken({
         idToken: token,
@@ -44,7 +59,6 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
       const payload = ticket.getPayload();
       userId = payload?.sub;
     } catch (idTokenError) {
-      // If ID token verification fails, try to verify as access token
       try {
         const userInfo = await client.getTokenInfo(token);
         userId = userInfo.sub;
@@ -58,7 +72,6 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
       return res.status(401).json({ error: "Invalid token" });
     }
 
-    // Token is valid, proceed with fetching the subtitles
     const bucketName = "dubbed_with_ai";
     const { movieId, subtitleId } = req.body;
     const filePath = `${movieId}/${subtitleId}/subtitles.srt`;
@@ -69,7 +82,6 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
       .exists();
 
     if (!fileExists) {
-      // File not found, get subtitle languages and find the correct fileId
       const baseUrl = process.env.API_URL;
       const getSubtitleLanguagesResponse = await fetch(
         `${baseUrl}/api/opensubtitles/get-subtitle-languages`,
@@ -91,7 +103,7 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         );
         return res.status(getSubtitleLanguagesResponse.status).json({
           error: "Error fetching subtitle languages",
-          details: responseText.substring(0, 200), // Include the first 200 characters of the response
+          details: responseText.substring(0, 200),
         });
       }
 
@@ -103,7 +115,7 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         const responseText = await getSubtitleLanguagesResponse.text();
         return res.status(500).json({
           error: "Error parsing subtitle languages response",
-          details: responseText.substring(0, 200), // Include the first 200 characters of the response
+          details: responseText.substring(0, 200),
         });
       }
       const selectedLanguage = subtitleLanguages.data.find(
@@ -124,36 +136,28 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         });
       }
 
-      // Trigger generate-dub
-      const generateDubResponse = await fetch(`${baseUrl}/api/generate-dub`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          imdbID: movieId,
-          subtitleID: subtitleId,
-          fileId,
-        }),
-      });
+      // Fetch the subtitle content and save it to Google Storage
+      const fetchSubtitlesResponse = await fetch(
+        `${baseUrl}/api/opensubtitles/fetch-subtitles`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ fileId }),
+        }
+      );
 
-      if (!generateDubResponse.ok) {
-        const errorData = await generateDubResponse.json();
-        return res.status(generateDubResponse.status).json(errorData);
+      if (!fetchSubtitlesResponse.ok) {
+        return res.status(fetchSubtitlesResponse.status).json({
+          error: "Error fetching subtitles",
+        });
       }
 
-      // After generate-dub is complete, try to fetch the file again
-      const [newFileExists] = await storage
-        .bucket(bucketName)
-        .file(filePath)
-        .exists();
-
-      if (!newFileExists) {
-        return res
-          .status(404)
-          .json({ error: `File not found after generation: ${filePath}` });
-      }
+      const { srtContent } = await fetchSubtitlesResponse.json();
+      const cleanedSrtContent = cleanSrtContent(srtContent);
+      await storage.bucket(bucketName).file(filePath).save(cleanedSrtContent);
     }
 
     const [fileContents] = await storage
@@ -161,10 +165,7 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
       .file(filePath)
       .download();
 
-    // Set the appropriate content type for the subtitle file
     res.setHeader("Content-Type", "application/x-subrip");
-
-    // Send the subtitle file contents as the response
     return res.status(200).send(fileContents);
   } catch (err) {
     console.error("Error fetching subtitles:", err);

@@ -44,8 +44,11 @@ const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
 
     // Token is valid, proceed with fetching the audio file
     const bucketName = "dubbed_with_ai";
-    const { movieId, subtitleId, fileName } = req.body;
-    const filePath = `${movieId}/${subtitleId}/${fileName}`;
+    const { filePath } = req.body;
+
+    if (!filePath) {
+      return res.status(400).json({ error: "File path is required" });
+    }
 
     const [fileExists] = await storage
       .bucket(bucketName)

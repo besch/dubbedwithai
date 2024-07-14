@@ -26,6 +26,8 @@ export default async function checkFileExists(
       .file(fileName)
       .exists();
 
+    console.log("File exists:", fileExists);
+
     res.status(200).json({ exists: fileExists });
   } catch (error) {
     console.error("Error checking file existence:", error);
