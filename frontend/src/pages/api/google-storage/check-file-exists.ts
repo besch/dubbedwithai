@@ -12,10 +12,10 @@ export default async function checkFileExists(
     return res.status(405).json({ error: "Method Not Allowed" });
   }
 
-  const { fileName } = req.body;
+  const { filePath } = req.body;
 
-  if (!fileName) {
-    return res.status(400).json({ error: "Missing fileName parameter" });
+  if (!filePath) {
+    return res.status(400).json({ error: "Missing filePath parameter" });
   }
 
   const bucketName = "dubbed_with_ai";
@@ -23,7 +23,7 @@ export default async function checkFileExists(
   try {
     const [fileExists] = await storage
       .bucket(bucketName)
-      .file(fileName)
+      .file(filePath)
       .exists();
 
     console.log("File exists:", fileExists);
