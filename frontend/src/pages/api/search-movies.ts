@@ -41,10 +41,8 @@ const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
     //   return res.status(401).json({ error: "Invalid token" });
     // }
 
-    console.log("!!!!!!!!!!!!", req.body.text);
-
     const response = await fetch(
-      `http://www.omdbapi.com/?apikey=508321b3&s=${req.body.text}`
+      `http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&s=${req.body.text}`
     );
 
     if (!response.ok) {
