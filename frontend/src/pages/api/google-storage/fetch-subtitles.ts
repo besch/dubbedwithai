@@ -42,35 +42,35 @@ function cleanSrtContent(srtContent: string): string {
 const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
 
-  const token = req.headers.authorization?.split(" ")[1];
+  // const token = req.headers.authorization?.split(" ")[1];
 
-  if (!token) {
-    return res.status(401).json({ error: "No token provided" });
-  }
+  // if (!token) {
+  //   return res.status(401).json({ error: "No token provided" });
+  // }
 
   try {
-    let userId: string | undefined;
+    // let userId: string | undefined;
 
-    try {
-      const ticket = await client.verifyIdToken({
-        idToken: token,
-        audience: process.env.GOOGLE_CLIENT_ID,
-      });
-      const payload = ticket.getPayload();
-      userId = payload?.sub;
-    } catch (idTokenError) {
-      try {
-        const userInfo = await client.getTokenInfo(token);
-        userId = userInfo.sub;
-      } catch (accessTokenError) {
-        console.error("Token verification failed:", accessTokenError);
-        return res.status(401).json({ error: "Invalid token" });
-      }
-    }
+    // try {
+    //   const ticket = await client.verifyIdToken({
+    //     idToken: token,
+    //     audience: process.env.GOOGLE_CLIENT_ID,
+    //   });
+    //   const payload = ticket.getPayload();
+    //   userId = payload?.sub;
+    // } catch (idTokenError) {
+    //   try {
+    //     const userInfo = await client.getTokenInfo(token);
+    //     userId = userInfo.sub;
+    //   } catch (accessTokenError) {
+    //     console.error("Token verification failed:", accessTokenError);
+    //     return res.status(401).json({ error: "Invalid token" });
+    //   }
+    // }
 
-    if (!userId) {
-      return res.status(401).json({ error: "Invalid token" });
-    }
+    // if (!userId) {
+    //   return res.status(401).json({ error: "Invalid token" });
+    // }
 
     const bucketName = "dubbed_with_ai";
     const { movieId, subtitleId } = req.body;
@@ -87,10 +87,10 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         `${baseUrl}/api/opensubtitles/get-subtitle-languages`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          // headers: {
+          //   "Content-Type": "application/json",
+          //   Authorization: `Bearer ${token}`,
+          // },
           body: JSON.stringify({ imdbID: movieId }),
         }
       );
@@ -141,10 +141,10 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         `${baseUrl}/api/opensubtitles/fetch-subtitles`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
+          // headers: {
+          //   "Content-Type": "application/json",
+          //   Authorization: `Bearer ${token}`,
+          // },
           body: JSON.stringify({ fileId }),
         }
       );
