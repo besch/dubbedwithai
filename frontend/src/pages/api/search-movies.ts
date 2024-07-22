@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import { OAuth2Client } from "google-auth-library";
+// import { OAuth2Client } from "google-auth-library";
 
-const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
 const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
@@ -40,6 +40,8 @@ const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
     // if (!userId) {
     //   return res.status(401).json({ error: "Invalid token" });
     // }
+
+    console.log("!!!!!!!!!!!!", req.body.text);
 
     const response = await fetch(
       `http://www.omdbapi.com/?apikey=508321b3&s=${req.body.text}`
