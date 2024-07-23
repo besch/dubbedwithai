@@ -87,10 +87,10 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         `${baseUrl}/api/opensubtitles/get-subtitle-languages`,
         {
           method: "POST",
-          // headers: {
-          //   "Content-Type": "application/json",
-          //   Authorization: `Bearer ${token}`,
-          // },
+          headers: {
+            "Content-Type": "application/json",
+            // Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ imdbID: movieId }),
         }
       );
@@ -141,10 +141,10 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
         `${baseUrl}/api/opensubtitles/fetch-subtitles`,
         {
           method: "POST",
-          // headers: {
-          //   "Content-Type": "application/json",
-          //   Authorization: `Bearer ${token}`,
-          // },
+          headers: {
+            "Content-Type": "application/json",
+            //   Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify({ fileId }),
         }
       );
