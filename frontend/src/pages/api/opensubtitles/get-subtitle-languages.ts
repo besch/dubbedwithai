@@ -1,52 +1,21 @@
+// pages/api/opensubtitles/fetch-subtitle-languages.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-// import { OAuth2Client } from "google-auth-library";
 
-// const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
-
-const getSubtitleLanguages = async (
+const fetchSubtitleLanguages = async (
   req: NextApiRequest,
   res: NextApiResponse
 ) => {
   await runMiddleware(req, res, cors);
 
-  // const token = req.headers.authorization?.split(" ")[1];
-
-  // if (!token) {
-  //   return res.status(401).json({ error: "No token provided" });
-  // }
-
   try {
-    // let userId: string | undefined;
-
-    // // Try to verify as ID token first
-    // try {
-    //   const ticket = await client.verifyIdToken({
-    //     idToken: token,
-    //     audience: process.env.GOOGLE_CLIENT_ID,
-    //   });
-    //   const payload = ticket.getPayload();
-    //   userId = payload?.sub;
-    // } catch (idTokenError) {
-    //   // If ID token verification fails, try to verify as access token
-    //   try {
-    //     const userInfo = await client.getTokenInfo(token);
-    //     userId = userInfo.sub;
-    //   } catch (accessTokenError) {
-    //     console.error("Token verification failed:", accessTokenError);
-    //     return res.status(401).json({ error: "Invalid token" });
-    //   }
-    // }
-
-    // if (!userId) {
-    //   return res.status(401).json({ error: "Invalid token" });
-    // }
+    const { imdbID, languageCode } = req.body;
 
     const response = await fetch(
-      `https://api.opensubtitles.com/api/v1/subtitles?imdb_id=${req.body.imdbID}`,
+      `https://api.opensubtitles.com/api/v1/subtitles?imdb_id=${imdbID}&languages=${languageCode}`,
       {
         headers: {
-          "User-Agent": "ANYDUB v0.1",
+          "User-Agent": "ONEDUB v0.1",
           "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
           "Content-Type": "application/json",
           Accept: "application/json",
@@ -60,37 +29,26 @@ const getSubtitleLanguages = async (
 
     const data = await response.json();
 
-    // Process the data to get unique languages sorted by rating
-    const languageMap = new Map();
-
-    // console.log(data.data);
-
-    data.data.forEach((subtitle: any) => {
-      const language = subtitle.attributes.language;
-      const rating = subtitle.attributes.ratings;
-
-      if (
-        !languageMap.has(language) ||
-        rating > languageMap.get(language).attributes.ratings
-      ) {
-        languageMap.set(language, subtitle);
+    // Sort subtitles by priority: new_download_count, download_count, votes, rating
+    const sortedSubtitles = data.data.sort((a: any, b: any) => {
+      if (a.attributes.new_download_count !== b.attributes.new_download_count) {
+        return (
+          b.attributes.new_download_count - a.attributes.new_download_count
+        );
       }
+      if (a.attributes.download_count !== b.attributes.download_count) {
+        return b.attributes.download_count - a.attributes.download_count;
+      }
+      if (a.attributes.votes !== b.attributes.votes) {
+        return b.attributes.votes - a.attributes.votes;
+      }
+      return b.attributes.ratings - a.attributes.ratings;
     });
 
-    const uniqueLanguages = Array.from(languageMap.values());
-
-    // Sort languages by rating in descending order
-    uniqueLanguages.sort(
-      (a, b) => b.attributes.download_count - a.attributes.download_count
-    );
-
-    const languagesWithProperlySetLanguageCode = uniqueLanguages.filter(
-      (language: any) => language.attributes.language
-    );
+    const bestSubtitle = sortedSubtitles[0];
 
     return res.status(200).json({
-      total_count: languagesWithProperlySetLanguageCode.length,
-      data: languagesWithProperlySetLanguageCode,
+      data: bestSubtitle,
     });
   } catch (err) {
     console.error("Error:", err);
@@ -98,4 +56,4 @@ const getSubtitleLanguages = async (
   }
 };
 
-export default getSubtitleLanguages;
+export default fetchSubtitleLanguages;
