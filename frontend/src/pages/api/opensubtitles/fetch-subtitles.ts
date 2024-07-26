@@ -1,4 +1,3 @@
-// pages/api/opensubtitles/fetch-subtitles.ts
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "../google-storage/google-storage-config";
@@ -85,11 +84,12 @@ async function downloadAndSaveSubtitles(
 ): Promise<string> {
   const downloadLink = await fetchSubtitlesDownloadLink(fileId);
   const srtContent = await downloadSrtContent(downloadLink);
+  const strContentClean = cleanSrtContent(srtContent);
 
   // Save to Google Storage
-  await storage.bucket(bucketName).file(filePath).save(srtContent);
+  await storage.bucket(bucketName).file(filePath).save(strContentClean);
 
-  return srtContent;
+  return strContentClean;
 }
 
 async function fetchSubtitlesDownloadLink(fileId: string): Promise<string> {
@@ -120,4 +120,23 @@ async function downloadSrtContent(link: string): Promise<string> {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
   return await response.text();
+}
+
+function cleanSrtContent(srtContent: string): string {
+  // Remove HTML tags
+  let cleaned = srtContent.replace(/<[^>]*>/g, "");
+
+  // Remove bracketed descriptions like [Phone ringing] or [Sigh]
+  cleaned = cleaned.replace(/\[.*?\]/g, "");
+
+  // Trim whitespace from each line
+  cleaned = cleaned
+    .split("\n")
+    .map((line) => line.trim())
+    .join("\n");
+
+  // Remove empty lines (keeping newlines for SRT format)
+  cleaned = cleaned.replace(/^\s*[\r\n]/gm, "");
+
+  return cleaned;
 }
