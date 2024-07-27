@@ -27,7 +27,7 @@ export default async function fetchSubtitles(
     }
 
     const fileId = bestSubtitle.attributes.files[0].file_id;
-    const filePath = `${imdbID}/${languageCode}/subtitles.srt`;
+    const filePath = `${imdbID}/${bestSubtitle.id}/subtitles.srt`;
 
     // Check if the file already exists in Google Storage
     const [fileExists] = await storage
