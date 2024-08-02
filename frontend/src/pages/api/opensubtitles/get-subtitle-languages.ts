@@ -2,26 +2,39 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 
-const fetchSubtitleLanguages = async (
+const getSubtitleLanguages = async (
   req: NextApiRequest,
   res: NextApiResponse
 ) => {
   await runMiddleware(req, res, cors);
 
   try {
-    const { imdbID, languageCode } = req.body;
+    const {
+      imdbID,
+      languageCode,
+      parent_imdb_id,
+      season_number,
+      episode_number,
+    } = req.body;
 
-    const response = await fetch(
-      `https://api.opensubtitles.com/api/v1/subtitles?imdb_id=${imdbID}&languages=${languageCode}`,
-      {
-        headers: {
-          "User-Agent": "ONEDUB v0.1",
-          "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-      }
-    );
+    let url = `https://api.opensubtitles.com/api/v1/subtitles?`;
+
+    if (parent_imdb_id) {
+      url += `parent_imdb_id=${parent_imdb_id}&episode_number=${episode_number}&season_number=${season_number}`;
+    } else {
+      url += `imdb_id=${imdbID}`;
+    }
+
+    url += `&languages=${languageCode}`;
+
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent": "ONEDUB v0.1",
+        "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
@@ -56,4 +69,4 @@ const fetchSubtitleLanguages = async (
   }
 };
 
-export default fetchSubtitleLanguages;
+export default getSubtitleLanguages;

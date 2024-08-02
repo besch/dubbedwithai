@@ -10,7 +10,7 @@ export default async function fetchSubtitles(
 ) {
   await runMiddleware(req, res, cors);
 
-  const { imdbID, languageCode } = req.body;
+  const { imdbID, languageCode, seasonNumber, episodeNumber } = req.body;
 
   if (!imdbID || !languageCode) {
     return res
@@ -20,7 +20,12 @@ export default async function fetchSubtitles(
 
   try {
     // First, fetch the best subtitle
-    const bestSubtitle = await getBestSubtitle(imdbID, languageCode);
+    const bestSubtitle = await getBestSubtitle(
+      imdbID,
+      languageCode,
+      seasonNumber,
+      episodeNumber
+    );
 
     if (!bestSubtitle || !bestSubtitle.attributes.files[0].file_id) {
       return res.status(404).json({ error: "No suitable subtitle found" });
@@ -58,17 +63,29 @@ export default async function fetchSubtitles(
   }
 }
 
-async function getBestSubtitle(imdbID: string, languageCode: string) {
-  const response = await fetch(
-    `${process.env.API_URL}/api/opensubtitles/get-subtitle-languages`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ imdbID, languageCode }),
-    }
-  );
+async function getBestSubtitle(
+  imdbID: string,
+  languageCode: string,
+  seasonNumber?: number,
+  episodeNumber?: number
+) {
+  let url = `${process.env.API_URL}/api/opensubtitles/get-subtitle-languages`;
+
+  const body: any = { imdbID, languageCode };
+
+  if (seasonNumber !== undefined && episodeNumber !== undefined) {
+    body.parent_imdb_id = imdbID;
+    body.season_number = seasonNumber;
+    body.episode_number = episodeNumber;
+  }
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
 
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
@@ -98,7 +115,7 @@ async function fetchSubtitlesDownloadLink(fileId: string): Promise<string> {
     {
       method: "POST",
       headers: {
-        "User-Agent": "ANYDUB v0.1",
+        "User-Agent": "ONEDUB v0.1",
         "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
         "Content-Type": "application/json",
       },
