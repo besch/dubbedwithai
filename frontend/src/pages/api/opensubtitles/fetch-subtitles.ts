@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
+import languageCodes from "@/lib/languageCodes";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -27,7 +28,7 @@ export default async function fetchSubtitles(
     let filePath: string;
     if (seasonNumber !== undefined && episodeNumber !== undefined) {
       // TV series
-      filePath = `${imdbID}/${languageCode}/${seasonNumber}/${episodeNumber}/subtitles.srt`;
+      filePath = `${imdbID}/${seasonNumber}/${episodeNumber}/${languageCode}/subtitles.srt`;
     } else {
       // Movie
       filePath = `${imdbID}/${languageCode}/subtitles.srt`;
@@ -49,43 +50,28 @@ export default async function fetchSubtitles(
         subtitleInfo: {
           attributes: {
             language: languageCode,
-            language_name: languageCode,
+            language_name: languageCodes[languageCode] || languageCode,
           },
         },
         srtContent: srtContent,
       });
     }
 
-    // Step 2: Query OpenSubtitles if not in Google Storage
-    const bestSubtitle = await getBestSubtitle(
-      imdbID,
-      languageCode,
-      seasonNumber,
-      episodeNumber
-    );
+    // Step 2 & 3: Query OpenSubtitles or generate/translate if necessary
+    const { subtitleInfo, srtContent, generated } =
+      await getOrGenerateSubtitles(
+        imdbID,
+        languageCode,
+        seasonNumber,
+        episodeNumber
+      );
 
-    if (bestSubtitle && bestSubtitle.attributes.files[0].file_id) {
-      const fileId = bestSubtitle.attributes.files[0].file_id;
-      const srtContent = await downloadAndSaveSubtitles(fileId, filePath);
-      return res.status(200).json({
-        subtitleInfo: bestSubtitle,
-        srtContent: srtContent,
-        generated: false,
-      });
-    }
-
-    // Step 3: Generate new subtitles if not found in OpenSubtitles
-    const generatedSrtContent = await generateSubtitles(imdbID, languageCode);
-    await storage.bucket(bucketName).file(filePath).save(generatedSrtContent);
+    await storage.bucket(bucketName).file(filePath).save(srtContent);
 
     return res.status(200).json({
-      subtitleInfo: {
-        attributes: {
-          language: languageCode,
-          language_name: languageCode,
-        },
-      },
-      srtContent: generatedSrtContent,
+      subtitleInfo,
+      srtContent,
+      generated,
     });
   } catch (error) {
     console.error("Error fetching subtitles:", error);
@@ -93,28 +79,72 @@ export default async function fetchSubtitles(
   }
 }
 
+async function getOrGenerateSubtitles(
+  imdbID: string,
+  targetLanguage: string,
+  seasonNumber?: number,
+  episodeNumber?: number
+): Promise<{ subtitleInfo: any; srtContent: string; generated: boolean }> {
+  const bestSubtitle = await getBestSubtitle(
+    imdbID,
+    seasonNumber,
+    episodeNumber
+  );
+
+  if (!bestSubtitle) {
+    throw new Error("No subtitles found for the given content");
+  }
+
+  const fileId = bestSubtitle.attributes.files[0].file_id;
+  let filePath: string;
+  if (seasonNumber !== undefined && episodeNumber !== undefined) {
+    // TV series
+    filePath = `${imdbID}/${seasonNumber}/${episodeNumber}/${targetLanguage}/subtitles.srt`;
+  } else {
+    // Movie
+    filePath = `${imdbID}/${targetLanguage}/subtitles.srt`;
+  }
+  const rawSrtContent = await downloadSubtitles(fileId);
+
+  // Translate subtitles to the target language
+  const translatedContent = await translateSubtitles(
+    rawSrtContent,
+    bestSubtitle.attributes.language,
+    targetLanguage
+  );
+  return {
+    subtitleInfo: {
+      attributes: {
+        language: targetLanguage,
+        language_name: languageCodes[targetLanguage] || targetLanguage,
+      },
+    },
+    srtContent: translatedContent,
+    generated: true,
+  };
+}
+
 async function getBestSubtitle(
   imdbID: string,
-  languageCode: string,
   seasonNumber?: number,
   episodeNumber?: number
 ) {
-  let url = `${process.env.API_URL}/api/opensubtitles/get-subtitle-languages`;
-
-  const body: any = { imdbID, languageCode };
+  let url = `https://api.opensubtitles.com/api/v1/subtitles?`;
 
   if (seasonNumber !== undefined && episodeNumber !== undefined) {
-    body.parent_imdb_id = imdbID;
-    body.season_number = seasonNumber;
-    body.episode_number = episodeNumber;
+    // TV series
+    url += `parent_imdb_id=${imdbID}&season_number=${seasonNumber}&episode_number=${episodeNumber}`;
+  } else {
+    // Movie
+    url += `imdb_id=${imdbID}`;
   }
 
   const response = await fetch(url, {
-    method: "POST",
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
+      "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
     },
-    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -122,43 +152,38 @@ async function getBestSubtitle(
   }
 
   const data = await response.json();
-  return data.data;
+
+  // Priority languages
+  const priorityLanguages = ["en", "es", "hi", "zh", "fr"];
+
+  // Try to find a subtitle in priority languages
+  for (const lang of priorityLanguages) {
+    const prioritySubtitle = data.data.find(
+      (subtitle: any) => subtitle.attributes.language === lang
+    );
+    if (prioritySubtitle) {
+      return prioritySubtitle;
+    }
+  }
+
+  // If no priority language subtitle is found, sort by download_count and return the best match
+  return data.data.sort(
+    (a: any, b: any) =>
+      b.attributes.download_count - a.attributes.download_count
+  )[0];
 }
 
-async function downloadAndSaveSubtitles(
-  fileId: string,
-  filePath: string
-): Promise<string> {
+async function downloadSubtitles(fileId: string): Promise<string> {
   const downloadLink = await fetchSubtitlesDownloadLink(fileId);
   const srtContent = await downloadSrtContent(downloadLink);
   const strContentClean = cleanSrtContent(srtContent);
 
-  // Save to Google Storage
-  await storage.bucket(bucketName).file(filePath).save(strContentClean);
-
   return strContentClean;
-}
-
-async function generateSubtitles(
-  movieId: string,
-  targetLanguage: string
-): Promise<string> {
-  // Fetch English subtitles
-  const englishSubtitles = await getBestSubtitle(movieId, "en");
-  if (!englishSubtitles || !englishSubtitles.attributes.files[0].file_id) {
-    throw new Error("No English subtitles found to translate from");
-  }
-
-  const fileId = englishSubtitles.attributes.files[0].file_id;
-  const rawSrtContent = await downloadAndSaveSubtitles(fileId, "temp.srt");
-  const cleanedSrtContent = cleanSrtContent(rawSrtContent);
-
-  // Translate subtitles
-  return await translateSubtitles(cleanedSrtContent, targetLanguage);
 }
 
 async function translateSubtitles(
   srtContent: string,
+  sourceLanguage: string,
   targetLanguage: string
 ): Promise<string> {
   const lines = srtContent.split("\n");
@@ -170,7 +195,9 @@ async function translateSubtitles(
   }
 
   const translatedBatches = await Promise.all(
-    batches.map((batch) => translateBatch(batch, targetLanguage))
+    batches.map((batch) =>
+      translateBatch(batch, sourceLanguage, targetLanguage)
+    )
   );
 
   return translatedBatches.join("\n");
@@ -178,16 +205,20 @@ async function translateSubtitles(
 
 async function translateBatch(
   batch: string,
+  sourceLanguage: string,
   targetLanguage: string,
   retries = 3
 ): Promise<string> {
   try {
+    const sourceLangName = languageCodes[sourceLanguage] || sourceLanguage;
+    const targetLangName = languageCodes[targetLanguage] || targetLanguage;
+
     const response = await openai.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
           role: "system",
-          content: `You are a professional translator. Translate the following SRT subtitle content from English to ${targetLanguage}. Maintain the SRT format, including line numbers and timestamps. Ensure that there is always a new line before the next subtitle number.`,
+          content: `You are a professional translator. Translate the following SRT subtitle content from ${sourceLangName} to ${targetLangName}. Maintain the SRT format, including line numbers and timestamps. Ensure that there is always a new line before the next subtitle number.`,
         },
         { role: "user", content: batch },
       ],
@@ -197,7 +228,12 @@ async function translateBatch(
   } catch (error) {
     if (retries > 0) {
       console.log(`Retrying translation... Attempts left: ${retries - 1}`);
-      return await translateBatch(batch, targetLanguage, retries - 1);
+      return await translateBatch(
+        batch,
+        sourceLanguage,
+        targetLanguage,
+        retries - 1
+      );
     }
     throw error;
   }
