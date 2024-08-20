@@ -153,16 +153,31 @@ async function getBestSubtitle(
 
   const data = await response.json();
 
+  // Priority release keywords
+  const priorityReleaseKeywords = ["4k", "blueray", "2160p"];
+
   // Priority languages
   const priorityLanguages = ["en", "es", "hi", "zh", "fr"];
 
-  // Try to find a subtitle in priority languages
+  // Function to check if a subtitle matches priority release keywords
+  const isPriorityRelease = (subtitle: any) => {
+    const release = subtitle.attributes.release.toLowerCase();
+    return priorityReleaseKeywords.some((keyword) => release.includes(keyword));
+  };
+
+  // First, try to find a subtitle with priority release keywords
+  const priorityReleaseSubtitle = data.data.find(isPriorityRelease);
+  if (priorityReleaseSubtitle) {
+    return priorityReleaseSubtitle;
+  }
+
+  // If no priority release subtitle is found, try to find a subtitle in priority languages
   for (const lang of priorityLanguages) {
-    const prioritySubtitle = data.data.find(
+    const priorityLanguageSubtitle = data.data.find(
       (subtitle: any) => subtitle.attributes.language === lang
     );
-    if (prioritySubtitle) {
-      return prioritySubtitle;
+    if (priorityLanguageSubtitle) {
+      return priorityLanguageSubtitle;
     }
   }
 
@@ -190,7 +205,7 @@ async function translateSubtitles(
   const batches = [];
   const batchSize = 100;
 
-  for (let i = 0; i < lines.length; i += batchSize) {
+  for (let i = 0; i < 2; i += batchSize) {
     batches.push(lines.slice(i, i + batchSize).join("\n"));
   }
 
