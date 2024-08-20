@@ -205,7 +205,7 @@ async function translateSubtitles(
   const batches = [];
   const batchSize = 100;
 
-  for (let i = 0; i < lines.length; i += batchSize) {
+  for (let i = 0; i < 2; i += batchSize) {
     batches.push(lines.slice(i, i + batchSize).join("\n"));
   }
 
