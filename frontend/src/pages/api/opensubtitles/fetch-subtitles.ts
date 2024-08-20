@@ -205,7 +205,7 @@ async function translateSubtitles(
   const batches = [];
   const batchSize = 100;
 
-  for (let i = 0; i < 2; i += batchSize) {
+  for (let i = 0; i < lines.length; i += batchSize) {
     batches.push(lines.slice(i, i + batchSize).join("\n"));
   }
 
@@ -233,7 +233,7 @@ async function translateBatch(
       messages: [
         {
           role: "system",
-          content: `You are a professional translator. Translate the following SRT subtitle content from ${sourceLangName} to ${targetLangName}. Maintain the SRT format, including line numbers and timestamps. Ensure that there is always a new line before the next subtitle number.`,
+          content: `You are a professional translator. Translate the following SRT subtitle content from ${sourceLangName} to ${targetLangName}. Maintain the SRT format, including line numbers and timestamps. Very Important!, ensure that there is always a new line before the next subtitle number.`,
         },
         { role: "user", content: batch },
       ],
