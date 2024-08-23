@@ -153,39 +153,79 @@ async function getBestSubtitle(
 
   const data = await response.json();
 
+  // Priority languages (in order of preference)
+  const priorityLanguages = [
+    "en",
+    "es",
+    "fr",
+    "de",
+    "it",
+    "pt",
+    "ru",
+    "ja",
+    "zh",
+    "ko",
+  ];
+
   // Priority release keywords
-  const priorityReleaseKeywords = ["4k", "blueray", "2160p"];
+  const priorityReleaseKeywords = [
+    "bluray",
+    "web-dl",
+    "webdl",
+    "webrip",
+    "bdrip",
+    "dvdrip",
+    "hdrip",
+  ];
 
-  // Priority languages
-  const priorityLanguages = ["en", "es", "hi", "zh", "fr"];
+  // Function to calculate score for a subtitle
+  const calculateScore = (subtitle: any) => {
+    let score = 0;
+    const attrs = subtitle.attributes;
 
-  // Function to check if a subtitle matches priority release keywords
-  const isPriorityRelease = (subtitle: any) => {
-    const release = subtitle.attributes.release.toLowerCase();
-    return priorityReleaseKeywords.some((keyword) => release.includes(keyword));
+    // Prefer HD subtitles
+    if (attrs.hd) score += 5;
+
+    // Score based on download count (1 point per 100 downloads, max 10 points)
+    score += Math.min(Math.floor(attrs.download_count / 100), 10);
+
+    // Score based on rating (0-10 points)
+    score += attrs.ratings * 2; // ratings are from 0-5, so we double it
+
+    // Prefer more recent uploads (lose 1 point per month old, max 12 points lost)
+    const monthsOld =
+      (new Date().getTime() - new Date(attrs.upload_date).getTime()) /
+      (1000 * 60 * 60 * 24 * 30);
+    score -= Math.min(Math.floor(monthsOld), 12);
+
+    // Prefer trusted uploaders
+    if (attrs.from_trusted) score += 3;
+
+    // Prefer certain languages
+    const languageIndex = priorityLanguages.indexOf(attrs.language);
+    if (languageIndex !== -1) {
+      score += 5 - languageIndex; // 5 points for first language, 4 for second, etc.
+    }
+
+    // Prefer certain release types
+    const release = attrs.release.toLowerCase();
+    for (let i = 0; i < priorityReleaseKeywords.length; i++) {
+      if (release.includes(priorityReleaseKeywords[i])) {
+        score += 5 - i; // 5 points for first keyword, 4 for second, etc.
+        break;
+      }
+    }
+
+    return score;
   };
 
-  // First, try to find a subtitle with priority release keywords
-  const priorityReleaseSubtitle = data.data.find(isPriorityRelease);
-  if (priorityReleaseSubtitle) {
-    return priorityReleaseSubtitle;
-  }
+  // Sort subtitles by score
+  const sortedSubtitles = data.data.sort(
+    (a: any, b: any) => calculateScore(b) - calculateScore(a)
+  );
 
-  // If no priority release subtitle is found, try to find a subtitle in priority languages
-  for (const lang of priorityLanguages) {
-    const priorityLanguageSubtitle = data.data.find(
-      (subtitle: any) => subtitle.attributes.language === lang
-    );
-    if (priorityLanguageSubtitle) {
-      return priorityLanguageSubtitle;
-    }
-  }
-
-  // If no priority language subtitle is found, sort by download_count and return the best match
-  return data.data.sort(
-    (a: any, b: any) =>
-      b.attributes.download_count - a.attributes.download_count
-  )[0];
+  // Return the best subtitle, or null if no subtitles found
+  return sortedSubtitles.length > 0 ? sortedSubtitles[0] : null;
 }
 
 async function downloadSubtitles(fileId: string): Promise<string> {
