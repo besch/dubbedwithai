@@ -95,7 +95,6 @@ async function getOrGenerateSubtitles(
     throw new Error("No subtitles found for the given content");
   }
 
-  const fileId = bestSubtitle.attributes.files[0].file_id;
   let filePath: string;
   if (seasonNumber !== undefined && episodeNumber !== undefined) {
     // TV series
@@ -104,14 +103,31 @@ async function getOrGenerateSubtitles(
     // Movie
     filePath = `${imdbID}/${targetLanguage}/subtitles.srt`;
   }
-  const rawSrtContent = await downloadSubtitles(fileId);
+
+  // Use the formatted content from getBestSubtitle
+  const formattedSrtContent = bestSubtitle.formattedContent;
+
+  if (bestSubtitle.attributes.language === targetLanguage) {
+    // If the best subtitle is already in the target language, return it as is
+    return {
+      subtitleInfo: {
+        attributes: {
+          language: targetLanguage,
+          language_name: languageCodes[targetLanguage] || targetLanguage,
+        },
+      },
+      srtContent: formattedSrtContent,
+      generated: false,
+    };
+  }
 
   // Translate subtitles to the target language
   const translatedContent = await translateSubtitles(
-    rawSrtContent,
+    formattedSrtContent,
     bestSubtitle.attributes.language,
     targetLanguage
   );
+
   return {
     subtitleInfo: {
       attributes: {
@@ -225,7 +241,24 @@ async function getBestSubtitle(
   );
 
   // Return the best subtitle, or null if no subtitles found
-  return sortedSubtitles.length > 0 ? sortedSubtitles[0] : null;
+  if (sortedSubtitles.length > 0) {
+    const bestSubtitle = sortedSubtitles[0];
+    const fileId = bestSubtitle.attributes.files[0].file_id;
+
+    // Download the subtitle content
+    const rawSrtContent = await downloadSubtitles(fileId);
+
+    // Format the subtitle content
+    const formattedSrtContent = formatSubtitles(rawSrtContent);
+
+    // Return the formatted content along with the subtitle info
+    return {
+      ...bestSubtitle,
+      formattedContent: formattedSrtContent,
+    };
+  }
+
+  return null;
 }
 
 async function downloadSubtitles(fileId: string): Promise<string> {
@@ -378,4 +411,37 @@ function cleanSrtContent(srtContent: string): string {
   cleaned = cleaned.replace(/^\s*[\r\n]/gm, "");
 
   return cleaned;
+}
+
+function formatSubtitles(srtContent: string): string {
+  const lines = srtContent.split("\n");
+  let formattedContent = "";
+  let currentEntry = [];
+  let subtitleNumber = 1;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    if (line === "") {
+      if (currentEntry.length >= 3) {
+        // Format and add the current entry
+        formattedContent += `${subtitleNumber}\n`;
+        formattedContent += `${currentEntry[1]}\n`;
+        formattedContent += currentEntry.slice(2).join("\n") + "\n\n";
+        subtitleNumber++;
+      }
+      currentEntry = [];
+    } else {
+      currentEntry.push(line);
+    }
+  }
+
+  // Add the last entry if it exists
+  if (currentEntry.length >= 3) {
+    formattedContent += `${subtitleNumber}\n`;
+    formattedContent += `${currentEntry[1]}\n`;
+    formattedContent += currentEntry.slice(2).join("\n") + "\n\n";
+  }
+
+  return formattedContent.trim();
 }
