@@ -237,7 +237,7 @@ async function translateBatch(
             1. Each subtitle entry consists of four parts:
               a) A sequential number
               b) The timecode line with start and end times (--:--:--,--- --> --:--:--,---)
-              c) The subtitle text (one or many lines)
+              c) The subtitle text (one or many lines).
               d) A blank line to separate entries
 
             2. Maintain the exact timecodes from the original subtitles.
@@ -248,11 +248,13 @@ async function translateBatch(
 
             5. Ensure there's always a blank line between subtitle entries.
 
-            6. Do not preserve any formatting tags like <i> for italics if present.
+            6. Remove any formatting tags like <i> for italics if present.
+
+            7. If subtitle text is empty or translated text is empty or corrupted somehow, do not include this subtitle
 
             Example of correct formatting:
 
-            1
+            "1
             00:00:42,625 --> 00:00:44,793
             Translated text line 1
             Translated text line 2
@@ -266,7 +268,7 @@ async function translateBatch(
             Italicized translated text
             Italicized translated text
             Italicized translated text
-            Italicized translated text
+            Italicized translated text"
 
             Translate accurately while maintaining natural language flow in ${targetLangName}.`,
         },
