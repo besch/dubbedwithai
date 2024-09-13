@@ -2,6 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
+import { logApiRequest } from "@/firebase/firebase-config";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -14,10 +15,19 @@ export default async function generateAudio(
 ) {
   await runMiddleware(req, res, cors);
 
-  const { text, filePath } = req.body;
+  const { text, filePath, movieName, language } = req.body;
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
   if (!text || !filePath) {
     console.error("Missing required parameters:", { text, filePath });
+    await logApiRequest({
+      endpoint: "generate-audio",
+      ip: ip as string,
+      movieName,
+      language,
+      time: Date.now(),
+      error: "Missing required parameters",
+    });
     return res.status(400).json({
       error: "Missing required parameters",
       details: {
@@ -29,11 +39,27 @@ export default async function generateAudio(
 
   try {
     await generateAndUploadAudio(text, filePath);
+    await logApiRequest({
+      endpoint: "generate-audio",
+      ip: ip as string,
+      movieName,
+      language,
+      time: Date.now(),
+    });
     res
       .status(200)
       .json({ message: "Audio generated and uploaded successfully" });
   } catch (error: unknown) {
     console.error("Error generating audio:", error);
+    await logApiRequest({
+      endpoint: "generate-audio",
+      ip: ip as string,
+      movieName,
+      language,
+      subtitlesFound: false,
+      time: Date.now(),
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
     if (error instanceof Error) {
       res
         .status(500)

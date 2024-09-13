@@ -1,9 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
+import { getFirestore, collection, addDoc } from "firebase/firestore";
 
-// Firebase project configuration using environment variables
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -13,20 +11,30 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-console.log(
-  "Initializing Firebase with the following configuration:",
-  firebaseConfig
-);
-
-// Initialize Firebase
 const app = initializeApp(firebaseConfig);
-
-// Initialize Firestore and Auth
 const db = getFirestore(app);
-const auth = getAuth(app);
 
-console.log(
-  "Firebase, Firestore, and Auth have been initialized successfully."
-);
+async function logApiRequest(data: {
+  endpoint: string;
+  ip: string;
+  time: number;
+  movieName?: string;
+  language?: string;
+  season?: number;
+  episode?: number;
+  subtitlesFound?: boolean;
+  subtitlesStep?: string;
+  error?: string;
+}) {
+  try {
+    await addDoc(collection(db, "api_logs"), {
+      ...data,
+      timestamp: new Date(),
+      time: data.time || Date.now(),
+    });
+  } catch (error) {
+    console.error("Error logging to Firebase:", error);
+  }
+}
 
-export { app, db, auth };
+export { app, db, logApiRequest };

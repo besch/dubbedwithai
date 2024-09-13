@@ -3,6 +3,7 @@ import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
 import languageCodes from "@/lib/languageCodes";
+import { logApiRequest } from "@/firebase/firebase-config";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -17,8 +18,19 @@ export default async function fetchSubtitles(
   await runMiddleware(req, res, cors);
 
   const { imdbID, languageCode, seasonNumber, episodeNumber } = req.body;
+  const ip = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
 
   if (!imdbID || !languageCode) {
+    await logApiRequest({
+      endpoint: "fetch-subtitles",
+      ip: ip as string,
+      movieName: imdbID,
+      language: languageCode,
+      season: seasonNumber,
+      episode: episodeNumber,
+      subtitlesFound: false,
+      time: Date.now(),
+    });
     return res
       .status(400)
       .json({ error: "Missing imdbID or languageCode parameter" });
@@ -27,14 +39,11 @@ export default async function fetchSubtitles(
   try {
     let filePath: string;
     if (seasonNumber !== undefined && episodeNumber !== undefined) {
-      // TV series
       filePath = `${imdbID}/${seasonNumber}/${episodeNumber}/${languageCode}/subtitles.srt`;
     } else {
-      // Movie
       filePath = `${imdbID}/${languageCode}/subtitles.srt`;
     }
 
-    // Step 1: Check if subtitles exist in Google Storage
     const [fileExists] = await storage
       .bucket(bucketName)
       .file(filePath)
@@ -46,6 +55,17 @@ export default async function fetchSubtitles(
         .file(filePath)
         .download();
       const srtContent = fileContents.toString("utf-8");
+      await logApiRequest({
+        endpoint: "fetch-subtitles",
+        ip: ip as string,
+        movieName: imdbID,
+        language: languageCode,
+        season: seasonNumber,
+        episode: episodeNumber,
+        subtitlesFound: true,
+        subtitlesStep: "storage",
+        time: Date.now(),
+      });
       return res.status(200).json({
         subtitleInfo: {
           attributes: {
@@ -57,7 +77,6 @@ export default async function fetchSubtitles(
       });
     }
 
-    // Step 2 & 3: Query OpenSubtitles or generate/translate if necessary
     const { subtitleInfo, srtContent, generated } =
       await getOrGenerateSubtitles(
         imdbID,
@@ -68,6 +87,18 @@ export default async function fetchSubtitles(
 
     await storage.bucket(bucketName).file(filePath).save(srtContent);
 
+    await logApiRequest({
+      endpoint: "fetch-subtitles",
+      ip: ip as string,
+      movieName: imdbID,
+      language: languageCode,
+      season: seasonNumber,
+      episode: episodeNumber,
+      subtitlesFound: true,
+      subtitlesStep: generated ? "generated" : "api",
+      time: Date.now(),
+    });
+
     return res.status(200).json({
       subtitleInfo,
       srtContent,
@@ -75,6 +106,16 @@ export default async function fetchSubtitles(
     });
   } catch (error) {
     console.error("Error fetching subtitles:", error);
+    await logApiRequest({
+      endpoint: "fetch-subtitles",
+      ip: ip as string,
+      movieName: imdbID,
+      language: languageCode,
+      season: seasonNumber,
+      episode: episodeNumber,
+      subtitlesFound: false,
+      time: Date.now(),
+    });
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
