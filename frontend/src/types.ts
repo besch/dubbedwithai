@@ -1,4 +1,10 @@
-export type Voice = "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer";
+export type DubbingVoice =
+  | "alloy"
+  | "echo"
+  | "fable"
+  | "onyx"
+  | "nova"
+  | "shimmer";
 
 export interface Language {
   id: string;
