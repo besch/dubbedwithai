@@ -249,7 +249,8 @@ async function getBestSubtitle(
     const rawSrtContent = await downloadSubtitles(fileId);
 
     // Format the subtitle content
-    const formattedSrtContent = formatSubtitles(rawSrtContent);
+    let formattedSrtContent = formatSubtitles(rawSrtContent);
+    formattedSrtContent = improveSubtitleFormatting(rawSrtContent);
 
     // Return the formatted content along with the subtitle info
     return {
@@ -259,6 +260,40 @@ async function getBestSubtitle(
   }
 
   return null;
+}
+
+function improveSubtitleFormatting(input: string): string {
+  // Split the input into lines
+  const lines = input.split("\n");
+  let formattedSubtitles = [];
+  let currentSubtitle = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].trim();
+
+    // Check if the line is a subtitle number
+    if (/^\d+$/.test(line)) {
+      // If we have a previous subtitle, add it to the formatted subtitles
+      if (currentSubtitle.length > 0) {
+        formattedSubtitles.push(currentSubtitle.join("\n"));
+        currentSubtitle = [];
+      }
+      // Start a new subtitle
+      currentSubtitle.push(line);
+    }
+    // Add non-empty lines to the current subtitle
+    else if (line !== "") {
+      currentSubtitle.push(line);
+    }
+  }
+
+  // Add the last subtitle if there is one
+  if (currentSubtitle.length > 0) {
+    formattedSubtitles.push(currentSubtitle.join("\n"));
+  }
+
+  // Join all formatted subtitles with double line breaks
+  return formattedSubtitles.join("\n\n");
 }
 
 async function downloadSubtitles(fileId: string): Promise<string> {

@@ -27,10 +27,8 @@ const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
       .file(filePath)
       .download();
 
-    // Set the appropriate content type for the audio file
     res.setHeader("Content-Type", "audio/mp3");
 
-    // Send the audio file contents as the response
     return res.status(200).send(fileContents);
   } catch (err) {
     console.error("Error fetching audio file:", err);

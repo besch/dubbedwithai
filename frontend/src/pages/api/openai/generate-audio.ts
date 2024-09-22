@@ -30,10 +30,10 @@ export default async function generateAudio(
 
   try {
     const voice = extractVoiceFromFilePath(filePath);
-    await generateAndUploadAudio(text, filePath, voice);
-    res
-      .status(200)
-      .json({ message: "Audio generated and uploaded successfully" });
+    const buffer = await generateAndUploadAudio(text, filePath, voice);
+
+    res.setHeader("Content-Type", "audio/mp3");
+    res.status(200).send(buffer);
   } catch (error: unknown) {
     console.error("Error generating audio:", error);
     if (error instanceof Error) {
@@ -62,20 +62,23 @@ async function generateAndUploadAudio(
   text: string,
   filePath: string,
   voice: DubbingVoice
-): Promise<void> {
+): Promise<Buffer> {
   const mp3 = await openai.audio.speech.create({
     model: "tts-1",
     voice: voice,
     input: text,
   });
-  console.log("voice", voice);
 
   const buffer = Buffer.from(await mp3.arrayBuffer());
 
-  const file = storage.bucket(bucketName).file(filePath);
-  await file.save(buffer, {
-    metadata: {
-      contentType: "audio/mpeg",
-    },
-  });
+  if (!filePath.includes("uploaded")) {
+    const file = storage.bucket(bucketName).file(filePath);
+    await file.save(buffer, {
+      metadata: {
+        contentType: "audio/mp3",
+      },
+    });
+  }
+
+  return buffer;
 }
