@@ -3,6 +3,8 @@ import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
 import languageCodes from "@/lib/languageCodes";
+import fetch from "node-fetch";
+import AdmZip from "adm-zip";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -46,30 +48,20 @@ export default async function fetchSubtitles(
         .file(filePath)
         .download();
       const srtContent = fileContents.toString("utf-8");
-      return res.status(200).json({
-        subtitleInfo: {
-          attributes: {
-            language: languageCode,
-            language_name: languageCodes[languageCode] || languageCode,
-          },
-        },
-        srtContent: srtContent,
-      });
+      return res.status(200).json({ srtContent });
     }
 
-    // Step 2 & 3: Query OpenSubtitles or generate/translate if necessary
-    const { subtitleInfo, srtContent, generated } =
-      await getOrGenerateSubtitles(
-        imdbID,
-        languageCode,
-        seasonNumber,
-        episodeNumber
-      );
+    // Step 2 & 3: Query Subdl or generate/translate if necessary
+    const { srtContent, generated } = await getOrGenerateSubtitles(
+      imdbID,
+      languageCode,
+      seasonNumber,
+      episodeNumber
+    );
 
     await storage.bucket(bucketName).file(filePath).save(srtContent);
 
     return res.status(200).json({
-      subtitleInfo,
       srtContent,
       generated,
     });
@@ -84,224 +76,148 @@ async function getOrGenerateSubtitles(
   targetLanguage: string,
   seasonNumber?: number,
   episodeNumber?: number
-): Promise<{ subtitleInfo: any; srtContent: string; generated: boolean }> {
-  const bestSubtitle = await getBestSubtitle(
+): Promise<{ srtContent: string; generated: boolean }> {
+  const result = await getBestSubtitle(
     imdbID,
+    targetLanguage,
     seasonNumber,
     episodeNumber
   );
 
-  if (!bestSubtitle) {
+  if (!result) {
     throw new Error("No subtitles found for the given content");
   }
 
-  let filePath: string;
-  if (seasonNumber !== undefined && episodeNumber !== undefined) {
-    // TV series
-    filePath = `${imdbID}/${seasonNumber}/${episodeNumber}/${targetLanguage}/subtitles.srt`;
-  } else {
-    // Movie
-    filePath = `${imdbID}/${targetLanguage}/subtitles.srt`;
-  }
-
-  // Use the formatted content from getBestSubtitle
-  const formattedSrtContent = bestSubtitle.formattedContent;
-
-  if (bestSubtitle.attributes.language === targetLanguage) {
-    // If the best subtitle is already in the target language, return it as is
-    return {
-      subtitleInfo: {
-        attributes: {
-          language: targetLanguage,
-          language_name: languageCodes[targetLanguage] || targetLanguage,
-        },
-      },
-      srtContent: formattedSrtContent,
-      generated: false,
-    };
-  }
-
-  // Translate subtitles to the target language
-  const translatedContent = await translateSubtitles(
-    formattedSrtContent,
-    bestSubtitle.attributes.language,
-    targetLanguage
-  );
-
   return {
-    subtitleInfo: {
-      attributes: {
-        language: targetLanguage,
-        language_name: languageCodes[targetLanguage] || targetLanguage,
-      },
-    },
-    srtContent: translatedContent,
-    generated: true,
+    srtContent: result.content,
+    generated: result.generated,
   };
 }
 
 async function getBestSubtitle(
   imdbID: string,
+  targetLanguage: string,
   seasonNumber?: number,
   episodeNumber?: number
 ) {
-  let url = `https://api.opensubtitles.com/api/v1/subtitles?`;
+  const languages = [
+    targetLanguage,
+    "en",
+    "es",
+    "fr",
+    "ru",
+    "de",
+    "it",
+    "pt",
+    "ja",
+    "zh",
+  ];
+  const languageString = languages.join(",");
+
+  let url = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${languageString}`;
 
   if (seasonNumber !== undefined && episodeNumber !== undefined) {
-    // TV series
-    url += `parent_imdb_id=${imdbID}&season_number=${seasonNumber}&episode_number=${episodeNumber}`;
-  } else {
-    // Movie
-    url += `imdb_id=${imdbID}`;
+    url += `&season_number=${seasonNumber}&episode_number=${episodeNumber}`;
   }
 
-  const response = await fetch(url, {
-    method: "GET",
-    headers: {
-      "Content-Type": "application/json",
-      "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
-    },
-  });
-
+  const response = await fetch(url);
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);
   }
 
   const data = await response.json();
 
-  // Priority languages (in order of preference)
-  const priorityLanguages = [
-    "en",
-    "es",
-    "fr",
-    "de",
-    "it",
-    "pt",
-    "ru",
-    "ja",
-    "zh",
-    "ko",
-  ];
+  if (!data.subtitles || data.subtitles.length === 0) {
+    return null;
+  }
 
-  // Priority release keywords
-  const priorityReleaseKeywords = [
-    "bluray",
-    "web-dl",
-    "webdl",
-    "webrip",
-    "bdrip",
-    "dvdrip",
-    "hdrip",
-  ];
-
-  // Function to calculate score for a subtitle
-  const calculateScore = (subtitle: any) => {
-    let score = 0;
-    const attrs = subtitle.attributes;
-
-    // Prefer HD subtitles
-    if (attrs.hd) score += 5;
-
-    // Score based on download count (1 point per 100 downloads, max 10 points)
-    score += Math.min(Math.floor(attrs.download_count / 100), 10);
-
-    // Score based on rating (0-10 points)
-    score += attrs.ratings * 2; // ratings are from 0-5, so we double it
-
-    // Prefer more recent uploads (lose 1 point per month old, max 12 points lost)
-    const monthsOld =
-      (new Date().getTime() - new Date(attrs.upload_date).getTime()) /
-      (1000 * 60 * 60 * 24 * 30);
-    score -= Math.min(Math.floor(monthsOld), 12);
-
-    // Prefer trusted uploaders
-    if (attrs.from_trusted) score += 3;
-
-    // Prefer certain languages
-    const languageIndex = priorityLanguages.indexOf(attrs.language);
-    if (languageIndex !== -1) {
-      score += 5 - languageIndex; // 5 points for first language, 4 for second, etc.
-    }
-
-    // Prefer certain release types
-    const release = attrs.release.toLowerCase();
-    for (let i = 0; i < priorityReleaseKeywords.length; i++) {
-      if (release.includes(priorityReleaseKeywords[i])) {
-        score += 5 - i; // 5 points for first keyword, 4 for second, etc.
-        break;
-      }
-    }
-
-    return score;
-  };
-
-  // Sort subtitles by score
-  const sortedSubtitles = data.data.sort(
-    (a: any, b: any) => calculateScore(b) - calculateScore(a)
+  // Find subtitles in the target language
+  const targetLangSubtitle = data.subtitles.find(
+    (sub: any) => sub.language.toLowerCase() === targetLanguage.toLowerCase()
   );
 
-  // Return the best subtitle, or null if no subtitles found
-  if (sortedSubtitles.length > 0) {
-    const bestSubtitle = sortedSubtitles[0];
-    const fileId = bestSubtitle.attributes.files[0].file_id;
-
-    // Download the subtitle content
-    const rawSrtContent = await downloadSubtitles(fileId);
-
-    // Format the subtitle content
-    let formattedSrtContent = formatSubtitles(rawSrtContent);
-    formattedSrtContent = improveSubtitleFormatting(rawSrtContent);
-
-    // Return the formatted content along with the subtitle info
+  if (targetLangSubtitle) {
+    const subtitleContent = await downloadAndExtractSubtitle(
+      targetLangSubtitle.url,
+      seasonNumber,
+      episodeNumber
+    );
     return {
-      ...bestSubtitle,
-      formattedContent: formattedSrtContent,
+      content: subtitleContent,
+      generated: false,
     };
   }
 
-  return null;
+  // If target language not found, use the first available subtitle and translate
+  const bestSubtitle = data.subtitles[0];
+  const subtitleContent = await downloadAndExtractSubtitle(
+    bestSubtitle.url,
+    seasonNumber,
+    episodeNumber
+  );
+
+  // Translate subtitles to the target language
+  const translatedContent = await translateSubtitles(
+    subtitleContent,
+    bestSubtitle.language,
+    targetLanguage
+  );
+
+  return {
+    content: translatedContent,
+    generated: true,
+  };
 }
 
-function improveSubtitleFormatting(input: string): string {
-  // Split the input into lines
-  const lines = input.split("\n");
-  let formattedSubtitles = [];
-  let currentSubtitle = [];
+async function downloadAndExtractSubtitle(
+  url: string,
+  seasonNumber?: number,
+  episodeNumber?: number
+): Promise<string> {
+  const response = await fetch(`https://dl.subdl.com${url}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
 
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
+  const buffer = await response.buffer();
+  const zip = new AdmZip(buffer);
 
-    // Check if the line is a subtitle number
-    if (/^\d+$/.test(line)) {
-      // If we have a previous subtitle, add it to the formatted subtitles
-      if (currentSubtitle.length > 0) {
-        formattedSubtitles.push(currentSubtitle.join("\n"));
-        currentSubtitle = [];
-      }
-      // Start a new subtitle
-      currentSubtitle.push(line);
+  let subtitleContent = "";
+
+  if (seasonNumber !== undefined && episodeNumber !== undefined) {
+    // TV show
+    const episodePattern = new RegExp(
+      `S${String(seasonNumber).padStart(2, "0")}E${String(
+        episodeNumber
+      ).padStart(2, "0")}.*\\.srt$`,
+      "i"
+    );
+    const matchingEntry = zip
+      .getEntries()
+      .find((entry: AdmZip.IZipEntry) => episodePattern.test(entry.entryName));
+
+    if (matchingEntry) {
+      subtitleContent = matchingEntry.getData().toString("utf8");
+    } else {
+      throw new Error(
+        "No matching subtitle file found for the specified episode"
+      );
     }
-    // Add non-empty lines to the current subtitle
-    else if (line !== "") {
-      currentSubtitle.push(line);
+  } else {
+    // Movie
+    const srtEntry = zip
+      .getEntries()
+      .find((entry: AdmZip.IZipEntry) =>
+        entry.entryName.toLowerCase().endsWith(".srt")
+      );
+    if (srtEntry) {
+      subtitleContent = srtEntry.getData().toString("utf8");
+    } else {
+      throw new Error("No .srt file found in the downloaded zip");
     }
   }
 
-  // Add the last subtitle if there is one
-  if (currentSubtitle.length > 0) {
-    formattedSubtitles.push(currentSubtitle.join("\n"));
-  }
-
-  // Join all formatted subtitles with double line breaks
-  return formattedSubtitles.join("\n\n");
-}
-
-async function downloadSubtitles(fileId: string): Promise<string> {
-  const downloadLink = await fetchSubtitlesDownloadLink(fileId);
-  const srtContent = await downloadSrtContent(downloadLink);
-  const strContentClean = cleanSrtContent(srtContent);
-
-  return strContentClean;
+  return cleanSrtContent(subtitleContent);
 }
 
 async function translateSubtitles(
@@ -399,39 +315,21 @@ async function translateBatch(
   }
 }
 
-async function fetchSubtitlesDownloadLink(fileId: string): Promise<string> {
-  const response = await fetch(
-    `https://api.opensubtitles.com/api/v1/download`,
-    {
-      method: "POST",
-      headers: {
-        "User-Agent": "ONEDUB v0.1",
-        "Api-Key": process.env.OPENSUBTITLES_API_KEY!,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ file_id: fileId }),
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
-  return data.link;
-}
-
-async function downloadSrtContent(link: string): Promise<string> {
-  const response = await fetch(link);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-  return await response.text();
-}
-
 function cleanSrtContent(srtContent: string): string {
+  // Split the content into individual subtitle entries
+  let entries = srtContent.split("\n\n");
+
+  // Filter out entries that start with '#'
+  entries = entries.filter((entry) => {
+    const lines = entry.split("\n");
+    return lines.length < 3 || !lines[2].trim().startsWith("#");
+  });
+
+  // Join the remaining entries back together
+  let cleaned = entries.join("\n\n");
+
   // Remove HTML tags
-  let cleaned = srtContent.replace(/<[^>]*>/g, "");
+  cleaned = cleaned.replace(/<[^>]*>/g, "");
 
   // Remove bracketed descriptions like [Phone ringing] or [Sigh]
   cleaned = cleaned.replace(/\[.*?\]/g, "");
@@ -446,37 +344,4 @@ function cleanSrtContent(srtContent: string): string {
   cleaned = cleaned.replace(/^\s*[\r\n]/gm, "");
 
   return cleaned;
-}
-
-function formatSubtitles(srtContent: string): string {
-  const lines = srtContent.split("\n");
-  let formattedContent = "";
-  let currentEntry = [];
-  let subtitleNumber = 1;
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-
-    if (line === "") {
-      if (currentEntry.length >= 3) {
-        // Format and add the current entry
-        formattedContent += `${subtitleNumber}\n`;
-        formattedContent += `${currentEntry[1]}\n`;
-        formattedContent += currentEntry.slice(2).join("\n") + "\n\n";
-        subtitleNumber++;
-      }
-      currentEntry = [];
-    } else {
-      currentEntry.push(line);
-    }
-  }
-
-  // Add the last entry if it exists
-  if (currentEntry.length >= 3) {
-    formattedContent += `${subtitleNumber}\n`;
-    formattedContent += `${currentEntry[1]}\n`;
-    formattedContent += currentEntry.slice(2).join("\n") + "\n\n";
-  }
-
-  return formattedContent.trim();
 }
