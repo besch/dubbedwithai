@@ -4,7 +4,7 @@ import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
 import languageCodes from "@/lib/languageCodes";
 import fetch from "node-fetch";
-import AdmZip from "adm-zip";
+import unzipper from "unzipper";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -180,7 +180,7 @@ async function downloadAndExtractSubtitle(
   }
 
   const buffer = await response.buffer();
-  const zip = new AdmZip(buffer);
+  const zip = await unzipper.Open.buffer(buffer);
 
   let subtitleContent = "";
 
@@ -192,12 +192,14 @@ async function downloadAndExtractSubtitle(
       ).padStart(2, "0")}.*\\.srt$`,
       "i"
     );
-    const matchingEntry = zip
-      .getEntries()
-      .find((entry: AdmZip.IZipEntry) => episodePattern.test(entry.entryName));
+    const matchingEntry = zip.files.find((entry) =>
+      episodePattern.test(entry.path)
+    );
 
     if (matchingEntry) {
-      subtitleContent = matchingEntry.getData().toString("utf8");
+      subtitleContent = await matchingEntry
+        .buffer()
+        .then((buf) => buf.toString("utf8"));
     } else {
       throw new Error(
         "No matching subtitle file found for the specified episode"
@@ -205,13 +207,13 @@ async function downloadAndExtractSubtitle(
     }
   } else {
     // Movie
-    const srtEntry = zip
-      .getEntries()
-      .find((entry: AdmZip.IZipEntry) =>
-        entry.entryName.toLowerCase().endsWith(".srt")
-      );
+    const srtEntry = zip.files.find((entry) =>
+      entry.path.toLowerCase().endsWith(".srt")
+    );
     if (srtEntry) {
-      subtitleContent = srtEntry.getData().toString("utf8");
+      subtitleContent = await srtEntry
+        .buffer()
+        .then((buf) => buf.toString("utf8"));
     } else {
       throw new Error("No .srt file found in the downloaded zip");
     }
