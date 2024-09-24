@@ -100,19 +100,8 @@ async function getBestSubtitle(
   seasonNumber?: number,
   episodeNumber?: number
 ) {
-  const languages = [
-    targetLanguage,
-    "en",
-    "es",
-    "fr",
-    "ru",
-    "de",
-    "it",
-    "pt",
-    "ja",
-    "zh",
-  ];
-  const languageString = languages.join(",");
+  const languages = ["en", "es", "fr", "ru", "de", "it", "pt", "ja", "zh"];
+  const languageString = `${targetLanguage},${languages.join(",")}`;
 
   let url = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${languageString}`;
 
@@ -121,11 +110,41 @@ async function getBestSubtitle(
   }
 
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
   const data = await response.json();
+
+  if (data.success === false && data.error === "Language error") {
+    const fallbackLanguage = languages.join(",");
+    const fallbackUrl = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${fallbackLanguage}`;
+
+    const fallbackResponse = await fetch(fallbackUrl);
+    if (!fallbackResponse.ok) {
+      throw new Error(`HTTP error! status: ${fallbackResponse.status}`);
+    }
+
+    const fallbackData = await fallbackResponse.json();
+    if (!fallbackData.subtitles || fallbackData.subtitles.length === 0) {
+      return null;
+    }
+
+    const bestSubtitle = fallbackData.subtitles[0];
+    const subtitleContent = await downloadAndExtractSubtitle(
+      bestSubtitle.url,
+      seasonNumber,
+      episodeNumber
+    );
+
+    // Translate subtitles to the target language
+    const translatedContent = await translateSubtitles(
+      subtitleContent,
+      bestSubtitle.language,
+      targetLanguage
+    );
+
+    return {
+      content: translatedContent,
+      generated: true,
+    };
+  }
 
   if (!data.subtitles || data.subtitles.length === 0) {
     return null;
