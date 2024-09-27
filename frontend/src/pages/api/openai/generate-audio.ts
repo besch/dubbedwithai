@@ -7,6 +7,7 @@ import { DubbingVoice } from "@/types";
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
 const bucketName = "dubbed_with_ai";
 
 export default async function generateAudio(
