@@ -47,29 +47,21 @@ export default async function fetchSubtitles(
         .download();
       const srtContent = fileContents.toString("utf-8");
       return res.status(200).json({
-        subtitleInfo: {
-          attributes: {
-            language: languageCode,
-            language_name: languageCodes[languageCode] || languageCode,
-          },
-        },
         srtContent: srtContent,
       });
     }
 
     // Step 2 & 3: Query OpenSubtitles or generate/translate if necessary
-    const { subtitleInfo, srtContent, generated } =
-      await getOrGenerateSubtitles(
-        imdbID,
-        languageCode,
-        seasonNumber,
-        episodeNumber
-      );
+    const { srtContent, generated } = await getOrGenerateSubtitles(
+      imdbID,
+      languageCode,
+      seasonNumber,
+      episodeNumber
+    );
 
     await storage.bucket(bucketName).file(filePath).save(srtContent);
 
     return res.status(200).json({
-      subtitleInfo,
       srtContent,
       generated,
     });
@@ -84,7 +76,7 @@ async function getOrGenerateSubtitles(
   targetLanguage: string,
   seasonNumber?: number,
   episodeNumber?: number
-): Promise<{ subtitleInfo: any; srtContent: string; generated: boolean }> {
+): Promise<{ srtContent: string; generated: boolean }> {
   const bestSubtitle = await getBestSubtitle(
     imdbID,
     seasonNumber,
@@ -110,12 +102,6 @@ async function getOrGenerateSubtitles(
   if (bestSubtitle.attributes.language === targetLanguage) {
     // If the best subtitle is already in the target language, return it as is
     return {
-      subtitleInfo: {
-        attributes: {
-          language: targetLanguage,
-          language_name: languageCodes[targetLanguage] || targetLanguage,
-        },
-      },
       srtContent: formattedSrtContent,
       generated: false,
     };
@@ -129,12 +115,6 @@ async function getOrGenerateSubtitles(
   );
 
   return {
-    subtitleInfo: {
-      attributes: {
-        language: targetLanguage,
-        language_name: languageCodes[targetLanguage] || targetLanguage,
-      },
-    },
     srtContent: translatedContent,
     generated: true,
   };
