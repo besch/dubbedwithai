@@ -102,6 +102,7 @@ async function getBestSubtitle(
 ) {
   const languages = ["en", "es", "fr", "ru", "de", "it", "pt", "ja", "zh"];
   const languageString = `${targetLanguage},${languages.join(",")}`;
+
   let url = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${languageString}`;
 
   if (seasonNumber !== undefined && episodeNumber !== undefined) {
