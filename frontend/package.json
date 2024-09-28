@@ -20,7 +20,7 @@
     "@tanstack/react-query": "^5.32.0",
     "@types/lodash": "^4.17.5",
     "@wavesurfer/react": "^1.0.6",
-    "axios": "^1.6.8",
+    "axios": "^1.7.7",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
     "cors": "^2.8.5",
@@ -44,6 +44,7 @@
     "srt-to-obj": "^0.0.3",
     "tailwind-merge": "^2.3.0",
     "tailwindcss-animate": "^1.0.7",
+    "unzipper": "^0.12.3",
     "wavesurfer.js": "^7.7.15"
   },
   "devDependencies": {
@@ -51,6 +52,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-window": "^1.8.8",
+    "@types/unzipper": "^0.10.10",
     "eslint": "^8",
     "eslint-config-next": "14.2.2",
     "postcss": "^8",
