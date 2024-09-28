@@ -4,7 +4,7 @@ import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
 import languageCodes from "@/lib/languageCodes";
 import fetch from "node-fetch";
-import AdmZip from "adm-zip";
+import unzipper from "unzipper";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -100,19 +100,8 @@ async function getBestSubtitle(
   seasonNumber?: number,
   episodeNumber?: number
 ) {
-  const languages = [
-    targetLanguage,
-    "en",
-    "es",
-    "fr",
-    "ru",
-    "de",
-    "it",
-    "pt",
-    "ja",
-    "zh",
-  ];
-  const languageString = languages.join(",");
+  const languages = ["en", "es", "fr", "ru", "de", "it", "pt", "ja", "zh"];
+  const languageString = `${targetLanguage},${languages.join(",")}`;
 
   let url = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${languageString}`;
 
@@ -121,11 +110,41 @@ async function getBestSubtitle(
   }
 
   const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
   const data = await response.json();
+
+  if (data.success === false && data.error === "Language error") {
+    const fallbackLanguage = languages.join(",");
+    const fallbackUrl = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${fallbackLanguage}`;
+
+    const fallbackResponse = await fetch(fallbackUrl);
+    if (!fallbackResponse.ok) {
+      throw new Error(`HTTP error! status: ${fallbackResponse.status}`);
+    }
+
+    const fallbackData = await fallbackResponse.json();
+    if (!fallbackData.subtitles || fallbackData.subtitles.length === 0) {
+      return null;
+    }
+
+    const bestSubtitle = fallbackData.subtitles[0];
+    const subtitleContent = await downloadAndExtractSubtitle(
+      bestSubtitle.url,
+      seasonNumber,
+      episodeNumber
+    );
+
+    // Translate subtitles to the target language
+    const translatedContent = await translateSubtitles(
+      subtitleContent,
+      bestSubtitle.language,
+      targetLanguage
+    );
+
+    return {
+      content: translatedContent,
+      generated: true,
+    };
+  }
 
   if (!data.subtitles || data.subtitles.length === 0) {
     return null;
@@ -180,7 +199,7 @@ async function downloadAndExtractSubtitle(
   }
 
   const buffer = await response.buffer();
-  const zip = new AdmZip(buffer);
+  const zip = await unzipper.Open.buffer(buffer);
 
   let subtitleContent = "";
 
@@ -192,12 +211,14 @@ async function downloadAndExtractSubtitle(
       ).padStart(2, "0")}.*\\.srt$`,
       "i"
     );
-    const matchingEntry = zip
-      .getEntries()
-      .find((entry: AdmZip.IZipEntry) => episodePattern.test(entry.entryName));
+    const matchingEntry = zip.files.find((entry) =>
+      episodePattern.test(entry.path)
+    );
 
     if (matchingEntry) {
-      subtitleContent = matchingEntry.getData().toString("utf8");
+      subtitleContent = await matchingEntry
+        .buffer()
+        .then((buf) => buf.toString("utf8"));
     } else {
       throw new Error(
         "No matching subtitle file found for the specified episode"
@@ -205,13 +226,13 @@ async function downloadAndExtractSubtitle(
     }
   } else {
     // Movie
-    const srtEntry = zip
-      .getEntries()
-      .find((entry: AdmZip.IZipEntry) =>
-        entry.entryName.toLowerCase().endsWith(".srt")
-      );
+    const srtEntry = zip.files.find((entry) =>
+      entry.path.toLowerCase().endsWith(".srt")
+    );
     if (srtEntry) {
-      subtitleContent = srtEntry.getData().toString("utf8");
+      subtitleContent = await srtEntry
+        .buffer()
+        .then((buf) => buf.toString("utf8"));
     } else {
       throw new Error("No .srt file found in the downloaded zip");
     }
