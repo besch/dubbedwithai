@@ -109,6 +109,9 @@ async function getBestSubtitle(
     url += `&season_number=${seasonNumber}&episode_number=${episodeNumber}`;
   }
 
+  console.warn("URL:", url);
+  console.warn("AWS_LAMBDA_PROXY_URL:", process.env.AWS_LAMBDA_PROXY_URL);
+
   try {
     // Use the AWS Lambda proxy instead of direct fetch
     const proxyResponse = await axios.post(process.env.AWS_LAMBDA_PROXY_URL!, {
@@ -117,6 +120,8 @@ async function getBestSubtitle(
     });
 
     const data = proxyResponse.data;
+
+    console.warn("DATA:", data);
 
     if (data.success === false && data.error === "Language error") {
       const fallbackLanguage = languages.join(",");
