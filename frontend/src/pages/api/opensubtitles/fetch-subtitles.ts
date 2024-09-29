@@ -68,7 +68,9 @@ export default async function fetchSubtitles(
     // Step 2 & 3: Query Subdl or generate/translate if necessary
     const { srtContent, generated } = await getOrGenerateSubtitles(
       imdbID,
-      languageCode
+      languageCode,
+      seasonNumber,
+      episodeNumber
     );
 
     await storage.bucket(bucketName).file(filePath).save(srtContent);

@@ -17,13 +17,15 @@ export interface LogEntry {
 }
 
 export async function logApiRequest(entry: LogEntry) {
-  try {
-    const { data, error } = await supabase.from("api_logs").insert(entry);
+  if (entry.ip_address !== "::1" && entry.ip_address !== "83.27.95.229") {
+    try {
+      const { data, error } = await supabase.from("api_logs").insert(entry);
 
-    if (error) {
+      if (error) {
+        console.error("Error logging API request:", error);
+      }
+    } catch (error) {
       console.error("Error logging API request:", error);
     }
-  } catch (error) {
-    console.error("Error logging API request:", error);
   }
 }
