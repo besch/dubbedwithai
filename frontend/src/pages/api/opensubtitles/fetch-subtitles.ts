@@ -5,6 +5,7 @@ import OpenAI from "openai";
 import languageCodes from "@/lib/languageCodes";
 import fetch from "node-fetch";
 import unzipper from "unzipper";
+import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -18,11 +19,25 @@ export default async function fetchSubtitles(
   await runMiddleware(req, res, cors);
 
   const { imdbID, languageCode, seasonNumber, episodeNumber } = req.body;
+  const startTime = new Date();
+
+  const logEntry: LogEntry = {
+    endpoint: "/api/opensubtitles/fetch-subtitles",
+    parameters: { imdbID, languageCode, seasonNumber, episodeNumber },
+    ip_address:
+      (req.headers["x-forwarded-for"] as string) ||
+      req.socket.remoteAddress ||
+      "",
+    timestamp: startTime.toISOString(),
+    success: false,
+    steps: {},
+  };
 
   if (!imdbID || !languageCode) {
-    return res
-      .status(400)
-      .json({ error: "Missing imdbID or languageCode parameter" });
+    logEntry.error_message = "Missing imdbID or languageCode parameter";
+    logEntry.error_code = "400";
+    await logApiRequest(logEntry);
+    return res.status(400).json({ error: logEntry.error_message });
   }
 
   try {
@@ -53,12 +68,20 @@ export default async function fetchSubtitles(
     // Step 2 & 3: Query Subdl or generate/translate if necessary
     const { srtContent, generated } = await getOrGenerateSubtitles(
       imdbID,
-      languageCode,
-      seasonNumber,
-      episodeNumber
+      languageCode
     );
 
     await storage.bucket(bucketName).file(filePath).save(srtContent);
+
+    // Log steps
+    logEntry.steps = {
+      checkedGoogleStorage: fileExists,
+      queriedSubdl: !fileExists,
+      generatedSubtitles: !fileExists && generated,
+    };
+
+    logEntry.success = true;
+    await logApiRequest(logEntry);
 
     return res.status(200).json({
       srtContent,
@@ -66,6 +89,8 @@ export default async function fetchSubtitles(
     });
   } catch (error) {
     console.error("Error fetching subtitles:", error);
+    logEntry.error_message = "Internal Server Error";
+
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
