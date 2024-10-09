@@ -262,11 +262,6 @@ async function downloadAndExtractSubtitle(
     } else {
       throw new Error("No .srt file found in the downloaded zip");
     }
-
-    return cleanSrtContent(subtitleContent);
-  } catch (error) {
-    console.error("Error downloading subtitle from proxy:", error);
-    throw error;
   }
 
   return cleanSrtContent(subtitleContent);
