@@ -3,6 +3,7 @@ import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
 import { DubbingVoice } from "@/types";
+import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -15,10 +16,26 @@ export default async function generateAudio(
 ) {
   await runMiddleware(req, res, cors);
 
+  const startTime = new Date();
+  const logEntry: LogEntry = {
+    endpoint: "/api/openai/generate-audio",
+    parameters: { text: req.body.text, filePath: req.body.filePath },
+    ip_address:
+      (req.headers["x-forwarded-for"] as string) ||
+      req.socket.remoteAddress ||
+      "",
+    timestamp: startTime.toISOString(),
+    success: false,
+    steps: {},
+  };
+
   const { text, filePath } = req.body;
 
   if (!text || !filePath) {
     console.error("Missing required parameters:", { text, filePath });
+    logEntry.error_message = "Missing required parameters";
+    logEntry.error_code = "400";
+    await logApiRequest(logEntry);
     return res.status(400).json({
       error: "Missing required parameters",
       details: {
@@ -32,10 +49,22 @@ export default async function generateAudio(
     const voice = extractVoiceFromFilePath(filePath);
     const buffer = await generateAndUploadAudio(text, filePath, voice);
 
+    logEntry.success = true;
+    logEntry.steps = {
+      voiceExtracted: true,
+      audioGenerated: true,
+      audioUploaded: true,
+    };
+    await logApiRequest(logEntry);
+
     res.setHeader("Content-Type", "audio/mp3");
     res.status(200).send(buffer);
   } catch (error: unknown) {
     console.error("Error generating audio:", error);
+    logEntry.error_message =
+      error instanceof Error ? error.message : "An unknown error occurred";
+    logEntry.error_code = "500";
+    await logApiRequest(logEntry);
     if (error instanceof Error) {
       res
         .status(500)

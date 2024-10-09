@@ -1,8 +1,22 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
+import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 
 const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
+
+  const startTime = new Date();
+  const logEntry: LogEntry = {
+    endpoint: "/api/search-movies",
+    parameters: { text: req.body.text },
+    ip_address:
+      (req.headers["x-forwarded-for"] as string) ||
+      req.socket.remoteAddress ||
+      "",
+    timestamp: startTime.toISOString(),
+    success: false,
+    steps: {},
+  };
 
   try {
     const response = await fetch(
@@ -15,9 +29,15 @@ const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
 
     const data = await response.json();
 
+    logEntry.success = true;
+    await logApiRequest(logEntry);
+
     res.status(200).json(data);
   } catch (error) {
     console.error("Error searching movies:", error);
+    logEntry.error_message = "Error searching movies";
+    logEntry.error_code = "500";
+    await logApiRequest(logEntry);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };

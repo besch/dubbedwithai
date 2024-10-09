@@ -11,16 +11,16 @@ const SendFeedback = async (req: NextApiRequest, res: NextApiResponse) => {
     return res.status(405).json({ message: "Method Not Allowed" });
   }
 
-  const { email, subject, message } = req.body;
+  const { email, name, message } = req.body;
 
-  if (!email || !subject || !message) {
+  if (!email || !name || !message) {
     return res.status(400).json({ message: "Missing required fields" });
   }
 
   const msg = {
     to: process.env.FEEDBACK_EMAIL,
-    from: process.env.SENDGRID_FROM_EMAIL as string, // This needs to be a verified sender
-    subject: `Feedback: ${subject}`,
+    from: process.env.SENDGRID_FROM_EMAIL as string,
+    name: `Feedback: ${name}`,
     text: `From: ${email}\n\n${message}`,
   };
 

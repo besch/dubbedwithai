@@ -3,13 +3,13 @@ import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "../google-storage/google-storage-config";
 import OpenAI from "openai";
 import languageCodes from "@/lib/languageCodes";
+import fetch from "node-fetch";
 import unzipper from "unzipper";
-import axios from "axios";
+import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
-
 const bucketName = "dubbed_with_ai";
 
 export default async function fetchSubtitles(
@@ -19,11 +19,25 @@ export default async function fetchSubtitles(
   await runMiddleware(req, res, cors);
 
   const { imdbID, languageCode, seasonNumber, episodeNumber } = req.body;
+  const startTime = new Date();
+
+  const logEntry: LogEntry = {
+    endpoint: "/api/opensubtitles/fetch-subtitles",
+    parameters: { imdbID, languageCode, seasonNumber, episodeNumber },
+    ip_address:
+      (req.headers["x-forwarded-for"] as string) ||
+      req.socket.remoteAddress ||
+      "",
+    timestamp: startTime.toISOString(),
+    success: false,
+    steps: {},
+  };
 
   if (!imdbID || !languageCode) {
-    return res
-      .status(400)
-      .json({ error: "Missing imdbID or languageCode parameter" });
+    logEntry.error_message = "Missing imdbID or languageCode parameter";
+    logEntry.error_code = "400";
+    await logApiRequest(logEntry);
+    return res.status(400).json({ error: logEntry.error_message });
   }
 
   try {
@@ -61,12 +75,24 @@ export default async function fetchSubtitles(
 
     await storage.bucket(bucketName).file(filePath).save(srtContent);
 
+    // Log steps
+    logEntry.steps = {
+      checkedGoogleStorage: fileExists,
+      queriedSubdl: !fileExists,
+      generatedSubtitles: !fileExists && generated,
+    };
+
+    logEntry.success = true;
+    await logApiRequest(logEntry);
+
     return res.status(200).json({
       srtContent,
       generated,
     });
   } catch (error) {
     console.error("Error fetching subtitles:", error);
+    logEntry.error_message = "Internal Server Error";
+
     res.status(500).json({ error: "Internal Server Error" });
   }
 }
@@ -109,75 +135,24 @@ async function getBestSubtitle(
     url += `&season_number=${seasonNumber}&episode_number=${episodeNumber}`;
   }
 
-  try {
-    // Use the AWS Lambda proxy instead of direct fetch
-    const proxyResponse = await axios.post(process.env.AWS_LAMBDA_PROXY_URL!, {
-      url,
-      method: "GET",
-    });
+  const response = await fetch(url);
+  const data = await response.json();
 
-    const data = proxyResponse.data;
+  if (data.success === false && data.error === "Language error") {
+    const fallbackLanguage = languages.join(",");
+    const fallbackUrl = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${fallbackLanguage}`;
 
-    if (data.success === false && data.error === "Language error") {
-      const fallbackLanguage = languages.join(",");
-      const fallbackUrl = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${fallbackLanguage}`;
-
-      const fallbackResponse = await axios.post(
-        process.env.AWS_LAMBDA_PROXY_URL!,
-        {
-          url: fallbackUrl,
-          method: "GET",
-        }
-      );
-
-      const fallbackData = fallbackResponse.data;
-      if (!fallbackData.subtitles || fallbackData.subtitles.length === 0) {
-        return null;
-      }
-
-      const bestSubtitle = fallbackData.subtitles[0];
-      const subtitleContent = await downloadAndExtractSubtitle(
-        bestSubtitle.url,
-        seasonNumber,
-        episodeNumber
-      );
-
-      // Translate subtitles to the target language
-      const translatedContent = await translateSubtitles(
-        subtitleContent,
-        bestSubtitle.language,
-        targetLanguage
-      );
-
-      return {
-        content: translatedContent,
-        generated: true,
-      };
+    const fallbackResponse = await fetch(fallbackUrl);
+    if (!fallbackResponse.ok) {
+      throw new Error(`HTTP error! status: ${fallbackResponse.status}`);
     }
 
-    if (!data.subtitles || data.subtitles.length === 0) {
+    const fallbackData = await fallbackResponse.json();
+    if (!fallbackData.subtitles || fallbackData.subtitles.length === 0) {
       return null;
     }
 
-    // Find subtitles in the target language
-    const targetLangSubtitle = data.subtitles.find(
-      (sub: any) => sub.language.toLowerCase() === targetLanguage.toLowerCase()
-    );
-
-    if (targetLangSubtitle) {
-      const subtitleContent = await downloadAndExtractSubtitle(
-        targetLangSubtitle.url,
-        seasonNumber,
-        episodeNumber
-      );
-      return {
-        content: subtitleContent,
-        generated: false,
-      };
-    }
-
-    // If target language not found, use the first available subtitle and translate
-    const bestSubtitle = data.subtitles[0];
+    const bestSubtitle = fallbackData.subtitles[0];
     const subtitleContent = await downloadAndExtractSubtitle(
       bestSubtitle.url,
       seasonNumber,
@@ -195,10 +170,48 @@ async function getBestSubtitle(
       content: translatedContent,
       generated: true,
     };
-  } catch (error) {
-    console.error("Error fetching subtitles from proxy:", error);
-    throw error;
   }
+
+  if (!data.subtitles || data.subtitles.length === 0) {
+    return null;
+  }
+
+  // Find subtitles in the target language
+  const targetLangSubtitle = data.subtitles.find(
+    (sub: any) => sub.language.toLowerCase() === targetLanguage.toLowerCase()
+  );
+
+  if (targetLangSubtitle) {
+    const subtitleContent = await downloadAndExtractSubtitle(
+      targetLangSubtitle.url,
+      seasonNumber,
+      episodeNumber
+    );
+    return {
+      content: subtitleContent,
+      generated: false,
+    };
+  }
+
+  // If target language not found, use the first available subtitle and translate
+  const bestSubtitle = data.subtitles[0];
+  const subtitleContent = await downloadAndExtractSubtitle(
+    bestSubtitle.url,
+    seasonNumber,
+    episodeNumber
+  );
+
+  // Translate subtitles to the target language
+  const translatedContent = await translateSubtitles(
+    subtitleContent,
+    bestSubtitle.language,
+    targetLanguage
+  );
+
+  return {
+    content: translatedContent,
+    generated: true,
+  };
 }
 
 async function downloadAndExtractSubtitle(
@@ -206,53 +219,48 @@ async function downloadAndExtractSubtitle(
   seasonNumber?: number,
   episodeNumber?: number
 ): Promise<string> {
-  const fullUrl = `https://dl.subdl.com${url}`;
+  const response = await fetch(`https://dl.subdl.com${url}`);
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
 
-  try {
-    const proxyResponse = await axios.post(process.env.AWS_LAMBDA_PROXY_URL!, {
-      url: fullUrl,
-      method: "GET",
-      responseType: "arraybuffer",
-    });
+  const buffer = await response.buffer();
+  const zip = await unzipper.Open.buffer(buffer);
 
-    const buffer = Buffer.from(proxyResponse.data);
-    const zip = await unzipper.Open.buffer(buffer);
+  let subtitleContent = "";
 
-    let subtitleContent = "";
+  if (seasonNumber !== undefined && episodeNumber !== undefined) {
+    // TV show
+    const episodePattern = new RegExp(
+      `S${String(seasonNumber).padStart(2, "0")}E${String(
+        episodeNumber
+      ).padStart(2, "0")}.*\\.srt$`,
+      "i"
+    );
+    const matchingEntry = zip.files.find((entry) =>
+      episodePattern.test(entry.path)
+    );
 
-    if (seasonNumber !== undefined && episodeNumber !== undefined) {
-      // TV show
-      const episodePattern = new RegExp(
-        `S${String(seasonNumber).padStart(2, "0")}E${String(
-          episodeNumber
-        ).padStart(2, "0")}.*\\.srt$`,
-        "i"
-      );
-      const matchingEntry = zip.files.find((entry) =>
-        episodePattern.test(entry.path)
-      );
-
-      if (matchingEntry) {
-        subtitleContent = await matchingEntry
-          .buffer()
-          .then((buf) => buf.toString("utf8"));
-      } else {
-        throw new Error(
-          "No matching subtitle file found for the specified episode"
-        );
-      }
+    if (matchingEntry) {
+      subtitleContent = await matchingEntry
+        .buffer()
+        .then((buf) => buf.toString("utf8"));
     } else {
-      // Movie
-      const srtEntry = zip.files.find((entry) =>
-        entry.path.toLowerCase().endsWith(".srt")
+      throw new Error(
+        "No matching subtitle file found for the specified episode"
       );
-      if (srtEntry) {
-        subtitleContent = await srtEntry
-          .buffer()
-          .then((buf) => buf.toString("utf8"));
-      } else {
-        throw new Error("No .srt file found in the downloaded zip");
-      }
+    }
+  } else {
+    // Movie
+    const srtEntry = zip.files.find((entry) =>
+      entry.path.toLowerCase().endsWith(".srt")
+    );
+    if (srtEntry) {
+      subtitleContent = await srtEntry
+        .buffer()
+        .then((buf) => buf.toString("utf8"));
+    } else {
+      throw new Error("No .srt file found in the downloaded zip");
     }
 
     return cleanSrtContent(subtitleContent);
@@ -260,6 +268,8 @@ async function downloadAndExtractSubtitle(
     console.error("Error downloading subtitle from proxy:", error);
     throw error;
   }
+
+  return cleanSrtContent(subtitleContent);
 }
 
 async function translateSubtitles(
