@@ -20,7 +20,7 @@ const SendFeedback = async (req: NextApiRequest, res: NextApiResponse) => {
   const msg = {
     to: process.env.FEEDBACK_EMAIL,
     from: process.env.SENDGRID_FROM_EMAIL as string,
-    name: `Feedback: ${name}`,
+    subject: `Feedback from: ${name}`,
     text: `From: ${email}\n\n${message}`,
   };
 
