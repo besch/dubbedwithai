@@ -17,6 +17,7 @@ const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
+    url: req.body.url,
   };
 
   try {

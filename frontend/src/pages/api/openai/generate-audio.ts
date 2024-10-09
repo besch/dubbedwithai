@@ -27,6 +27,7 @@ export default async function generateAudio(
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
+    url: req.body.url,
   };
 
   const { text, filePath } = req.body;

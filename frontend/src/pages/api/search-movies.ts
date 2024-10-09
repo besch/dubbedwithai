@@ -7,6 +7,7 @@ const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
 
   const startTime = new Date();
   const logEntry: LogEntry = {
+    url: req.body.url,
     endpoint: "/api/search-movies",
     parameters: { text: req.body.text },
     ip_address:

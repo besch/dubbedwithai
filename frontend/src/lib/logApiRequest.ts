@@ -20,10 +20,11 @@ export interface LogEntry {
   error_message?: string;
   error_code?: string;
   steps?: object;
+  url?: string;
 }
 
 export async function logApiRequest(entry: LogEntry) {
-  if (entry.ip_address !== "::1" && entry.ip_address !== "83.27.95.229") {
+  if (entry.ip_address !== "::1") {
     try {
       const { data, error } = await supabase.from("api_logs").insert(entry);
 

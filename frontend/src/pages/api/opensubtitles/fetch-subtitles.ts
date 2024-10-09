@@ -31,6 +31,7 @@ export default async function fetchSubtitles(
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
+    url: req.body.url,
   };
 
   if (!imdbID || !languageCode) {
