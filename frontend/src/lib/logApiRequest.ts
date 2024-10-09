@@ -24,7 +24,6 @@ export interface LogEntry {
 }
 
 export async function logApiRequest(entry: LogEntry) {
-  console.log("Logging API request:", entry);
   if (entry.ip_address !== "::1") {
     try {
       const { data, error } = await supabase.from("api_logs").insert(entry);
