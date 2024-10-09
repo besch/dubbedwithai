@@ -63,6 +63,7 @@ export default async function fetchSubtitles(
         .file(filePath)
         .download();
       const srtContent = fileContents.toString("utf-8");
+      await logApiRequest(logEntry);
       return res.status(200).json({ srtContent });
     }
 
