@@ -16,10 +16,11 @@ export default async function generateAudio(
 ) {
   await runMiddleware(req, res, cors);
 
+  const { url, text, filePath } = req.body;
   const startTime = new Date();
   const logEntry: LogEntry = {
     endpoint: "/api/openai/generate-audio",
-    parameters: { text: req.body.text, filePath: req.body.filePath },
+    parameters: { text, filePath },
     ip_address:
       (req.headers["x-forwarded-for"] as string) ||
       req.socket.remoteAddress ||
@@ -27,10 +28,8 @@ export default async function generateAudio(
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
-    url: req.body.url,
+    url: url,
   };
-
-  const { text, filePath } = req.body;
 
   if (!text || !filePath) {
     console.error("Missing required parameters:", { text, filePath });

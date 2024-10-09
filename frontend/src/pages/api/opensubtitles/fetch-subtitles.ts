@@ -18,7 +18,7 @@ export default async function fetchSubtitles(
 ) {
   await runMiddleware(req, res, cors);
 
-  const { imdbID, languageCode, seasonNumber, episodeNumber } = req.body;
+  const { imdbID, languageCode, seasonNumber, episodeNumber, url } = req.body;
   const startTime = new Date();
 
   const logEntry: LogEntry = {
@@ -31,7 +31,7 @@ export default async function fetchSubtitles(
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
-    url: req.body.url,
+    url,
   };
 
   if (!imdbID || !languageCode) {

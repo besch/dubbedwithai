@@ -6,10 +6,11 @@ import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
 
+  const { filePath, url } = req.body;
   const startTime = new Date();
   const logEntry: LogEntry = {
     endpoint: "/api/google-storage/fetch-audio-file",
-    parameters: { filePath: req.body.filePath },
+    parameters: { filePath },
     ip_address:
       (req.headers["x-forwarded-for"] as string) ||
       req.socket.remoteAddress ||
@@ -17,12 +18,11 @@ const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
-    url: req.body.url,
+    url,
   };
 
   try {
     const bucketName = "dubbed_with_ai";
-    const { filePath } = req.body;
 
     if (!filePath) {
       logEntry.error_message = "File path is required";

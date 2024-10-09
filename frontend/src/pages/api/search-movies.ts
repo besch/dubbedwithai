@@ -5,11 +5,11 @@ import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
   await runMiddleware(req, res, cors);
 
+  const { text, url } = req.body;
   const startTime = new Date();
   const logEntry: LogEntry = {
-    url: req.body.url,
     endpoint: "/api/search-movies",
-    parameters: { text: req.body.text },
+    parameters: { text },
     ip_address:
       (req.headers["x-forwarded-for"] as string) ||
       req.socket.remoteAddress ||
@@ -17,11 +17,12 @@ const searchMovies = async (req: NextApiRequest, res: NextApiResponse) => {
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
+    url,
   };
 
   try {
     const response = await fetch(
-      `http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&s=${req.body.text}`
+      `http://www.omdbapi.com/?apikey=${process.env.OMDB_API_KEY}&s=${text}`
     );
 
     if (!response.ok) {
