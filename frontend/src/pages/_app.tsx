@@ -17,8 +17,8 @@ function MyApp({ Component, pageProps }: AppProps) {
       <Provider store={store}>
         <Layout>
           <Head>
-            <link rel="icon" href="/favicon.ico" />
-            <link rel="apple-touch-icon" href="/favicon.ico" />
+            <link rel="icon" href="/images/favicon.ico" />
+            <link rel="apple-touch-icon" href="/images/favicon.ico" />
             <meta name="theme-color" content="#000000" />
           </Head>
           <Component {...pageProps} />

@@ -44,7 +44,7 @@ export default function Home() {
 
             <div className="flex justify-center mb-4">
               <img
-                src="/icon.png"
+                src="/images/icon.png"
                 alt="OneDub Logo"
                 className="h-32 w-32 rounded-3xl border-2 border-yellow-400 mb-5"
               />
