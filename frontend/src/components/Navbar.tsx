@@ -1,25 +1,43 @@
 import Link from "next/link";
+import { useState } from "react";
+import { Menu, X } from "lucide-react";
 
 export default function Navbar() {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
   return (
-    <nav className="bg-accent text-foreground p-4 shadow-md">
+    <nav className="bg-gray-900 text-white p-4">
       <div className="container mx-auto flex justify-between items-center">
         <Link href="/" className="text-2xl font-bold">
           Dubabase
         </Link>
-        <div className="space-x-6">
-          <Link href="/" className="hover:text-yellow-400 transition-colors">
+        <div className="md:hidden">
+          <button onClick={() => setIsMenuOpen(!isMenuOpen)}>
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+        <div
+          className={`md:flex space-x-6 ${
+            isMenuOpen
+              ? "block absolute top-16 left-0 right-0 bg-gray-900 p-4"
+              : "hidden"
+          }`}
+        >
+          <Link
+            href="/"
+            className="block py-2 hover:text-yellow-400 transition-colors"
+          >
             Home
           </Link>
           <Link
             href="/pricing"
-            className="hover:text-yellow-400 transition-colors"
+            className="block py-2 hover:text-yellow-400 transition-colors"
           >
             Pricing
           </Link>
           <Link
             href="/privacy-policy"
-            className="hover:text-yellow-400 transition-colors"
+            className="block py-2 hover:text-yellow-400 transition-colors"
           >
             Privacy Policy
           </Link>
@@ -27,7 +45,7 @@ export default function Navbar() {
             href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-primary text-white px-4 py-2 rounded-md hover:bg-opacity-90 transition-colors"
+            className="block py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
           >
             Install Now
           </a>
