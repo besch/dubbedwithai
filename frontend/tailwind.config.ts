@@ -20,6 +20,28 @@ const config = {
     },
     extend: {
       colors: {
+        background: "hsl(222.2 84% 4.9%)",
+        foreground: "hsl(210 40% 98%)",
+        primary: {
+          DEFAULT: "hsl(210, 100%, 50%)",
+          foreground: "hsl(0, 0%, 100%)",
+        },
+        secondary: {
+          DEFAULT: "hsl(280, 100%, 50%)",
+          foreground: "hsl(0, 0%, 100%)",
+        },
+        destructive: {
+          DEFAULT: "hsl(0, 62.8%, 30.6%)",
+          foreground: "hsl(210 40% 98%)",
+        },
+        accent: {
+          DEFAULT: "hsl(216, 34%, 17%)",
+          foreground: "hsl(210 40% 98%)",
+        },
+        muted: {
+          DEFAULT: "hsl(217.2 32.6% 17.5%)",
+          foreground: "hsl(215 20.2% 65.1%)",
+        },
         dubbing: {
           primary: "#3f3cbb",
           secondary: "#ff77e9",
@@ -43,28 +65,6 @@ const config = {
         border: "hsl(var(--border))",
         input: "hsl(var(--input))",
         ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
