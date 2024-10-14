@@ -41,6 +41,14 @@ export default function Home() {
               Chrome. Break language barriers and enjoy global content like
               never before!
             </p>
+
+            <div className="flex justify-center mb-4">
+              <img
+                src="/icon.png"
+                alt="OneDub Logo"
+                className="h-32 w-32 rounded-3xl border-2 border-yellow-400 mb-5"
+              />
+            </div>
             <a
               href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
               target="_blank"
