@@ -141,8 +141,8 @@ const Pricing: React.FC = () => {
                 </h3>
                 <p>
                   Once you reach the 1,500 daily dubbing limit on the free plan,
-                  you'll need to wait until the next day or upgrade to a paid
-                  plan for unlimited dubbing.
+                  you&apos;ll need to wait until the next day or upgrade to a
+                  paid plan for unlimited dubbing.
                 </p>
               </div>
               <div>

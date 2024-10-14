@@ -75,8 +75,8 @@ export default function PrivacyPolicy() {
               We may update this Privacy Policy from time to time to reflect
               changes in our practices or for other operational, legal, or
               regulatory reasons. We will notify you of any material changes by
-              posting the new Privacy Policy on this page and updating the "Last
-              updated" date at the top of this Privacy Policy.
+              posting the new Privacy Policy on this page and updating the
+              &quot;Last updated&quot; date at the top of this Privacy Policy.
             </p>
             <h2 className="flex items-center text-2xl font-semibold mb-4">
               <MessageCircle className="w-6 h-6 mr-2 text-yellow-400" />
@@ -91,7 +91,7 @@ export default function PrivacyPolicy() {
               >
                 privacy@onedub.com
               </a>
-              . We're here to address any concerns you may have about your
+              . We&apos;re here to address any concerns you may have about your
               privacy and data security.
             </p>
           </div>
