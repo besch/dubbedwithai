@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import storage from "./google-storage-config";
+import storage from "@/lib/google-storage-config";
 interface Language {
   id: string;
   attributes: {
@@ -51,7 +51,7 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
     if (!fileExists) {
       const baseUrl = process.env.API_URL;
       const getSubtitleLanguagesResponse = await fetch(
-        `${baseUrl}/api/opensubtitles/get-subtitle-languages`,
+        `${baseUrl}/api/get-subtitle-languages`,
         {
           method: "POST",
           headers: {
@@ -104,7 +104,7 @@ const fetchSubtitles = async (req: NextApiRequest, res: NextApiResponse) => {
 
       // Fetch the subtitle content and save it to Google Storage
       const fetchSubtitlesResponse = await fetch(
-        `${baseUrl}/api/opensubtitles/fetch-subtitles`,
+        `${baseUrl}/api/fetch-subtitles`,
         {
           method: "POST",
           headers: {

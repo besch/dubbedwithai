@@ -6,6 +6,11 @@ export type DubbingVoice =
   | "nova"
   | "shimmer";
 
+export interface AdjustedTiming {
+  start: number;
+  end: number;
+}
+
 export interface Language {
   id: string;
   attributes: {

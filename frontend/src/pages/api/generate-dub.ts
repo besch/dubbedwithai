@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import srtToObject, { SrtObject } from "@/lib/srtParser";
-import storage from "./google-storage/google-storage-config";
+import storage from "@/lib/google-storage-config";
 
 const GENERATE_SUBTITLE_AUDIO_FILE_FOR_HOW_MANY_MINUTES = 3 * 60 * 1000;
 
@@ -25,14 +25,11 @@ export default async function handler(
     const baseUrl = process.env.API_URL;
 
     // 1. Fetch subtitles
-    const subtitlesResponse = await fetch(
-      `${baseUrl}/api/opensubtitles/fetch-subtitles`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileId }),
-      }
-    );
+    const subtitlesResponse = await fetch(`${baseUrl}/api/fetch-subtitles`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileId }),
+    });
     const { srtContent } = await subtitlesResponse.json();
     const cleanedSrtContent = stripHtmlTags(srtContent);
 

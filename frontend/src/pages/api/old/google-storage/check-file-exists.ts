@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import storage from "./google-storage-config";
+import storage from "../../../../lib/google-storage-config";
 
 export default async function checkFileExists(
   req: NextApiRequest,

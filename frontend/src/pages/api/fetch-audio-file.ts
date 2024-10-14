@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import storage from "./google-storage-config";
+import storage from "../../lib/google-storage-config";
 import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 
 const fetchAudioFile = async (req: NextApiRequest, res: NextApiResponse) => {

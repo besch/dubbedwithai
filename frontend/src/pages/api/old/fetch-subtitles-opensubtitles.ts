@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
-import storage from "../google-storage/google-storage-config";
+import storage from "@/lib/google-storage-config";
 import OpenAI from "openai";
 import languageCodes from "@/lib/languageCodes";
 
