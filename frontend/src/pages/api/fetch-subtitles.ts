@@ -9,7 +9,6 @@ import { cleanSrtContent } from "@/lib/subtitles";
 import { translateSubtitles } from "@/utils/subtitles";
 
 const bucketName = "dubbed_with_ai";
-const dailyFetchAudioLimit = 1500;
 
 const supabase = createClient(
   process.env.SUPABASE_URL!,
@@ -53,17 +52,6 @@ export default async function fetchSubtitles(
   }
 
   try {
-    // Check daily limit
-    const isLimitExceeded = await checkDailyLimit(ipAddress);
-    if (isLimitExceeded) {
-      logEntry.error_message = "Daily limit exceeded";
-      logEntry.error_code = "429";
-      await logApiRequest(logEntry);
-      return res
-        .status(429)
-        .json({ error: "Daily limit exceeded. Please try again tomorrow." });
-    }
-
     let filePath: string;
     if (seasonNumber !== undefined && episodeNumber !== undefined) {
       // TV series
@@ -289,21 +277,4 @@ async function downloadAndExtractSubtitle(
   }
 
   return cleanSrtContent(subtitleContent);
-}
-
-async function checkDailyLimit(ipAddress: string): Promise<boolean> {
-  const today = new Date().toISOString().split("T")[0];
-  const { count, error } = await supabase
-    .from("api_logs")
-    .select("*", { count: "exact", head: true })
-    .eq("ip_address", ipAddress)
-    .gte("timestamp", `${today}T00:00:00Z`)
-    .lt("timestamp", `${today}T23:59:59Z`);
-
-  if (error) {
-    console.error("Error checking daily limit:", error);
-    return false;
-  }
-
-  return count !== null && count >= dailyFetchAudioLimit;
 }
