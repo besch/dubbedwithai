@@ -198,12 +198,6 @@ export default function Home() {
                 <p>Access a world of content without language barriers.</p>
               </div>
             </div>
-            <Link
-              href="/features"
-              className="text-yellow-400 hover:underline text-lg"
-            >
-              Learn more about OneDub features
-            </Link>
           </div>
         </section>
       </div>
