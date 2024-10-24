@@ -67,7 +67,7 @@ export default function Home() {
               <iframe
                 width="100%"
                 height="500"
-                src="https://www.youtube.com/embed/f9Ti7OfXIjQ"
+                src="https://www.youtube.com/embed/f9Ti7OfXIjQ?vq=hd720"
                 title="OneDub Tutorial"
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
