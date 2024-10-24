@@ -1,6 +1,4 @@
 import Head from "next/head";
-import Image from "next/image";
-import Link from "next/link";
 import { Film, Globe, Mic, PlayCircle } from "lucide-react";
 
 export default function Home() {
