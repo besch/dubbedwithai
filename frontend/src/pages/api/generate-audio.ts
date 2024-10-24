@@ -7,6 +7,41 @@ import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 
 const bucketName = "dubbed_with_ai";
 
+function extractVoiceFromFilePath(filePath: string): DubbingVoice {
+  const parts = filePath.split("/");
+  const voice = parts[parts.length - 2] as DubbingVoice;
+  const validVoices = [
+    "en-US-JennyNeural",
+    "en-US-GuyNeural",
+    "en-US-AmberNeural",
+    "en-US-ChristopherNeural",
+    "en-US-AriaNeural",
+    "en-US-JaneNeural",
+    "es-ES-ElviraNeural",
+    "es-ES-AlvaroNeural",
+    "fr-FR-DeniseNeural",
+    "fr-FR-HenriNeural",
+    "de-DE-KatjaNeural",
+    "de-DE-ConradNeural",
+    "it-IT-ElsaNeural",
+    "it-IT-DiegoNeural",
+    "ja-JP-NanamiNeural",
+    "ja-JP-KeitaNeural",
+    "ko-KR-SunHiNeural",
+    "ko-KR-InJoonNeural",
+    "pt-BR-FranciscaNeural",
+    "pt-BR-AntonioNeural",
+    "ru-RU-SvetlanaNeural",
+    "ru-RU-DmitryNeural",
+    "zh-CN-XiaoxiaoNeural",
+    "zh-CN-YunxiNeural",
+  ];
+  if (!validVoices.includes(voice)) {
+    throw new Error(`Invalid voice: ${voice}`);
+  }
+  return voice;
+}
+
 export default async function generateAudio(
   req: NextApiRequest,
   res: NextApiResponse
@@ -82,15 +117,6 @@ export default async function generateAudio(
   }
 }
 
-function extractVoiceFromFilePath(filePath: string): DubbingVoice {
-  const parts = filePath.split("/");
-  const voice = parts[parts.length - 2] as DubbingVoice;
-  if (!["alloy", "echo", "fable", "onyx", "nova", "shimmer"].includes(voice)) {
-    throw new Error(`Invalid voice: ${voice}`);
-  }
-  return voice;
-}
-
 async function generateAndUploadAudio(
   text: string,
   filePath: string,
@@ -100,7 +126,7 @@ async function generateAndUploadAudio(
     process.env.AZURE_SPEECH_KEY!,
     process.env.AZURE_SPEECH_REGION!
   );
-  speechConfig.speechSynthesisVoiceName = mapVoiceToAzure(voice);
+  speechConfig.speechSynthesisVoiceName = voice;
   speechConfig.speechSynthesisOutputFormat =
     sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
@@ -165,16 +191,4 @@ async function generateAndUploadAudio(
       }
     }, 30000);
   });
-}
-
-function mapVoiceToAzure(voice: DubbingVoice): string {
-  const voiceMap: Record<DubbingVoice, string> = {
-    alloy: "en-US-JennyNeural",
-    echo: "en-US-GuyNeural",
-    fable: "en-US-AmberNeural",
-    onyx: "en-US-ChristopherNeural",
-    nova: "en-US-AriaNeural",
-    shimmer: "en-US-JaneNeural",
-  };
-  return voiceMap[voice];
 }
