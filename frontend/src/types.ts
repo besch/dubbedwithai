@@ -6,6 +6,15 @@ export type DubbingVoice =
   | "nova"
   | "shimmer";
 
+// Add this new type for Azure voices
+export type AzureVoice =
+  | "en-US-JennyNeural"
+  | "en-US-GuyNeural"
+  | "en-US-AmberNeural"
+  | "en-US-ChristopherNeural"
+  | "en-US-AriaNeural"
+  | "en-US-JaneNeural";
+
 export interface AdjustedTiming {
   start: number;
   end: number;
