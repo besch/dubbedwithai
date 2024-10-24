@@ -2,9 +2,13 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { cors, runMiddleware } from "@/lib/corsMiddleware";
 import storage from "@/lib/google-storage-config";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+import OpenAI from "openai";
 import { DubbingVoice } from "@/types";
 import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 const bucketName = "dubbed_with_ai";
 
 function extractVoiceFromFilePath(filePath: string): DubbingVoice {
@@ -35,6 +39,12 @@ function extractVoiceFromFilePath(filePath: string): DubbingVoice {
     "ru-RU-DmitryNeural",
     "zh-CN-XiaoxiaoNeural",
     "zh-CN-YunxiNeural",
+    "alloy",
+    "echo",
+    "fable",
+    "onyx",
+    "nova",
+    "shimmer",
   ];
   if (!validVoices.includes(voice)) {
     throw new Error(`Invalid voice: ${voice}`);
@@ -122,6 +132,34 @@ async function generateAndUploadAudio(
   filePath: string,
   voice: DubbingVoice
 ): Promise<Buffer> {
+  let buffer: Buffer;
+
+  if (["alloy", "echo", "fable", "onyx", "nova", "shimmer"].includes(voice)) {
+    // Use OpenAI for old voices
+    const mp3 = await openai.audio.speech.create({
+      model: "tts-1",
+      voice: voice as "alloy" | "echo" | "fable" | "onyx" | "nova" | "shimmer",
+      input: text,
+    });
+    buffer = Buffer.from(await mp3.arrayBuffer());
+  } else {
+    // Use Azure for new voices
+    buffer = await generateAzureAudio(text, voice, filePath);
+  }
+
+  if (!filePath.includes("uploaded")) {
+    const file = storage.bucket(bucketName).file(filePath);
+    await file.save(buffer, { metadata: { contentType: "audio/mp3" } });
+  }
+
+  return buffer;
+}
+
+async function generateAzureAudio(
+  text: string,
+  voice: DubbingVoice,
+  filePath: string
+): Promise<Buffer> {
   const speechConfig = sdk.SpeechConfig.fromSubscription(
     process.env.AZURE_SPEECH_KEY!,
     process.env.AZURE_SPEECH_REGION!
@@ -131,7 +169,7 @@ async function generateAndUploadAudio(
     sdk.SpeechSynthesisOutputFormat.Audio16Khz32KBitRateMonoMp3;
 
   const ssml = `
-    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="en-US">
+    <speak version="1.0" xmlns="http://www.w3.org/2001/10/synthesis" xml:lang="fr-FR">
       <voice name="${speechConfig.speechSynthesisVoiceName}">
         <prosody rate="1.2">
           <break strength="x-weak" />

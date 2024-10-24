@@ -22,7 +22,14 @@ export type DubbingVoice =
   | "ru-RU-SvetlanaNeural"
   | "ru-RU-DmitryNeural"
   | "zh-CN-XiaoxiaoNeural"
-  | "zh-CN-YunxiNeural";
+  | "zh-CN-YunxiNeural"
+  // Add OpenAI voices
+  | "alloy"
+  | "echo"
+  | "fable"
+  | "onyx"
+  | "nova"
+  | "shimmer";
 
 export interface AdjustedTiming {
   start: number;
