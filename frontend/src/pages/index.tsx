@@ -44,7 +44,7 @@ export default function Home() {
               <img
                 src="/images/icon.png"
                 alt="OneDub Logo"
-                className="h-32 w-32 rounded-3xl border-2 border-yellow-400 mb-5"
+                className="h-32 w-32 mb-5"
               />
             </div>
             <a
