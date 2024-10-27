@@ -144,21 +144,14 @@ export default function Home() {
                 }}
               />
             </div>
-            <motion.a
+            <a
               href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-[#6a3de8] text-white text-lg px-10 py-4 rounded-full shadow-lg inline-block"
-              variants={fadeInUp}
-              transition={{ delay: 0.8, duration: 0.8 }}
-              whileHover={{
-                scale: 1.02,
-                boxShadow: "0px 0px 8px rgba(106, 61, 232, 0.5)",
-              }}
-              whileTap={{ scale: 0.98 }}
+              className="bg-dubbing-primary text-white text-lg px-10 py-4 rounded-full shadow-lg inline-block transition-all duration-300 hover:bg-dubbing-primary/80"
             >
               Install OneDub Now
-            </motion.a>
+            </a>
           </div>
         </motion.section>
 
