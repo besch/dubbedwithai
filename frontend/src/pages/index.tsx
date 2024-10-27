@@ -1,7 +1,46 @@
 import Head from "next/head";
 import { Film, Globe, Mic, PlayCircle } from "lucide-react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
+  const [isVisible, setIsVisible] = useState({
+    hero: false,
+    video: false,
+    howItWorks: false,
+    keyFeatures: false,
+    additionalBenefits: false,
+  });
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const sections = [
+        "hero",
+        "video",
+        "howItWorks",
+        "keyFeatures",
+        "additionalBenefits",
+      ];
+      const updatedVisibility = { ...isVisible };
+
+      sections.forEach((section) => {
+        const element = document.getElementById(section);
+        if (element) {
+          const rect = element.getBoundingClientRect();
+          if (rect.top <= window.innerHeight * 0.85) {
+            updatedVisibility[section as keyof typeof isVisible] = true;
+          }
+        }
+      });
+
+      setIsVisible(updatedVisibility);
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    handleScroll(); // Initial check
+
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [isVisible]);
+
   return (
     <>
       <Head>
@@ -29,12 +68,18 @@ export default function Home() {
         <meta name="twitter:card" content="summary_large_image" />
       </Head>
       <div className="bg-background text-foreground min-h-screen">
-        <section className="py-24 bg-gradient-to-b from-accent to-background">
+        {/* Hero Section */}
+        <section
+          id="hero"
+          className={`py-24 bg-gradient-to-b from-accent to-background transition-opacity duration-1000 ${
+            isVisible.hero ? "opacity-100 animate-fade-in" : "opacity-0"
+          }`}
+        >
           <div className="container mx-auto text-center">
-            <h1 className="text-6xl font-extrabold mb-6 text-yellow-400">
+            <h1 className="text-6xl font-extrabold mb-6 text-yellow-400 animate-slide-in-left">
               Welcome to OneDub
             </h1>
-            <p className="text-xl mb-12 max-w-3xl mx-auto">
+            <p className="text-xl mb-12 max-w-3xl mx-auto animate-fade-in-delay">
               Transform your streaming experience with OneDub’s AI-powered
               real-time dubbing. Enjoy movies and TV shows in your preferred
               language effortlessly!
@@ -44,23 +89,29 @@ export default function Home() {
               <img
                 src="/images/icon.png"
                 alt="OneDub Logo"
-                className="h-40 w-40 mb-5"
+                className="h-40 w-40 mb-5 animate-pulse-slow"
               />
             </div>
             <a
               href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-primary text-white text-lg px-10 py-4 rounded-full shadow-lg hover:bg-opacity-90 transition-colors inline-block"
+              className="bg-primary text-white text-lg px-10 py-4 rounded-full shadow-lg hover:bg-opacity-90 transition-colors inline-block transform hover:-translate-y-1 hover:scale-105 animate-button"
             >
               Install OneDub Now
             </a>
           </div>
         </section>
 
-        <section className="py-24 bg-accent">
+        {/* Video Section */}
+        <section
+          id="video"
+          className={`py-24 bg-accent transition-opacity duration-1000 ${
+            isVisible.video ? "opacity-100 animate-fade-in" : "opacity-0"
+          }`}
+        >
           <div className="container mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-8 text-foreground">
+            <h2 className="text-4xl font-bold mb-8 text-foreground animate-slide-in-right">
               See OneDub in Action
             </h2>
             <div className="aspect-w-16 aspect-h-9 max-w-4xl mx-auto">
@@ -72,20 +123,26 @@ export default function Home() {
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                className="rounded-xl shadow-2xl"
+                className="rounded-xl shadow-2xl animate-scale-up"
               ></iframe>
             </div>
           </div>
         </section>
 
-        <section className="py-24 bg-gradient-to-b from-background to-accent">
+        {/* How It Works Section */}
+        <section
+          id="howItWorks"
+          className={`py-24 bg-gradient-to-b from-background to-accent transition-opacity duration-1000 ${
+            isVisible.howItWorks ? "opacity-100 animate-fade-in" : "opacity-0"
+          }`}
+        >
           <div className="container mx-auto">
-            <h2 className="text-4xl font-bold mb-12 text-center text-foreground">
+            <h2 className="text-4xl font-bold mb-12 text-center text-foreground animate-slide-in-left">
               How OneDub Works
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow">
-                <Film className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
+              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card">
+                <Film className="w-16 h-16 mx-auto mb-4 text-yellow-400 animate-icon" />
                 <h3 className="text-xl font-semibold mb-3 text-foreground">
                   1. Choose Your Content
                 </h3>
@@ -94,8 +151,8 @@ export default function Home() {
                   platform seamlessly.
                 </p>
               </div>
-              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow">
-                <Globe className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
+              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card delay-200">
+                <Globe className="w-16 h-16 mx-auto mb-4 text-yellow-400 animate-icon" />
                 <h3 className="text-xl font-semibold mb-3 text-foreground">
                   2. Select Your Language
                 </h3>
@@ -104,8 +161,8 @@ export default function Home() {
                   dubbing.
                 </p>
               </div>
-              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow">
-                <PlayCircle className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
+              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card delay-400">
+                <PlayCircle className="w-16 h-16 mx-auto mb-4 text-yellow-400 animate-icon" />
                 <h3 className="text-xl font-semibold mb-3 text-foreground">
                   3. Enjoy Your Content
                 </h3>
@@ -118,13 +175,19 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-24 bg-accent">
+        {/* Key Features Section */}
+        <section
+          id="keyFeatures"
+          className={`py-24 bg-accent transition-opacity duration-1000 ${
+            isVisible.keyFeatures ? "opacity-100 animate-fade-in" : "opacity-0"
+          }`}
+        >
           <div className="container mx-auto">
-            <h2 className="text-4xl font-bold mb-12 text-center text-foreground">
+            <h2 className="text-4xl font-bold mb-12 text-center text-foreground animate-slide-in-right">
               Key Features
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
-              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   Seamless Integration
                 </h3>
@@ -133,7 +196,7 @@ export default function Home() {
                   and more!
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card delay-200">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   High-Quality AI Voices
                 </h3>
@@ -142,7 +205,7 @@ export default function Home() {
                   original audio.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card delay-400">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   Multiple Languages
                 </h3>
@@ -151,7 +214,7 @@ export default function Home() {
                   content.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card delay-600">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   Easy-to-Use Interface
                 </h3>
@@ -164,14 +227,22 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="py-24 bg-gradient-to-b from-background to-accent">
+        {/* Additional Benefits Section */}
+        <section
+          id="additionalBenefits"
+          className={`py-24 bg-gradient-to-b from-background to-accent transition-opacity duration-1000 ${
+            isVisible.additionalBenefits
+              ? "opacity-100 animate-fade-in"
+              : "opacity-0"
+          }`}
+        >
           <div className="container mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-10 text-foreground">
+            <h2 className="text-4xl font-bold mb-10 text-foreground animate-slide-in-left">
               Transform Your Streaming Experience
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
-                <Mic className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card">
+                <Mic className="w-12 h-12 mx-auto mb-4 text-yellow-400 animate-icon" />
                 <h3 className="text-xl font-semibold mb-4 text-foreground">
                   Watch Foreign Films
                 </h3>
@@ -180,8 +251,8 @@ export default function Home() {
                   preferred language.
                 </p>
               </div>
-              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
-                <Globe className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card delay-200">
+                <Globe className="w-12 h-12 mx-auto mb-4 text-yellow-400 animate-icon" />
                 <h3 className="text-xl font-semibold mb-4 text-foreground">
                   Learn New Languages
                 </h3>
@@ -190,8 +261,8 @@ export default function Home() {
                   different languages.
                 </p>
               </div>
-              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
-                <Film className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
+              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow transform hover:scale-105 animate-card delay-400">
+                <Film className="w-12 h-12 mx-auto mb-4 text-yellow-400 animate-icon" />
                 <h3 className="text-xl font-semibold mb-4 text-foreground">
                   Global Accessibility
                 </h3>
@@ -205,7 +276,7 @@ export default function Home() {
               href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-12 inline-block bg-primary text-white px-8 py-3 rounded-full shadow-lg hover:bg-opacity-90 transition-colors"
+              className="mt-12 inline-block bg-primary text-white px-8 py-3 rounded-full shadow-lg hover:bg-opacity-90 transition-colors transform hover:-translate-y-1 hover:scale-105 animate-button"
             >
               Get Started with OneDub
             </a>
