@@ -45,7 +45,7 @@ export default function Navbar() {
             href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
             target="_blank"
             rel="noopener noreferrer"
-            className="block py-2 px-4 bg-blue-500 text-white rounded-md hover:bg-blue-600 transition-colors"
+            className="block py-2 px-4 bg-blue-500 text-white rounded-md bg-[#6a3de8] hover:bg-blue-600 transition-colors"
           >
             Install Now
           </a>

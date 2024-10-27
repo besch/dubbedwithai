@@ -39,26 +39,37 @@ export default function Home() {
         "keyFeatures",
         "additionalBenefits",
       ];
-      const updatedVisibility = { ...isVisible };
 
-      sections.forEach((section) => {
-        const element = document.getElementById(section);
-        if (element) {
-          const rect = element.getBoundingClientRect();
-          if (rect.top <= window.innerHeight * 0.85) {
-            updatedVisibility[section as keyof typeof isVisible] = true;
+      setIsVisible((prevState) => {
+        const updatedVisibility = { ...prevState };
+        let hasChanges = false;
+
+        sections.forEach((section) => {
+          const element = document.getElementById(section);
+          if (element) {
+            const rect = element.getBoundingClientRect();
+            const shouldBeVisible = rect.top <= window.innerHeight * 0.85;
+
+            if (
+              updatedVisibility[section as keyof typeof prevState] !==
+              shouldBeVisible
+            ) {
+              updatedVisibility[section as keyof typeof prevState] =
+                shouldBeVisible;
+              hasChanges = true;
+            }
           }
-        }
-      });
+        });
 
-      setIsVisible(updatedVisibility);
+        return hasChanges ? updatedVisibility : prevState;
+      });
     };
 
     window.addEventListener("scroll", handleScroll);
     handleScroll(); // Initial check
 
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [isVisible]);
+  }, []); // Empty dependency array
 
   return (
     <>
@@ -121,20 +132,30 @@ export default function Home() {
                 className="h-40 w-40 mb-5"
                 variants={fadeInUp}
                 transition={{ delay: 0.6, duration: 0.8 }}
+                whileHover={{
+                  scale: 1.05,
+                  rotate: [0, -5, 5, -5, 0],
+                  transition: {
+                    rotate: {
+                      duration: 0.5,
+                      ease: "easeInOut",
+                    },
+                  },
+                }}
               />
             </div>
             <motion.a
               href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-primary text-white text-lg px-10 py-4 rounded-full shadow-lg inline-block"
+              className="bg-[#6a3de8] text-white text-lg px-10 py-4 rounded-full shadow-lg inline-block"
               variants={fadeInUp}
               transition={{ delay: 0.8, duration: 0.8 }}
               whileHover={{
-                scale: 1.05,
-                boxShadow: "0px 0px 8px rgb(255, 204, 0)",
+                scale: 1.02,
+                boxShadow: "0px 0px 8px rgba(106, 61, 232, 0.5)",
               }}
-              whileTap={{ scale: 0.95 }}
+              whileTap={{ scale: 0.98 }}
             >
               Install OneDub Now
             </motion.a>
@@ -419,11 +440,14 @@ export default function Home() {
               href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-12 inline-block bg-primary text-white px-8 py-3 rounded-full shadow-lg"
+              className="mt-12 inline-block bg-[#6a3de8] text-white px-8 py-3 rounded-full shadow-lg"
               variants={fadeInUp}
               transition={{ delay: 0.6, duration: 0.8 }}
-              whileHover={{ scale: 1.05, backgroundColor: "#ffcc00" }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{
+                scale: 1.02,
+                boxShadow: "0px 0px 8px rgba(106, 61, 232, 0.5)",
+              }}
+              whileTap={{ scale: 0.98 }}
             >
               Get Started with OneDub
             </motion.a>
