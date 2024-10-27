@@ -28,39 +28,41 @@ export default function Home() {
         <meta property="og:type" content="website" />
         <meta name="twitter:card" content="summary_large_image" />
       </Head>
-      <div className="bg-background text-foreground">
-        <section className="py-20 bg-gradient-to-b from-accent to-background">
+      <div className="bg-background text-foreground min-h-screen">
+        <section className="py-24 bg-gradient-to-b from-accent to-background">
           <div className="container mx-auto text-center">
-            <h1 className="text-6xl font-bold mb-6 text-yellow-400">
+            <h1 className="text-6xl font-extrabold mb-6 text-yellow-400">
               Welcome to OneDub
             </h1>
-            <p className="text-xl mb-12 max-w-2xl mx-auto">
-              Your ultimate AI-powered real-time movie dubbing solution for
-              Chrome. Break language barriers and enjoy global content like
-              never before!
+            <p className="text-xl mb-12 max-w-3xl mx-auto">
+              Transform your streaming experience with OneDub’s AI-powered
+              real-time dubbing. Enjoy movies and TV shows in your preferred
+              language effortlessly!
             </p>
 
-            <div className="flex justify-center mb-4">
+            <div className="flex justify-center mb-6">
               <img
                 src="/images/icon.png"
                 alt="OneDub Logo"
-                className="h-32 w-32 mb-5"
+                className="h-40 w-40 mb-5"
               />
             </div>
             <a
               href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
               target="_blank"
               rel="noopener noreferrer"
-              className="bg-primary text-white text-lg px-8 py-3 rounded-md hover:bg-opacity-90 transition-colors inline-block"
+              className="bg-primary text-white text-lg px-10 py-4 rounded-full shadow-lg hover:bg-opacity-90 transition-colors inline-block"
             >
               Install OneDub Now
             </a>
           </div>
         </section>
 
-        <section className="py-20 bg-accent">
+        <section className="py-24 bg-accent">
           <div className="container mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-8">See OneDub in Action</h2>
+            <h2 className="text-4xl font-bold mb-8 text-foreground">
+              See OneDub in Action
+            </h2>
             <div className="aspect-w-16 aspect-h-9 max-w-4xl mx-auto">
               <iframe
                 width="100%"
@@ -70,132 +72,143 @@ export default function Home() {
                 frameBorder="0"
                 allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                 allowFullScreen
-                className="rounded-lg shadow-2xl"
+                className="rounded-xl shadow-2xl"
               ></iframe>
             </div>
           </div>
         </section>
 
-        <section className="py-20 bg-gradient-to-b from-background to-accent">
+        <section className="py-24 bg-gradient-to-b from-background to-accent">
           <div className="container mx-auto">
-            <h2 className="text-4xl font-bold mb-12 text-center">
+            <h2 className="text-4xl font-bold mb-12 text-center text-foreground">
               How OneDub Works
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              <div className="bg-muted p-6 rounded-lg text-center shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow">
                 <Film className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-                <h3 className="text-xl font-semibold mb-2">
+                <h3 className="text-xl font-semibold mb-3 text-foreground">
                   1. Choose Your Content
                 </h3>
-                <p>
+                <p className="text-foreground">
                   Select any movie or TV show on your favorite streaming
-                  platform.
+                  platform seamlessly.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg text-center shadow-lg">
+              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow">
                 <Globe className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-                <h3 className="text-xl font-semibold mb-2">
+                <h3 className="text-xl font-semibold mb-3 text-foreground">
                   2. Select Your Language
                 </h3>
-                <p>
-                  Choose your preferred dubbing language from our wide range of
-                  options.
+                <p className="text-foreground">
+                  Choose from a wide array of languages for high-quality AI
+                  dubbing.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg text-center shadow-lg">
+              <div className="bg-muted p-8 rounded-2xl text-center shadow-lg hover:shadow-2xl transition-shadow">
                 <PlayCircle className="w-16 h-16 mx-auto mb-4 text-yellow-400" />
-                <h3 className="text-xl font-semibold mb-2">
+                <h3 className="text-xl font-semibold mb-3 text-foreground">
                   3. Enjoy Your Content
                 </h3>
-                <p>
-                  Start watching with instant AI dubbing in your chosen
-                  language!
+                <p className="text-foreground">
+                  Start watching with instant AI dubbing in your chosen language
+                  seamlessly integrated.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-20 bg-gradient-to-b from-accent to-background">
+        <section className="py-24 bg-accent">
           <div className="container mx-auto">
-            <h2 className="text-4xl font-bold mb-12 text-center">
+            <h2 className="text-4xl font-bold mb-12 text-center text-foreground">
               Key Features
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="bg-muted p-6 rounded-lg shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   Seamless Integration
                 </h3>
-                <p>
-                  Works with popular streaming platforms like YouTube, Netflix,
-                  Amazon Prime Video, and more!
+                <p className="text-foreground">
+                  Works flawlessly with YouTube, Netflix, Amazon Prime Video,
+                  and more!
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   High-Quality AI Voices
                 </h3>
-                <p>
-                  Experience natural-sounding dubbing that blends seamlessly
-                  with the original audio.
+                <p className="text-foreground">
+                  Experience natural-sounding dubbing that blends perfectly with
+                  original audio.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   Multiple Languages
                 </h3>
-                <p>
-                  Choose from a wide range of languages to dub your favorite
+                <p className="text-foreground">
+                  Choose from a diverse range of languages to dub your favorite
                   content.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg">
+              <div className="bg-muted p-6 rounded-lg shadow-lg hover:shadow-2xl transition-shadow">
                 <h3 className="text-2xl font-semibold mb-4 text-yellow-400">
                   Easy-to-Use Interface
                 </h3>
-                <p>
-                  Start dubbing with just a few clicks, making it accessible for
-                  users of all technical levels.
+                <p className="text-foreground">
+                  User-friendly interface ensures effortless dubbing for
+                  everyone.
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        <section className="py-20 bg-gradient-to-b from-background to-accent">
+        <section className="py-24 bg-gradient-to-b from-background to-accent">
           <div className="container mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-8">
+            <h2 className="text-4xl font-bold mb-10 text-foreground">
               Transform Your Streaming Experience
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-12">
-              <div className="bg-muted p-6 rounded-lg shadow-lg">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
                 <Mic className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
-                <h3 className="text-xl font-semibold mb-4">
+                <h3 className="text-xl font-semibold mb-4 text-foreground">
                   Watch Foreign Films
                 </h3>
-                <p>
+                <p className="text-foreground">
                   Enjoy international cinema with instant AI dubbing in your
                   preferred language.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg">
+              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
                 <Globe className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
-                <h3 className="text-xl font-semibold mb-4">
+                <h3 className="text-xl font-semibold mb-4 text-foreground">
                   Learn New Languages
                 </h3>
-                <p>
-                  Improve your language skills by watching content in different
-                  languages.
+                <p className="text-foreground">
+                  Enhance your language skills by immersing yourself in
+                  different languages.
                 </p>
               </div>
-              <div className="bg-muted p-6 rounded-lg shadow-lg">
+              <div className="bg-muted p-8 rounded-2xl shadow-lg hover:shadow-2xl transition-shadow">
                 <Film className="w-12 h-12 mx-auto mb-4 text-yellow-400" />
-                <h3 className="text-xl font-semibold mb-4">
+                <h3 className="text-xl font-semibold mb-4 text-foreground">
                   Global Accessibility
                 </h3>
-                <p>Access a world of content without language barriers.</p>
+                <p className="text-foreground">
+                  Access a world of content without any language barriers
+                  hindering your enjoyment.
+                </p>
               </div>
             </div>
+            <a
+              href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-12 inline-block bg-primary text-white px-8 py-3 rounded-full shadow-lg hover:bg-opacity-90 transition-colors"
+            >
+              Get Started with OneDub
+            </a>
           </div>
         </section>
       </div>
