@@ -42,44 +42,18 @@ export async function translateBatch(
       messages: [
         {
           role: "system",
-          content: `You are a professional subtitle translator. Translate the following SRT subtitle content from ${sourceLangName} to ${targetLangName}. Strictly adhere to these SRT formatting rules:
-            1. Each subtitle entry consists of four parts:
-              a) A sequential number
-              b) The timecode line with start and end times (--:--:--,--- --> --:--:--,---)
-              c) The subtitle text (one or many lines).
-              d) A blank line to separate entries
-
-            2. Maintain the exact timecodes from the original subtitles.
-
-            3. Translate only the subtitle text. Do not alter numbers or timecodes.
-
-            4. Keep line breaks within the subtitle text as in the original.
-
-            5. Ensure there's always a blank line between subtitle entries.
-
-            6. Remove any formatting tags like <i> for italics if present.
-
-            7. If subtitle text is empty or translated text is empty or corrupted somehow, do not include this subtitle
-
-            Example of correct formatting:
-
-            "1
-            00:00:42,625 --> 00:00:44,793
-            Translated text line 1
-            Translated text line 2
-
-            2
-            00:00:47,797 --> 00:00:48,923
-            Short translated line
-
-            3
-            00:00:49,173 --> 00:00:52,593
-            Italicized translated text
-            Italicized translated text
-            Italicized translated text
-            Italicized translated text"
-
-            Translate accurately while maintaining natural language flow in ${targetLangName}.`,
+          content: `Translate the following subtitles from ${sourceLangName} to ${targetLangName}. 
+            Maintain the exact same timing and numbering format. 
+            Critical formatting rules:
+            1. Each subtitle entry MUST be separated by exactly one empty line
+            2. Each entry MUST follow this exact format (no square brackets):
+               [number]
+               [timestamp]
+               [translated text]
+               [empty line]
+            3. The last subtitle entry MUST be followed by an empty line
+            4. Never include multiple consecutive empty lines
+            5. Preserve all original numbering and timing exactly as provided`,
         },
         { role: "user", content: batch },
       ],
