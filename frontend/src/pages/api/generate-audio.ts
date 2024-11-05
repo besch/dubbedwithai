@@ -45,6 +45,13 @@ export default async function generateAudio(
     });
   }
 
+  if (text.length > 250) {
+    return res.status(400).json({
+      error: "Text too long",
+      details: `Text length (${text.length}) exceeds maximum length of 250 characters`,
+    });
+  }
+
   try {
     const voice = extractVoiceFromFilePath(filePath);
     const buffer = await generateAndUploadAudio(text, filePath, voice);
