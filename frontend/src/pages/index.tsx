@@ -2,10 +2,12 @@ import Head from "next/head";
 import { Film, Globe, Mic, PlayCircle } from "lucide-react";
 import { useEffect, useState, useRef } from "react";
 import { motion, useInView } from "framer-motion";
+import Marquee from "react-fast-marquee";
+import { streamingServices } from "@/data/streamingServices";
 
 // Define animation variants
 const fadeInUp = {
-  hidden: { opacity: 0, y: 50 },
+  hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0 },
 };
 
@@ -22,6 +24,7 @@ export default function Home() {
   const [isVisible, setIsVisible] = useState({
     hero: false,
     video: false,
+    streamingServices: false,
     howItWorks: false,
     keyFeatures: false,
     additionalBenefits: false,
@@ -31,45 +34,37 @@ export default function Home() {
   const isHeroInView = useInView(heroRef, { margin: "-100px" });
 
   useEffect(() => {
-    const handleScroll = () => {
-      const sections = [
-        "hero",
-        "video",
-        "howItWorks",
-        "keyFeatures",
-        "additionalBenefits",
-      ];
-
-      setIsVisible((prevState) => {
-        const updatedVisibility = { ...prevState };
-        let hasChanges = false;
-
-        sections.forEach((section) => {
-          const element = document.getElementById(section);
-          if (element) {
-            const rect = element.getBoundingClientRect();
-            const shouldBeVisible = rect.top <= window.innerHeight * 0.85;
-
-            if (
-              updatedVisibility[section as keyof typeof prevState] !==
-              shouldBeVisible
-            ) {
-              updatedVisibility[section as keyof typeof prevState] =
-                shouldBeVisible;
-              hasChanges = true;
-            }
-          }
-        });
-
-        return hasChanges ? updatedVisibility : prevState;
-      });
+    const observerOptions = {
+      threshold: 0.1,
     };
 
-    window.addEventListener("scroll", handleScroll);
-    handleScroll(); // Initial check
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting) {
+          setIsVisible((prev) => ({
+            ...prev,
+            [entry.target.id]: true,
+          }));
+        }
+      });
+    }, observerOptions);
 
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []); // Empty dependency array
+    const sections = [
+      "hero",
+      "video",
+      "streamingServices",
+      "howItWorks",
+      "keyFeatures",
+      "additionalBenefits",
+    ];
+
+    sections.forEach((section) => {
+      const element = document.getElementById(section);
+      if (element) observer.observe(element);
+    });
+
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <>
@@ -187,6 +182,90 @@ export default function Home() {
                 allowFullScreen
                 className="rounded-xl shadow-2xl"
               ></iframe>
+            </motion.div>
+          </div>
+        </motion.section>
+
+        {/* Streaming Services Section */}
+        <motion.section
+          id="streamingServices"
+          variants={fadeInUp}
+          initial="hidden"
+          animate={isVisible.streamingServices ? "visible" : "hidden"}
+          transition={{ duration: 0.8 }}
+          className="py-24 bg-gradient-to-b from-accent to-background overflow-hidden"
+        >
+          <div className="container mx-auto text-center">
+            <motion.h2
+              className="text-4xl font-bold mb-12 text-yellow-400"
+              variants={fadeInUp}
+              transition={{ delay: 0.2, duration: 0.8 }}
+            >
+              Supported Free Streaming Services
+            </motion.h2>
+
+            {/* Movies & TV Series */}
+            <motion.div
+              className="mb-16"
+              variants={fadeInUp}
+              transition={{ delay: 0.4, duration: 0.8 }}
+            >
+              <h3 className="text-2xl font-semibold mb-6 text-foreground">
+                Movies & TV Series
+              </h3>
+              <Marquee
+                gradient={true}
+                gradientColor={"rgb(34, 41, 57)"}
+                speed={40}
+                pauseOnHover={true}
+                className="py-4 overflow-y-hidden"
+              >
+                {streamingServices.moviesAndTV.map((service, index) => (
+                  <a
+                    key={index}
+                    href={service.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mx-6 px-6 py-3 bg-muted rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer"
+                  >
+                    <span className="text-foreground whitespace-nowrap">
+                      {service.name}
+                    </span>
+                  </a>
+                ))}
+              </Marquee>
+            </motion.div>
+
+            {/* Anime */}
+            <motion.div
+              variants={fadeInUp}
+              transition={{ delay: 0.6, duration: 0.8 }}
+            >
+              <h3 className="text-2xl font-semibold mb-6 text-foreground">
+                Anime
+              </h3>
+              <Marquee
+                gradient={true}
+                gradientColor={"rgb(34, 41, 57)"}
+                speed={40}
+                pauseOnHover={true}
+                direction="right"
+                className="py-4 overflow-y-hidden"
+              >
+                {streamingServices.anime.map((service, index) => (
+                  <a
+                    key={index}
+                    href={service.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="mx-6 px-6 py-3 bg-muted rounded-xl shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 cursor-pointer"
+                  >
+                    <span className="text-foreground whitespace-nowrap">
+                      {service.name}
+                    </span>
+                  </a>
+                ))}
+              </Marquee>
             </motion.div>
           </div>
         </motion.section>
