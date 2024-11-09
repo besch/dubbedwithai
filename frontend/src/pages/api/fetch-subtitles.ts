@@ -6,6 +6,8 @@ import unzipper from "unzipper";
 import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 import { cleanSrtContent } from "@/lib/subtitles";
 import { translateSubtitles } from "@/utils/subtitles";
+import detectEncoding from "detect-file-encoding-and-language";
+import iconv from "iconv-lite";
 
 const bucketName = "dubbed_with_ai";
 
@@ -227,7 +229,7 @@ async function downloadAndExtractSubtitle(
   const buffer = await response.buffer();
   const zip = await unzipper.Open.buffer(buffer);
 
-  let subtitleContent = "";
+  let subtitleBuffer: Buffer;
 
   if (seasonNumber !== undefined && episodeNumber !== undefined) {
     // TV show
@@ -242,9 +244,7 @@ async function downloadAndExtractSubtitle(
     );
 
     if (matchingEntry) {
-      subtitleContent = await matchingEntry
-        .buffer()
-        .then((buf) => buf.toString("utf8"));
+      subtitleBuffer = await matchingEntry.buffer();
     } else {
       throw new Error(
         "No matching subtitle file found for the specified episode"
@@ -256,13 +256,18 @@ async function downloadAndExtractSubtitle(
       entry.path.toLowerCase().endsWith(".srt")
     );
     if (srtEntry) {
-      subtitleContent = await srtEntry
-        .buffer()
-        .then((buf) => buf.toString("utf8"));
+      subtitleBuffer = await srtEntry.buffer();
     } else {
       throw new Error("No .srt file found in the downloaded zip");
     }
   }
+
+  // Detect encoding
+  const encodingInfo = await detectEncoding(subtitleBuffer);
+  const encoding = encodingInfo.encoding || "utf-8";
+
+  // Convert buffer to string using detected encoding
+  const subtitleContent = iconv.decode(subtitleBuffer, encoding);
 
   return cleanSrtContent(subtitleContent);
 }
