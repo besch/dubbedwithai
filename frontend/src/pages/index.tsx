@@ -215,7 +215,7 @@ export default function Home() {
               </h3>
               <Marquee
                 gradient={true}
-                gradientColor={"rgb(34, 41, 57)"}
+                gradientColor={"rgba(0, 0, 0, 0)"}
                 speed={40}
                 pauseOnHover={true}
                 className="py-4 overflow-y-hidden"
@@ -246,7 +246,7 @@ export default function Home() {
               </h3>
               <Marquee
                 gradient={true}
-                gradientColor={"rgb(34, 41, 57)"}
+                gradientColor={"rgba(0, 0, 0, 0)"}
                 speed={40}
                 pauseOnHover={true}
                 direction="right"
