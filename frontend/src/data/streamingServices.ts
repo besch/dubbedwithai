@@ -17,6 +17,7 @@ export const streamingServices = {
     { name: "123MoviesTV", url: "https://123moviestv.net" },
     { name: "Movies2Watch", url: "https://movies2watch.tv" },
     { name: "M4uhd", url: "https://ww2.m4uhd.tv/" },
+    { name: "Stremio", url: "https://web.stremio.com/" },
   ],
   anime: [
     { name: "AnimeTake", url: "https://animetake.tv" },
