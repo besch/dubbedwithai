@@ -33,3 +33,6 @@ export const streamingServices = {
     { name: "KissAnime", url: "https://kissanime.com.ru" },
   ],
 };
+
+//    updated list of free services
+//    https://telegram.me/s/streamingwebsites
