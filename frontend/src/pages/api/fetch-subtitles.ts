@@ -269,5 +269,5 @@ async function downloadAndExtractSubtitle(
   // Convert buffer to string using detected encoding
   const subtitleContent = iconv.decode(subtitleBuffer, encoding);
 
-  return cleanSrtContent(subtitleContent);
+  return subtitleContent;
 }
