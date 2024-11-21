@@ -183,15 +183,36 @@ async function getBestSubtitle(
   );
 
   if (targetLangSubtitle) {
-    const subtitleContent = await downloadAndExtractSubtitle(
-      targetLangSubtitle.url,
-      seasonNumber,
-      episodeNumber
-    );
-    return {
-      content: subtitleContent,
-      generated: false,
-    };
+    try {
+      const subtitleContent = await downloadAndExtractSubtitle(
+        targetLangSubtitle.url,
+        seasonNumber,
+        episodeNumber
+      );
+      return {
+        content: subtitleContent,
+        generated: false,
+      };
+    } catch (error) {
+      const bestSubtitle = data.subtitles[0];
+      const subtitleContent = await downloadAndExtractSubtitle(
+        bestSubtitle.url,
+        seasonNumber,
+        episodeNumber
+      );
+
+      // Translate subtitles to the target language since we're using a different language
+      const translatedContent = await translateSubtitles(
+        subtitleContent,
+        bestSubtitle.language,
+        targetLanguage
+      );
+
+      return {
+        content: translatedContent,
+        generated: true,
+      };
+    }
   }
 
   // If target language not found, use the first available subtitle and translate
