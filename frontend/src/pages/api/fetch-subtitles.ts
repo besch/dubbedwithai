@@ -4,7 +4,6 @@ import storage from "@/lib/google-storage-config";
 import fetch from "node-fetch";
 import unzipper from "unzipper";
 import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
-import { cleanSrtContent } from "@/lib/subtitles";
 import { translateSubtitles } from "@/utils/subtitles";
 import detectEncoding from "detect-file-encoding-and-language";
 import iconv from "iconv-lite";
@@ -233,14 +232,35 @@ async function downloadAndExtractSubtitle(
 
   if (seasonNumber !== undefined && episodeNumber !== undefined) {
     // TV show
-    const episodePattern = new RegExp(
-      `S${String(seasonNumber).padStart(2, "0")}E${String(
-        episodeNumber
-      ).padStart(2, "0")}.*\\.srt$`,
-      "i"
-    );
+    const episodePatterns = [
+      // Standard pattern: S01E01
+      new RegExp(
+        `S${String(seasonNumber).padStart(2, "0")}E${String(
+          episodeNumber
+        ).padStart(2, "0")}.*\\.srt$`,
+        "i"
+      ),
+      // Simple pattern: 01x01 or 1x01
+      new RegExp(
+        `${seasonNumber}x${String(episodeNumber).padStart(2, "0")}.*\\.srt$`,
+        "i"
+      ),
+      // Episode number only: 01 - Episode Title
+      new RegExp(
+        `^${String(episodeNumber).padStart(2, "0")}\\s*-.*\\.srt$`,
+        "i"
+      ),
+      // Show Name - S01E01
+      new RegExp(
+        `-\\s*S${String(seasonNumber).padStart(2, "0")}E${String(
+          episodeNumber
+        ).padStart(2, "0")}.*\\.srt$`,
+        "i"
+      ),
+    ];
+
     const matchingEntry = zip.files.find((entry) =>
-      episodePattern.test(entry.path)
+      episodePatterns.some((pattern) => pattern.test(entry.path))
     );
 
     if (matchingEntry) {
