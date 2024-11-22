@@ -139,7 +139,7 @@ async function getBestSubtitle(
   const response = await fetch(url);
   const data = await response.json();
 
-  if (data.success === false && data.error === "Language error") {
+  if (data.success === false) {
     const fallbackLanguage = languages.join(",");
     const fallbackUrl = `https://api.subdl.com/api/v1/subtitles?api_key=${process.env.SUBDL_API_KEY}&imdb_id=${imdbID}&languages=${fallbackLanguage}`;
 
