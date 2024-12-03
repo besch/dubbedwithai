@@ -26,7 +26,7 @@ const PricingTier: React.FC<PricingTierProps> = ({
   >
     <h3 className="text-2xl font-bold mb-4">{name}</h3>
     <p className="text-4xl font-bold mb-6">
-      ${price}
+      ${price.toFixed(2)}
       <span className="text-lg font-normal">/month</span>
     </p>
     <ul className="space-y-3 mb-8 flex-grow">
@@ -37,15 +37,17 @@ const PricingTier: React.FC<PricingTierProps> = ({
         </li>
       ))}
     </ul>
-    <button
-      className={`mt-auto w-full py-2 px-4 rounded-md transition-colors ${
-        popular
-          ? "bg-yellow-400 text-black hover:bg-yellow-500"
-          : "bg-primary text-white hover:bg-opacity-90"
-      }`}
-    >
-      Choose Plan
-    </button>
+    {price > 0 && (
+      <button
+        className={`mt-auto w-full py-2 px-4 rounded-md transition-colors ${
+          popular
+            ? "bg-yellow-400 text-black hover:bg-yellow-500"
+            : "bg-primary text-white hover:bg-opacity-90"
+        }`}
+      >
+        Choose Plan
+      </button>
+    )}
   </div>
 );
 
@@ -93,7 +95,7 @@ const Pricing: React.FC = () => {
       <div className="bg-background text-foreground py-20">
         <div className="container mx-auto">
           <h1 className="text-5xl font-bold mb-12 text-center text-yellow-400">
-            Choose Your OneDub Plan
+            Choose Your Plan
           </h1>
           <p className="text-xl text-center mb-12 max-w-2xl mx-auto">
             Select the perfect plan to unlock the power of AI dubbing and enjoy
@@ -156,8 +158,8 @@ const Pricing: React.FC = () => {
                   What payment methods do you accept?
                 </h3>
                 <p>
-                  We accept all major credit cards, PayPal, and cryptocurrency
-                  payments for your convenience.
+                  We accept all major credit cards and use Stripe for payment
+                  processing.
                 </p>
               </div>
             </div>
