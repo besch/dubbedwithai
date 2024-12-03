@@ -177,42 +177,50 @@ async function getBestSubtitle(
     return null;
   }
 
-  // Find subtitles in the target language
-  const targetLangSubtitle = data.subtitles.find(
+  // Find all subtitles in the target language
+  const targetLangSubtitles = data.subtitles.filter(
     (sub: any) => sub.language.toLowerCase() === targetLanguage.toLowerCase()
   );
 
-  if (targetLangSubtitle) {
-    try {
-      const subtitleContent = await downloadAndExtractSubtitle(
-        targetLangSubtitle.url,
-        seasonNumber,
-        episodeNumber
-      );
-      return {
-        content: subtitleContent,
-        generated: false,
-      };
-    } catch (error) {
-      const bestSubtitle = data.subtitles[0];
-      const subtitleContent = await downloadAndExtractSubtitle(
-        bestSubtitle.url,
-        seasonNumber,
-        episodeNumber
-      );
-
-      // Translate subtitles to the target language since we're using a different language
-      const translatedContent = await translateSubtitles(
-        subtitleContent,
-        bestSubtitle.language,
-        targetLanguage
-      );
-
-      return {
-        content: translatedContent,
-        generated: true,
-      };
+  if (targetLangSubtitles.length > 0) {
+    // Try each subtitle in the target language until one works
+    for (const subtitle of targetLangSubtitles) {
+      try {
+        const subtitleContent = await downloadAndExtractSubtitle(
+          subtitle.url,
+          seasonNumber,
+          episodeNumber
+        );
+        return {
+          content: subtitleContent,
+          generated: false,
+        };
+      } catch (error) {
+        console.warn(`Failed to download subtitle: ${subtitle.url}`, error);
+        // Continue to next subtitle
+        continue;
+      }
     }
+
+    // If all target language subtitles fail, fall back to first available subtitle
+    const bestSubtitle = data.subtitles[0];
+    const subtitleContent = await downloadAndExtractSubtitle(
+      bestSubtitle.url,
+      seasonNumber,
+      episodeNumber
+    );
+
+    // Translate subtitles to the target language
+    const translatedContent = await translateSubtitles(
+      subtitleContent,
+      bestSubtitle.language,
+      targetLanguage
+    );
+
+    return {
+      content: translatedContent,
+      generated: true,
+    };
   }
 
   // If target language not found, use the first available subtitle and translate
