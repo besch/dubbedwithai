@@ -24,7 +24,7 @@ export default async function fetchSubtitles(
     "";
 
   const logEntry: LogEntry = {
-    endpoint: "/api/opensubtitles/fetch-subtitles",
+    endpoint: "/api/fetch-subtitles",
     parameters: { imdbID, languageCode, seasonNumber, episodeNumber },
     ip_address: ipAddress,
     timestamp: startTime.toISOString(),

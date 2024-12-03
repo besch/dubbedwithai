@@ -19,7 +19,7 @@ export default async function generateAudio(
   const { url, text, filePath } = req.body;
   const startTime = new Date();
   const logEntry: LogEntry = {
-    endpoint: "/api/openai/generate-audio",
+    endpoint: "/api/generate-audio",
     parameters: { text, filePath },
     ip_address:
       (req.headers["x-forwarded-for"] as string) ||
