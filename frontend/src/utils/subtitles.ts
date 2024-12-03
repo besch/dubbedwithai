@@ -93,6 +93,9 @@ export function cleanSrtContent(srtContent: string): string {
   // Remove bracketed descriptions like [Phone ringing] or [Sigh]
   cleaned = cleaned.replace(/\[.*?\]/g, "");
 
+  // Remove i18n formatting like {\\an8} or {\\i1}
+  cleaned = cleaned.replace(/\{\\[^}]*\}/g, "");
+
   // Trim whitespace from each line
   cleaned = cleaned
     .split("\n")
