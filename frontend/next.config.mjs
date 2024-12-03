@@ -15,6 +15,11 @@ const nextConfig = {
       destination: "/src/pages/api/:path*",
     },
   ],
+  api: {
+    bodyParser: {
+      sizeLimit: "1mb",
+    },
+  },
 };
 
 export default nextConfig;

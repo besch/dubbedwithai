@@ -1,6 +1,10 @@
 import Head from "next/head";
 import { Check } from "lucide-react";
 import { useState } from "react";
+import { PRICING_PLANS } from "@/config/pricing";
+import { loadStripe } from "@stripe/stripe-js";
+
+const stripePromise = loadStripe(process.env.STRIPE_PUBLISHABLE_KEY!);
 
 interface PricingTierProps {
   name: string;
@@ -50,37 +54,29 @@ const Pricing: React.FC = () => {
 
   const pricingPlans: PricingTierProps[] = [
     {
-      name: "Free",
+      name: PRICING_PLANS.FREE.name,
       price: 0,
       features: [
-        "Up to 1,500 dubbing generations per day",
-        "Access to basic AI voices",
-        "Standard quality audio output",
-        "Email support",
+        `Up to ${PRICING_PLANS.FREE.generations} dubbing generations per ${PRICING_PLANS.FREE.period}`,
       ],
     },
     {
-      name: "Pro",
-      price: isYearly ? 8 : 10,
+      name: PRICING_PLANS.BASIC.name,
+      price: isYearly
+        ? PRICING_PLANS.BASIC.price.yearly / 12
+        : PRICING_PLANS.BASIC.price.monthly,
       features: [
-        "Unlimited dubbing generations",
-        "Access to premium AI voices",
-        "High-quality audio output",
-        "Priority email support",
-        "Remove OneDub watermark",
+        `${PRICING_PLANS.BASIC.generations} dubbing generations per ${PRICING_PLANS.BASIC.period}`,
       ],
       popular: true,
     },
     {
-      name: "Power User",
-      price: isYearly ? 20 : 25,
+      name: PRICING_PLANS.PRO.name,
+      price: isYearly
+        ? PRICING_PLANS.PRO.price.yearly / 12
+        : PRICING_PLANS.PRO.price.monthly,
       features: [
-        "Everything in Pro plan",
-        "Ultra high-quality audio output",
-        "Custom voice training",
-        "API access for integrations",
-        "Dedicated account manager",
-        "24/7 priority support",
+        `${PRICING_PLANS.PRO.generations} dubbing generations per ${PRICING_PLANS.PRO.period}`,
       ],
     },
   ];

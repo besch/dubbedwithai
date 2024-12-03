@@ -4,6 +4,8 @@ import storage from "@/lib/google-storage-config";
 import OpenAI from "openai";
 import { DubbingVoice } from "@/types";
 import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
+import { checkUsageLimit } from "@/lib/checkUsageLimit";
+import { PRICING_PLANS } from "@/config/pricing";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -52,7 +54,32 @@ export default async function generateAudio(
     });
   }
 
+  const ipAddress =
+    (req.headers["x-forwarded-for"] as string) ||
+    req.socket.remoteAddress ||
+    "";
+
   try {
+    // Check usage limit
+    const { hasExceededLimit, currentCount, resetAt } = await checkUsageLimit(
+      ipAddress
+    );
+
+    if (hasExceededLimit) {
+      logEntry.error_message = "Free generation limit exceeded";
+      logEntry.error_code = "429";
+      await logApiRequest(logEntry);
+      return res.status(429).json({
+        error: "Generation limit exceeded",
+        details: {
+          currentCount,
+          limit: PRICING_PLANS.FREE.generations,
+          resetAt,
+          requiresSubscription: true,
+        },
+      });
+    }
+
     const voice = extractVoiceFromFilePath(filePath);
     const buffer = await generateAndUploadAudio(text, filePath, voice);
 
