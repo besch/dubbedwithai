@@ -186,11 +186,13 @@ async function getBestSubtitle(
     // Try each subtitle in the target language until one works
     for (const subtitle of targetLangSubtitles) {
       try {
-        const subtitleContent = await downloadAndExtractSubtitle(
+        let subtitleContent = await downloadAndExtractSubtitle(
           subtitle.url,
           seasonNumber,
           episodeNumber
         );
+        // Add formatting step
+        subtitleContent = insertNewLineIfWrongFormattedSRT(subtitleContent);
         return {
           content: subtitleContent,
           generated: false,
@@ -202,15 +204,15 @@ async function getBestSubtitle(
       }
     }
 
-    // If all target language subtitles fail, fall back to first available subtitle
+    // Fallback case
     const bestSubtitle = data.subtitles[0];
-    const subtitleContent = await downloadAndExtractSubtitle(
+    let subtitleContent = await downloadAndExtractSubtitle(
       bestSubtitle.url,
       seasonNumber,
       episodeNumber
     );
-
-    // Translate subtitles to the target language
+    // Add formatting step
+    subtitleContent = insertNewLineIfWrongFormattedSRT(subtitleContent);
     const translatedContent = await translateSubtitles(
       subtitleContent,
       bestSubtitle.language,
@@ -242,6 +244,10 @@ async function getBestSubtitle(
     content: translatedContent,
     generated: true,
   };
+}
+
+function insertNewLineIfWrongFormattedSRT(input: string): string {
+  return input.replace(/^(\d+)(\r?\n)/gm, "\n$1$2");
 }
 
 async function downloadAndExtractSubtitle(
