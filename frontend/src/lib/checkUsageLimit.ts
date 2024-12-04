@@ -1,16 +1,5 @@
-import { createClient } from "@supabase/supabase-js";
 import { PRICING_PLANS } from "@/config/pricing";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+import supabase from "./supabaseClient";
 
 export async function checkUsageLimit(ipAddress: string, userId?: string) {
   // If user is logged in, check their subscription

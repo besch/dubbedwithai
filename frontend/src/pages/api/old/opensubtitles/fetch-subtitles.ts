@@ -4,23 +4,12 @@ import storage from "@/lib/google-storage-config";
 import fetch from "node-fetch";
 import unzipper from "unzipper";
 import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
-import { createClient } from "@supabase/supabase-js";
 import { cleanSrtContent } from "@/lib/subtitles";
 import { translateSubtitles } from "@/utils/subtitles";
+import supabase from "@/lib/supabaseClient";
 
 const bucketName = "dubbed_with_ai";
 const dailyFetchAudioLimit = 1500;
-
-const supabase = createClient(
-  process.env.SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
 
 export default async function fetchSubtitles(
   req: NextApiRequest,
