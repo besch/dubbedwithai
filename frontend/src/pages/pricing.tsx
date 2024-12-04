@@ -3,6 +3,9 @@ import { Check } from "lucide-react";
 import { useState } from "react";
 import { PRICING_PLANS } from "@/config/pricing";
 import { loadStripe } from "@stripe/stripe-js";
+import { useRouter } from "next/router";
+import { useAppSelector } from "@/store/hooks";
+import { signInWithOAuth } from "@/services/auth";
 
 const stripePromise = loadStripe(process.env.STRIPE_PUBLISHABLE_KEY!);
 
@@ -11,6 +14,7 @@ interface PricingTierProps {
   price: number;
   features: string[];
   popular?: boolean;
+  onSelect?: () => void;
 }
 
 const PricingTier: React.FC<PricingTierProps> = ({
@@ -18,6 +22,7 @@ const PricingTier: React.FC<PricingTierProps> = ({
   price,
   features,
   popular = false,
+  onSelect,
 }) => (
   <div
     className={`bg-muted p-8 rounded-lg shadow-lg flex flex-col h-full ${
@@ -39,6 +44,7 @@ const PricingTier: React.FC<PricingTierProps> = ({
     </ul>
     {price > 0 && (
       <button
+        onClick={onSelect}
         className={`mt-auto w-full py-2 px-4 rounded-md transition-colors ${
           popular
             ? "bg-yellow-400 text-black hover:bg-yellow-500"
@@ -52,7 +58,44 @@ const PricingTier: React.FC<PricingTierProps> = ({
 );
 
 const Pricing: React.FC = () => {
+  const router = useRouter();
   const [isYearly, setIsYearly] = useState<boolean>(false);
+  const user = useAppSelector((state) => state.user.user);
+
+  const handlePlanSelection = async (
+    plan: (typeof PRICING_PLANS)[keyof typeof PRICING_PLANS]
+  ) => {
+    try {
+      if (!user) {
+        // If user is not logged in, trigger OAuth
+        await signInWithOAuth();
+        return;
+      }
+
+      // User is logged in, proceed with payment
+      const priceId = isYearly
+        ? plan.stripeYearlyPriceId
+        : plan.stripeMonthlyPriceId;
+
+      const response = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          priceId,
+          planType: plan.name.toUpperCase(),
+          interval: isYearly ? "yearly" : "monthly",
+        }),
+      });
+
+      const { sessionId } = await response.json();
+      const stripe = await stripePromise;
+      await stripe?.redirectToCheckout({ sessionId });
+    } catch (error) {
+      console.error("Error:", error);
+    }
+  };
 
   const pricingPlans: PricingTierProps[] = [
     {
@@ -61,6 +104,7 @@ const Pricing: React.FC = () => {
       features: [
         `Up to ${PRICING_PLANS.FREE.generations} dubbing generations per ${PRICING_PLANS.FREE.period}`,
       ],
+      onSelect: () => {}, // Free plan doesn't need payment
     },
     {
       name: PRICING_PLANS.BASIC.name,
@@ -71,6 +115,7 @@ const Pricing: React.FC = () => {
         `${PRICING_PLANS.BASIC.generations} dubbing generations per ${PRICING_PLANS.BASIC.period}`,
       ],
       popular: true,
+      onSelect: () => handlePlanSelection(PRICING_PLANS.BASIC),
     },
     {
       name: PRICING_PLANS.PRO.name,
@@ -80,6 +125,7 @@ const Pricing: React.FC = () => {
       features: [
         `${PRICING_PLANS.PRO.generations} dubbing generations per ${PRICING_PLANS.PRO.period}`,
       ],
+      onSelect: () => handlePlanSelection(PRICING_PLANS.PRO),
     },
   ];
 
