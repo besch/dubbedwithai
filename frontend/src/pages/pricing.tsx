@@ -138,9 +138,9 @@ const Pricing: React.FC = () => {
                   What happens if I exceed the free plan limit?
                 </h3>
                 <p>
-                  Once you reach the 1,500 daily dubbing limit on the free plan,
-                  you&apos;ll need to wait until the next day or upgrade to a
-                  paid plan for unlimited dubbing.
+                  Once you reach the 150 weekly dubbing generations limit on the
+                  free plan, you&apos;ll need to wait until the next day or
+                  upgrade to a paid plan for unlimited dubbing.
                 </p>
               </div>
               <div>

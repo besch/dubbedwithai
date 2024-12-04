@@ -29,18 +29,6 @@ export default function Navbar() {
           >
             Home
           </Link>
-          {/* <Link
-            href="/pricing"
-            className="block py-2 hover:text-yellow-400 transition-colors"
-          >
-            Pricing
-          </Link> */}
-          <Link
-            href="/privacy-policy"
-            className="block py-2 hover:text-yellow-400 transition-colors"
-          >
-            Privacy Policy
-          </Link>
           <a
             href="https://chromewebstore.google.com/detail/onedub/cphceeehafncfeigajlnajkbddokpnbn"
             target="_blank"

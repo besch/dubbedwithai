@@ -1,3 +1,4 @@
+import Footer from "./Footer";
 import Navbar from "./Navbar";
 
 export default function Layout({ children }: { children: React.ReactNode }) {
@@ -7,6 +8,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       <main className="container mx-auto px-4 py-8 bg-accent shadow-md">
         {children}
       </main>
+      <Footer />
     </div>
   );
 }
