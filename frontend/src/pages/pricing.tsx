@@ -78,6 +78,11 @@ const Pricing: React.FC = () => {
           ? plan.stripeMonthlyPriceId
           : undefined;
 
+      if (!priceId) {
+        console.error("No price ID available for this plan");
+        return;
+      }
+
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
         headers: {
@@ -91,11 +96,21 @@ const Pricing: React.FC = () => {
         }),
       });
 
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to create checkout session");
+      }
+
       const { sessionId } = await response.json();
       const stripe = await stripePromise;
-      await stripe?.redirectToCheckout({ sessionId });
+
+      const result = await stripe?.redirectToCheckout({ sessionId });
+      if (result?.error) {
+        throw new Error(result.error.message);
+      }
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error during checkout:", error);
+      // You might want to show an error message to the user here
     }
   };
 

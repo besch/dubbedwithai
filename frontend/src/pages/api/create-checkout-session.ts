@@ -13,10 +13,14 @@ export default async function handler(
     return res.status(405).end();
   }
 
-  const { priceId, planType, interval } = req.body;
+  const { priceId, planType, interval, userId } = req.body;
 
   if (!priceId) {
     return res.status(400).json({ error: "Price ID is required" });
+  }
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required" });
   }
 
   try {
@@ -29,11 +33,12 @@ export default async function handler(
         },
       ],
       mode: "subscription",
-      success_url: `${req.headers.origin}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${req.headers.origin}/subscriptions?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/pricing`,
       metadata: {
         planType,
         interval,
+        userId,
       },
     });
 
