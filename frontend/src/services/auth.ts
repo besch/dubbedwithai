@@ -13,7 +13,7 @@ export async function signInWithOAuth(provider: Provider = "google") {
   return data;
 }
 
-export async function createOrUpdateUser(userData: any) {
+export async function createOrUpdateUser(userData: any, ipAddress: string) {
   const { data, error } = await supabase
     .from("users")
     .upsert({
@@ -21,6 +21,7 @@ export async function createOrUpdateUser(userData: any) {
       email: userData.email,
       full_name: userData.user_metadata?.full_name,
       avatar_url: userData.user_metadata?.avatar_url,
+      ip_address: ipAddress,
       updated_at: new Date().toISOString(),
     })
     .select()

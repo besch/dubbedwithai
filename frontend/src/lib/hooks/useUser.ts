@@ -3,6 +3,7 @@ import { useAppDispatch } from "@/store/hooks";
 import { setUser, setLoading } from "@/store/features/userSlice";
 import supabase from "@/lib/supabaseClient";
 import { createOrUpdateUser } from "@/services/auth";
+import { getUserIpAddress } from "@/utils/ipUtils";
 
 export function useUser() {
   const dispatch = useAppDispatch();
@@ -17,7 +18,8 @@ export function useUser() {
         } = await supabase.auth.getSession();
 
         if (session?.user && mounted) {
-          await createOrUpdateUser(session.user);
+          const ipAddress = await getUserIpAddress();
+          await createOrUpdateUser(session.user, ipAddress);
           dispatch(setUser(session.user));
         }
       } catch (error) {
@@ -36,7 +38,8 @@ export function useUser() {
     } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (mounted) {
         if (session?.user) {
-          await createOrUpdateUser(session.user);
+          const ipAddress = await getUserIpAddress();
+          await createOrUpdateUser(session.user, ipAddress);
           dispatch(setUser(session.user));
         } else {
           dispatch(setUser(null));
