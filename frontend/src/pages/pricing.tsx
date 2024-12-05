@@ -3,11 +3,12 @@ import { Check } from "lucide-react";
 import { useState } from "react";
 import { PRICING_PLANS } from "@/config/pricing";
 import { loadStripe } from "@stripe/stripe-js";
-import { useRouter } from "next/router";
 import { useAppSelector } from "@/store/hooks";
 import { signInWithOAuth } from "@/services/auth";
 
-const stripePromise = loadStripe(process.env.STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = loadStripe(
+  process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
+);
 
 interface PricingTierProps {
   name: string;

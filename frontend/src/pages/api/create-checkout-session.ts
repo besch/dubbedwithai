@@ -2,7 +2,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
 import { PRICING_PLANS } from "@/config/pricing";
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",
 });
 
