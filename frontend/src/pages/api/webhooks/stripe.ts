@@ -15,7 +15,10 @@ export const config = {
   },
 };
 
-async function updateSubscription(subscription: Stripe.Subscription) {
+async function updateSubscription(
+  subscription: Stripe.Subscription,
+  session?: Stripe.Checkout.Session
+) {
   const customerId = subscription.customer as string;
   const status = subscription.status;
   const subscriptionId = subscription.id;
@@ -25,9 +28,18 @@ async function updateSubscription(subscription: Stripe.Subscription) {
   const priceId = subscription.items.data[0].price.id;
   const planType = determinePlanType(priceId);
 
+  // Get user_id from metadata if available
+  const userId = session?.metadata?.userId;
+
+  if (!userId) {
+    console.error("No user ID found in session metadata");
+    return;
+  }
+
   await supabase
     .from("subscriptions")
     .upsert({
+      user_id: userId,
       stripe_customer_id: customerId,
       stripe_subscription_id: subscriptionId,
       status: mapStripeStatus(status),
@@ -104,7 +116,7 @@ export default async function handler(
           const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
           );
-          await updateSubscription(subscription);
+          await updateSubscription(subscription, session);
         }
         break;
     }

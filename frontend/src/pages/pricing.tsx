@@ -67,17 +67,16 @@ const Pricing: React.FC = () => {
   ) => {
     try {
       if (!user) {
-        // If user is not logged in, trigger OAuth
         await signInWithOAuth();
         return;
       }
 
-      // User is logged in, proceed with payment
-      const priceId = isYearly && 'stripeYearlyPriceId' in plan
-        ? plan.stripeYearlyPriceId
-        : 'stripeMonthlyPriceId' in plan
-        ? plan.stripeMonthlyPriceId
-        : undefined;
+      const priceId =
+        isYearly && "stripeYearlyPriceId" in plan
+          ? plan.stripeYearlyPriceId
+          : "stripeMonthlyPriceId" in plan
+          ? plan.stripeMonthlyPriceId
+          : undefined;
 
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
@@ -88,6 +87,7 @@ const Pricing: React.FC = () => {
           priceId,
           planType: plan.name.toUpperCase(),
           interval: isYearly ? "yearly" : "monthly",
+          userId: user.id,
         }),
       });
 
