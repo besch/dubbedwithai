@@ -1,8 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
-import { PRICING_PLANS } from "@/config/pricing";
 
-const stripe = new Stripe(process.env.NEXT_PUBLIC_STRIPE_SECRET_KEY!, {
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",
 });
 
@@ -15,6 +14,10 @@ export default async function handler(
   }
 
   const { priceId, planType, interval } = req.body;
+
+  if (!priceId) {
+    return res.status(400).json({ error: "Price ID is required" });
+  }
 
   try {
     const session = await stripe.checkout.sessions.create({
@@ -37,6 +40,10 @@ export default async function handler(
     res.status(200).json({ sessionId: session.id });
   } catch (error) {
     console.error("Error creating checkout session:", error);
-    res.status(500).json({ error: "Failed to create checkout session" });
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    res
+      .status(500)
+      .json({ error: `Failed to create checkout session: ${errorMessage}` });
   }
 }
