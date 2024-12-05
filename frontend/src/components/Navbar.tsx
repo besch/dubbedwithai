@@ -1,9 +1,13 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Menu, X } from "lucide-react";
+import UserMenu from "./UserMenu";
+import { useAppSelector } from "@/store/hooks";
+import { signInWithOAuth } from "@/services/auth";
 
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const user = useAppSelector((state) => state.user.user);
 
   return (
     <nav className="bg-gray-900 text-white p-4">
@@ -17,7 +21,7 @@ export default function Navbar() {
           </button>
         </div>
         <div
-          className={`md:flex space-x-6 ${
+          className={`md:flex items-center space-x-6 ${
             isMenuOpen
               ? "block absolute top-16 left-0 right-0 bg-gray-900 p-4"
               : "hidden"
@@ -43,6 +47,16 @@ export default function Navbar() {
           >
             Install Now
           </a>
+          {user ? (
+            <UserMenu />
+          ) : (
+            <button
+              onClick={() => signInWithOAuth()}
+              className="block py-2 hover:text-yellow-400 transition-colors"
+            >
+              Sign In
+            </button>
+          )}
         </div>
       </div>
     </nav>
