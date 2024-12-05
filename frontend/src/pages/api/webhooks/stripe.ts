@@ -23,31 +23,56 @@ async function updateSubscription(
   const status = subscription.status;
   const subscriptionId = subscription.id;
   const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
+  const currentPeriodStart = new Date(subscription.current_period_start * 1000);
 
   // Get the price ID to determine the plan type
   const priceId = subscription.items.data[0].price.id;
   const planType = determinePlanType(priceId);
 
   // Get user_id from metadata if available
-  const userId = session?.metadata?.userId;
+  const userId = session?.metadata?.userId || subscription.metadata?.userId;
 
   if (!userId) {
     console.error("No user ID found in session metadata");
     return;
   }
 
-  await supabase
+  const subscriptionData = {
+    user_id: userId,
+    stripe_customer_id: customerId,
+    stripe_subscription_id: subscriptionId,
+    status: mapStripeStatus(status),
+    current_period_start: currentPeriodStart.toISOString(),
+    current_period_end: currentPeriodEnd.toISOString(),
+    plan_type: planType,
+    cancel_at_period_end: subscription.cancel_at_period_end,
+    updated_at: new Date().toISOString(),
+  };
+
+  const { error } = await supabase
     .from("subscriptions")
-    .upsert({
-      user_id: userId,
-      stripe_customer_id: customerId,
-      stripe_subscription_id: subscriptionId,
-      status: mapStripeStatus(status),
-      current_period_end: currentPeriodEnd.toISOString(),
-      plan_type: planType,
+    .upsert(subscriptionData)
+    .match({ stripe_subscription_id: subscriptionId });
+
+  if (error) {
+    console.error("Error updating subscription in Supabase:", error);
+    throw error;
+  }
+
+  // Update user's subscription status
+  const { error: userError } = await supabase
+    .from("users")
+    .update({
+      subscription_status: mapStripeStatus(status),
+      subscription_plan: planType,
       updated_at: new Date().toISOString(),
     })
-    .match({ stripe_subscription_id: subscriptionId });
+    .eq("id", userId);
+
+  if (userError) {
+    console.error("Error updating user subscription status:", userError);
+    throw userError;
+  }
 }
 
 function determinePlanType(priceId: string): "BASIC" | "PRO" {
