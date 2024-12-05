@@ -58,7 +58,6 @@ const PricingTier: React.FC<PricingTierProps> = ({
 );
 
 const Pricing: React.FC = () => {
-  const router = useRouter();
   const [isYearly, setIsYearly] = useState<boolean>(false);
   const user = useAppSelector((state) => state.user.user);
 
@@ -73,9 +72,11 @@ const Pricing: React.FC = () => {
       }
 
       // User is logged in, proceed with payment
-      const priceId = isYearly
+      const priceId = isYearly && 'stripeYearlyPriceId' in plan
         ? plan.stripeYearlyPriceId
-        : plan.stripeMonthlyPriceId;
+        : 'stripeMonthlyPriceId' in plan
+        ? plan.stripeMonthlyPriceId
+        : undefined;
 
       const response = await fetch("/api/create-checkout-session", {
         method: "POST",
