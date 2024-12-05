@@ -26,6 +26,9 @@ export async function createOrUpdateUser(userData: any) {
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    console.error("Error updating user:", error);
+    return null;
+  }
   return data;
 }
