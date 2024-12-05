@@ -14,7 +14,7 @@ export default function Subscriptions() {
   const user = useAppSelector((state) => state.user.user);
   const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [usage, setUsage] = useState<LogEntry[]>([]);
+  const [usage, setUsage] = useState<number>(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -47,11 +47,11 @@ export default function Subscriptions() {
           .from("api_logs")
           .select("*")
           .eq("ip_address", userData.ip_address)
-          .order("timestamp", { ascending: false });
+          .eq("endpoint", "/api/generate-audio");
 
-        if (usageData) {
-          setUsage(usageData as LogEntry[]);
-        }
+        const count = usageData ? usageData.length : 0;
+        console.log(`Count of entries for /api/generate-audio: ${count}`);
+        setUsage(count);
       }
 
       setLoading(false);
@@ -88,24 +88,7 @@ export default function Subscriptions() {
 
       <h2 className="text-2xl font-bold mb-4">Usage History</h2>
       <div className="bg-muted p-6 rounded-lg">
-        <table className="w-full">
-          <thead>
-            <tr>
-              <th className="text-left">Date</th>
-              <th className="text-left">Endpoint</th>
-              <th className="text-left">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {usage.map((log, index) => (
-              <tr key={index}>
-                <td>{new Date(log.timestamp).toLocaleDateString()}</td>
-                <td>{log.endpoint}</td>
-                <td>{log.success ? "Success" : "Failed"}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <p className="text-xl">Used audio generations: {usage}</p>
       </div>
     </div>
   );
