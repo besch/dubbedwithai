@@ -19,14 +19,15 @@ export default async function generateAudio(
   await runMiddleware(req, res, cors);
 
   const { url, text, filePath } = req.body;
+  const ip_address =
+    (req.headers["x-forwarded-for"] as string) ||
+    req.socket.remoteAddress ||
+    "";
   const startTime = new Date();
   const logEntry: LogEntry = {
     endpoint: "/api/generate-audio",
     parameters: { text, filePath },
-    ip_address:
-      (req.headers["x-forwarded-for"] as string) ||
-      req.socket.remoteAddress ||
-      "",
+    ip_address,
     timestamp: startTime.toISOString(),
     success: false,
     steps: {},
@@ -54,15 +55,10 @@ export default async function generateAudio(
     });
   }
 
-  const ipAddress =
-    (req.headers["x-forwarded-for"] as string) ||
-    req.socket.remoteAddress ||
-    "";
-
   try {
     // Check usage limit
     const { hasExceededLimit, currentCount, resetAt } = await checkUsageLimit(
-      ipAddress
+      ip_address
     );
 
     if (hasExceededLimit) {
