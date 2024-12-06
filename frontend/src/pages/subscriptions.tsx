@@ -80,6 +80,29 @@ export default function Subscriptions() {
     }
   };
 
+  const handleReactivateSubscription = async () => {
+    if (!activeSubscription?.stripe_subscription_id) return;
+
+    try {
+      const response = await fetch("/api/reactivate-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscriptionId: activeSubscription.stripe_subscription_id,
+        }),
+      });
+
+      if (!response.ok) throw new Error("Failed to reactivate subscription");
+
+      // Refresh the page to show updated status
+      router.reload();
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+    }
+  };
+
   if (loading) {
     return <div className="container mx-auto p-8">Loading...</div>;
   }
@@ -106,12 +129,20 @@ export default function Subscriptions() {
               ).toLocaleDateString()}
             </p>
             {activeSubscription.cancel_at_period_end ? (
-              <p className="text-yellow-400">
-                Your subscription will end on{" "}
-                {new Date(
-                  activeSubscription.current_period_end
-                ).toLocaleDateString()}
-              </p>
+              <div className="mt-4 space-y-2">
+                <p className="text-yellow-400">
+                  Your subscription will end on{" "}
+                  {new Date(
+                    activeSubscription.current_period_end
+                  ).toLocaleDateString()}
+                </p>
+                <button
+                  onClick={handleReactivateSubscription}
+                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
+                >
+                  Reactivate Subscription
+                </button>
+              </div>
             ) : (
               <button
                 onClick={handleCancelSubscription}
