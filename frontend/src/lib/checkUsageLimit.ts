@@ -12,9 +12,7 @@ export async function checkUsageLimit(ipAddress: string, userId?: string) {
       .single();
 
     if (subscription) {
-      // User has an active subscription
       if (subscription.plan_type === "PRO") {
-        // PRO users have unlimited generations
         return {
           currentCount: 0,
           hasExceededLimit: false,
@@ -22,8 +20,6 @@ export async function checkUsageLimit(ipAddress: string, userId?: string) {
           subscription: subscription,
         };
       } else if (subscription.plan_type === "BASIC") {
-        // BASIC users have 5000 generations per month
-        // You might want to implement monthly usage tracking here
         return {
           currentCount: 0,
           hasExceededLimit: false,
@@ -34,26 +30,24 @@ export async function checkUsageLimit(ipAddress: string, userId?: string) {
     }
   }
 
-  // First, clean up expired entries
-  await supabase
-    .from("audio_generation_usage")
-    .delete()
-    .lt("reset_at", new Date().toISOString());
-
-  // Get or create usage record
-  let { data: usage, error } = await supabase
+  // Get current usage record
+  let { data: usage } = await supabase
     .from("audio_generation_usage")
     .select("*")
     .eq("ip_address", ipAddress)
     .single();
 
   if (!usage) {
+    // Create new usage record if none exists
+    const resetAt = new Date();
+    resetAt.setDate(resetAt.getDate() + 30); // Reset after 30 days
+
     const { data: newUsage, error: insertError } = await supabase
       .from("audio_generation_usage")
       .insert({
         ip_address: ipAddress,
-        user_id: userId,
         count: 1,
+        reset_at: resetAt.toISOString(),
       })
       .select()
       .single();
@@ -65,18 +59,15 @@ export async function checkUsageLimit(ipAddress: string, userId?: string) {
     const { error: updateError } = await supabase
       .from("audio_generation_usage")
       .update({ count: usage.count + 1 })
-      .eq("id", usage.id);
+      .eq("ip_address", ipAddress);
 
     if (updateError) throw updateError;
     usage.count++;
   }
 
-  // Check if user has exceeded free limit
-  const hasExceededLimit = usage.count > PRICING_PLANS.FREE.generations;
-
   return {
     currentCount: usage.count,
-    hasExceededLimit,
+    hasExceededLimit: usage.count > PRICING_PLANS.FREE.generations,
     resetAt: usage.reset_at,
   };
 }
