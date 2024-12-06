@@ -166,6 +166,29 @@ export default function Subscriptions() {
     }
   };
 
+  const handleReactivateFromHistory = async (subscriptionId: string) => {
+    try {
+      const response = await fetch("/api/reactivate-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscriptionId: subscriptionId,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to reactivate subscription");
+      }
+
+      await refreshSubscriptionData();
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+      throw error;
+    }
+  };
+
   // Add this function to format the date
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString("en-US", {
@@ -204,7 +227,7 @@ export default function Subscriptions() {
         </a>
       </div>
 
-      {/* Active Subscription */}
+      {/* Active Subscription or No Subscription Message */}
       {activeSubscription ? (
         <SubscriptionManager
           subscription={activeSubscription}
@@ -214,6 +237,11 @@ export default function Subscriptions() {
       ) : (
         <div className="bg-muted p-6 rounded-lg mb-8 text-center">
           <p className="mb-4">You don&apos;t have any active subscriptions.</p>
+          {subscriptions.length > 0 ? (
+            <p className="text-sm text-gray-400 mb-4">
+              You can reactivate your previous subscription from the history below or choose a new plan.
+            </p>
+          ) : null}
           <a
             href="/pricing"
             className="inline-block px-4 py-2 bg-yellow-400 text-black rounded-md hover:bg-yellow-500 transition-colors"
@@ -249,7 +277,7 @@ export default function Subscriptions() {
         </div>
       </div>
 
-      {/* Subscription History */}
+      {/* Updated Subscription History */}
       <div className="bg-muted p-6 rounded-lg mt-8">
         <h2 className="text-2xl font-semibold mb-4">Subscription History</h2>
         <div className="space-y-4">
@@ -287,6 +315,21 @@ export default function Subscriptions() {
                 )}
                 <p>Last updated: {formatDate(sub.updated_at)}</p>
               </div>
+
+              {/* Add Reactivate Button for canceled subscriptions */}
+              {!activeSubscription && 
+               (sub === subscriptions[0]) && // Show button only for the most recent subscription
+               ((sub.status === "canceled") || 
+                (sub.status === "active" && sub.cancel_at_period_end)) && (
+                <div className="mt-4">
+                  <button
+                    onClick={() => handleReactivateFromHistory(sub.stripe_subscription_id)}
+                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                  >
+                    Reactivate This Plan
+                  </button>
+                </div>
+              )}
             </div>
           ))}
         </div>
