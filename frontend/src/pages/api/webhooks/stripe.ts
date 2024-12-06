@@ -30,12 +30,27 @@ async function updateSubscription(
   const planType = determinePlanType(priceId);
 
   // Check for userId in multiple places
-  const userId = session?.metadata?.userId || subscription.metadata?.userId;
+  let userId = subscription.metadata?.userId;
+
+  if (!userId && session?.metadata?.userId) {
+    userId = session.metadata.userId;
+  }
+
+  if (!userId) {
+    // Try to get userId from customer metadata
+    const customerResponse = await stripe.customers.retrieve(customerId);
+    if ("deleted" in customerResponse) {
+      console.error("Customer has been deleted");
+    } else {
+      userId = customerResponse.metadata?.userId;
+    }
+  }
 
   console.log("Debug metadata:", {
     sessionMetadata: session?.metadata,
     subscriptionMetadata: subscription.metadata,
     userId: userId,
+    customerId: customerId,
   });
 
   if (!userId) {
@@ -44,6 +59,7 @@ async function updateSubscription(
       {
         sessionMetadata: session?.metadata,
         subscriptionMetadata: subscription.metadata,
+        customerId: customerId,
       }
     );
     return;
@@ -77,7 +93,6 @@ async function updateSubscription(
     .from("users")
     .update({
       subscription_status: mapStripeStatus(status),
-      subscription_plan: planType,
       updated_at: new Date().toISOString(),
     })
     .eq("id", userId);

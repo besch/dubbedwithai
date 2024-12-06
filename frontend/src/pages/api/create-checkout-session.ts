@@ -24,7 +24,27 @@ export default async function handler(
   }
 
   try {
+    // Create a customer first if needed
+    let customerId;
+    const { data: customers } = await stripe.customers.list({
+      email: req.body.email,
+      limit: 1,
+    });
+
+    if (customers && customers.length > 0) {
+      customerId = customers[0].id;
+    } else {
+      const customer = await stripe.customers.create({
+        email: req.body.email,
+        metadata: {
+          userId: userId,
+        },
+      });
+      customerId = customer.id;
+    }
+
     const session = await stripe.checkout.sessions.create({
+      customer: customerId,
       payment_method_types: ["card"],
       line_items: [
         {
@@ -35,10 +55,17 @@ export default async function handler(
       mode: "subscription",
       success_url: `${req.headers.origin}/subscriptions?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${req.headers.origin}/pricing`,
+      subscription_data: {
+        metadata: {
+          userId: userId,
+          planType: planType,
+          interval: interval,
+        },
+      },
       metadata: {
-        planType,
-        interval,
-        userId,
+        userId: userId,
+        planType: planType,
+        interval: interval,
       },
     });
 
