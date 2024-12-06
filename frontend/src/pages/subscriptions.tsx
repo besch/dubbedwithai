@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import { useAppSelector } from "@/store/hooks";
 import supabase from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
-import { PRICING_PLANS } from "@/config/pricing";
+import SubscriptionManager from "@/components/SubscriptionManager";
+import { ArrowRight, Clock } from "lucide-react";
 
 interface Subscription {
   id: string;
@@ -60,47 +61,41 @@ export default function Subscriptions() {
   const handleCancelSubscription = async () => {
     if (!activeSubscription?.stripe_subscription_id) return;
 
-    try {
-      const response = await fetch("/api/cancel-subscription", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subscriptionId: activeSubscription.stripe_subscription_id,
-        }),
-      });
+    const response = await fetch("/api/cancel-subscription", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        subscriptionId: activeSubscription.stripe_subscription_id,
+      }),
+    });
 
-      if (!response.ok) throw new Error("Failed to cancel subscription");
-
-      // Refresh the page to show updated status
-      router.reload();
-    } catch (error) {
-      console.error("Error canceling subscription:", error);
+    if (!response.ok) {
+      throw new Error("Failed to cancel subscription");
     }
+
+    router.reload();
   };
 
   const handleReactivateSubscription = async () => {
     if (!activeSubscription?.stripe_subscription_id) return;
 
-    try {
-      const response = await fetch("/api/reactivate-subscription", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          subscriptionId: activeSubscription.stripe_subscription_id,
-        }),
-      });
+    const response = await fetch("/api/reactivate-subscription", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        subscriptionId: activeSubscription.stripe_subscription_id,
+      }),
+    });
 
-      if (!response.ok) throw new Error("Failed to reactivate subscription");
-
-      // Refresh the page to show updated status
-      router.reload();
-    } catch (error) {
-      console.error("Error reactivating subscription:", error);
+    if (!response.ok) {
+      throw new Error("Failed to reactivate subscription");
     }
+
+    router.reload();
   };
 
   if (loading) {
@@ -108,79 +103,69 @@ export default function Subscriptions() {
   }
 
   return (
-    <div className="container mx-auto p-8">
-      <h1 className="text-3xl font-bold mb-8">Subscription Management</h1>
+    <div className="container mx-auto p-8 max-w-4xl">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-3xl font-bold">Subscription Management</h1>
+        <a
+          href="/pricing"
+          className="text-yellow-400 hover:text-yellow-500 flex items-center"
+        >
+          View Plans <ArrowRight className="ml-2 h-4 w-4" />
+        </a>
+      </div>
 
       {/* Active Subscription */}
       {activeSubscription ? (
-        <div className="bg-muted p-6 rounded-lg mb-8">
-          <h2 className="text-2xl font-semibold mb-4">Current Subscription</h2>
-          <div className="space-y-2">
-            <p className="text-xl">Plan: {activeSubscription.plan_type}</p>
-            <p>Status: {activeSubscription.status}</p>
-            <p>
-              Current Period:{" "}
-              {new Date(
-                activeSubscription.current_period_start
-              ).toLocaleDateString()}{" "}
-              -{" "}
-              {new Date(
-                activeSubscription.current_period_end
-              ).toLocaleDateString()}
-            </p>
-            {activeSubscription.cancel_at_period_end ? (
-              <div className="mt-4 space-y-2">
-                <p className="text-yellow-400">
-                  Your subscription will end on{" "}
-                  {new Date(
-                    activeSubscription.current_period_end
-                  ).toLocaleDateString()}
-                </p>
-                <button
-                  onClick={handleReactivateSubscription}
-                  className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600 transition-colors"
-                >
-                  Reactivate Subscription
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleCancelSubscription}
-                className="mt-4 px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition-colors"
-              >
-                Cancel Subscription
-              </button>
-            )}
-          </div>
-        </div>
+        <SubscriptionManager
+          subscription={activeSubscription}
+          onCancel={handleCancelSubscription}
+          onReactivate={handleReactivateSubscription}
+        />
       ) : (
-        <div className="bg-muted p-6 rounded-lg mb-8">
-          <p>You don&apos;t have any active subscriptions.</p>
-          <a href="/pricing" className="text-yellow-400 hover:underline">
-            View our pricing plans
+        <div className="bg-muted p-6 rounded-lg mb-8 text-center">
+          <p className="mb-4">You don&apos;t have any active subscriptions.</p>
+          <a
+            href="/pricing"
+            className="inline-block px-4 py-2 bg-yellow-400 text-black rounded-md hover:bg-yellow-500 transition-colors"
+          >
+            View Pricing Plans
           </a>
         </div>
       )}
 
       {/* Usage Statistics */}
-      <div className="bg-muted p-6 rounded-lg mb-8">
-        <h2 className="text-2xl font-semibold mb-4">Usage Statistics</h2>
+      <div className="bg-muted p-6 rounded-lg mb-8 mt-8">
+        <h2 className="text-2xl font-semibold mb-4 flex items-center">
+          <Clock className="mr-2" /> Usage Statistics
+        </h2>
         <p className="text-xl">Total Audio Generations: {usage}</p>
       </div>
 
       {/* Subscription History */}
       {subscriptions.length > 1 && (
-        <div className="bg-muted p-6 rounded-lg">
+        <div className="bg-muted p-6 rounded-lg mt-8">
           <h2 className="text-2xl font-semibold mb-4">Subscription History</h2>
           <div className="space-y-4">
             {subscriptions
               .filter((sub) => sub.id !== activeSubscription?.id)
               .map((sub) => (
-                <div key={sub.id} className="border-b border-gray-700 pb-4">
-                  <p className="font-semibold">{sub.plan_type}</p>
-                  <p>Status: {sub.status}</p>
-                  <p>
-                    Period:{" "}
+                <div
+                  key={sub.id}
+                  className="border border-gray-700 rounded-md p-4"
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <p className="font-semibold">{sub.plan_type}</p>
+                    <span
+                      className={`px-2 py-1 rounded-full text-sm ${
+                        sub.status === "active"
+                          ? "bg-green-900/20 text-green-400"
+                          : "bg-gray-900/20 text-gray-400"
+                      }`}
+                    >
+                      {sub.status}
+                    </span>
+                  </div>
+                  <p className="text-sm opacity-70">
                     {new Date(sub.current_period_start).toLocaleDateString()} -{" "}
                     {new Date(sub.current_period_end).toLocaleDateString()}
                   </p>
