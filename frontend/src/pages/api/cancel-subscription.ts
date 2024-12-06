@@ -1,9 +1,25 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import Stripe from "stripe";
+import supabase from "@/lib/supabaseClient";
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",
 });
+
+function mapStripeStatus(
+  status: string
+): "active" | "canceled" | "past_due" | "unpaid" {
+  switch (status) {
+    case "active":
+      return "active";
+    case "canceled":
+      return "canceled";
+    case "past_due":
+      return "past_due";
+    default:
+      return "unpaid";
+  }
+}
 
 export default async function handler(
   req: NextApiRequest,
@@ -24,6 +40,22 @@ export default async function handler(
     const subscription = await stripe.subscriptions.update(subscriptionId, {
       cancel_at_period_end: true,
     });
+
+    console.log("!!!!!!!!!!!!!subscription", subscription);
+    // Update the subscription in Supabase
+    const { error: updateError } = await supabase
+      .from("subscriptions")
+      .update({
+        cancel_at_period_end: true,
+        status: mapStripeStatus(subscription.status),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("stripe_subscription_id", subscriptionId);
+
+    if (updateError) {
+      console.error("Error updating subscription in Supabase:", updateError);
+      throw updateError;
+    }
 
     res.status(200).json({ subscription });
   } catch (error) {

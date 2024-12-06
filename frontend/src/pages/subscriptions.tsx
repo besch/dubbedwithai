@@ -58,44 +58,73 @@ export default function Subscriptions() {
     fetchData();
   }, [user, router]);
 
+  const refreshSubscriptionData = async () => {
+    if (!user) return;
+
+    // Fetch all subscriptions
+    const { data: subsData } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+
+    if (subsData) {
+      setSubscriptions(subsData);
+      const active = subsData.find((sub) => sub.status === "active");
+      setActiveSubscription(active || null);
+    }
+  };
+
   const handleCancelSubscription = async () => {
     if (!activeSubscription?.stripe_subscription_id) return;
 
-    const response = await fetch("/api/cancel-subscription", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        subscriptionId: activeSubscription.stripe_subscription_id,
-      }),
-    });
+    try {
+      const response = await fetch("/api/cancel-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscriptionId: activeSubscription.stripe_subscription_id,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to cancel subscription");
+      if (!response.ok) {
+        throw new Error("Failed to cancel subscription");
+      }
+
+      // Refresh the subscription data instead of reloading the page
+      await refreshSubscriptionData();
+    } catch (error) {
+      console.error("Error canceling subscription:", error);
+      throw error;
     }
-
-    router.reload();
   };
 
   const handleReactivateSubscription = async () => {
     if (!activeSubscription?.stripe_subscription_id) return;
 
-    const response = await fetch("/api/reactivate-subscription", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        subscriptionId: activeSubscription.stripe_subscription_id,
-      }),
-    });
+    try {
+      const response = await fetch("/api/reactivate-subscription", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subscriptionId: activeSubscription.stripe_subscription_id,
+        }),
+      });
 
-    if (!response.ok) {
-      throw new Error("Failed to reactivate subscription");
+      if (!response.ok) {
+        throw new Error("Failed to reactivate subscription");
+      }
+
+      // Refresh the subscription data instead of reloading the page
+      await refreshSubscriptionData();
+    } catch (error) {
+      console.error("Error reactivating subscription:", error);
+      throw error;
     }
-
-    router.reload();
   };
 
   if (loading) {

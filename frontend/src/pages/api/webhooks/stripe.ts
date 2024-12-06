@@ -87,20 +87,6 @@ async function updateSubscription(
     console.error("Error updating subscription in Supabase:", error);
     throw error;
   }
-
-  // Update user's subscription status
-  const { error: userError } = await supabase
-    .from("users")
-    .update({
-      subscription_status: mapStripeStatus(status),
-      updated_at: new Date().toISOString(),
-    })
-    .eq("id", userId);
-
-  if (userError) {
-    console.error("Error updating user subscription status:", userError);
-    throw userError;
-  }
 }
 
 function determinePlanType(priceId: string): "BASIC" | "PRO" {
