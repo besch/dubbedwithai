@@ -1,35 +1,7 @@
 import { PRICING_PLANS } from "@/config/pricing";
 import supabase from "./supabaseClient";
 
-export async function checkUsageLimit(ipAddress: string, userId?: string) {
-  // If user is logged in, check their subscription
-  if (userId) {
-    const { data: subscription } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", userId)
-      .eq("status", "active")
-      .single();
-
-    if (subscription) {
-      if (subscription.plan_type === "PRO") {
-        return {
-          currentCount: 0,
-          hasExceededLimit: false,
-          resetAt: null,
-          subscription: subscription,
-        };
-      } else if (subscription.plan_type === "BASIC") {
-        return {
-          currentCount: 0,
-          hasExceededLimit: false,
-          resetAt: subscription.current_period_end,
-          subscription: subscription,
-        };
-      }
-    }
-  }
-
+export async function checkUsageLimit(ipAddress: string) {
   // Get current usage record
   let { data: usage } = await supabase
     .from("audio_generation_usage")
