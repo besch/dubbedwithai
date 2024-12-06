@@ -11,34 +11,67 @@ interface UserProfile {
 
 export default function Profile() {
   const user = useAppSelector((state) => state.user.user);
+  const loading = useAppSelector((state) => state.user.loading);
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      router.push("/");
+    // Wait for the user state to be loaded
+    if (loading) return;
+
+    // If no user is found after loading, redirect to pricing
+    if (!user && !loading) {
+      router.push("/pricing");
       return;
     }
 
-    async function fetchProfile() {
-      const { data, error } = await supabase
-        .from("users")
-        .select("*")
-        .eq("id", user!.id)
-        .single();
+    let mounted = true;
 
-      if (data) {
-        setProfile(data);
+    async function fetchProfile() {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", user.id)
+          .single();
+
+        if (data && mounted) {
+          setProfile(data);
+        }
+      } catch (error) {
+        console.error("Error fetching profile:", error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
       }
-      setLoading(false);
     }
 
     fetchProfile();
-  }, [user, router]);
 
-  if (loading) {
-    return <div className="container mx-auto p-8">Loading...</div>;
+    return () => {
+      mounted = false;
+    };
+  }, [user, loading, router]);
+
+  // Show loading state while checking authentication
+  if (loading || isLoading) {
+    return (
+      <div className="container mx-auto p-8 flex justify-center items-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user is found and loading is complete, the useEffect will handle the redirect
+  if (!user) {
+    return null;
   }
 
   return (

@@ -18,25 +18,76 @@ interface Subscription {
 
 export default function Subscriptions() {
   const user = useAppSelector((state) => state.user.user);
+  const loading = useAppSelector((state) => state.user.loading);
   const router = useRouter();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [activeSubscription, setActiveSubscription] =
-    useState<Subscription | null>(null);
+  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
   const [usage, setUsage] = useState<number>(0);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!user) {
-      router.push("/");
+    // Wait for the user state to be loaded
+    if (loading) return;
+
+    // If no user is found after loading, redirect to pricing
+    if (!user && !loading) {
+      router.push('/pricing');
       return;
     }
 
+    let mounted = true;
+
     async function fetchData() {
+      if (!user) return;
+      
+      try {
+        // Fetch all subscriptions
+        const { data: subsData } = await supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false });
+
+        if (subsData && mounted) {
+          setSubscriptions(subsData);
+          const active = subsData.find((sub) => sub.status === "active");
+          setActiveSubscription(active || null);
+        }
+
+        // Fetch usage
+        const { data: usageData } = await supabase
+          .from("api_logs")
+          .select("*")
+          .eq("endpoint", "/api/generate-audio");
+
+        if (mounted) {
+          setUsage(usageData?.length || 0);
+        }
+      } catch (error) {
+        console.error("Error fetching subscription data:", error);
+      } finally {
+        if (mounted) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    fetchData();
+
+    return () => {
+      mounted = false;
+    };
+  }, [user, loading, router]);
+
+  const refreshSubscriptionData = async () => {
+    if (!user) return;
+
+    try {
       // Fetch all subscriptions
       const { data: subsData } = await supabase
         .from("subscriptions")
         .select("*")
-        .eq("user_id", user!.id)
+        .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
       if (subsData) {
@@ -44,34 +95,8 @@ export default function Subscriptions() {
         const active = subsData.find((sub) => sub.status === "active");
         setActiveSubscription(active || null);
       }
-
-      // Fetch usage
-      const { data: usageData } = await supabase
-        .from("api_logs")
-        .select("*")
-        .eq("endpoint", "/api/generate-audio");
-
-      setUsage(usageData?.length || 0);
-      setLoading(false);
-    }
-
-    fetchData();
-  }, [user, router]);
-
-  const refreshSubscriptionData = async () => {
-    if (!user) return;
-
-    // Fetch all subscriptions
-    const { data: subsData } = await supabase
-      .from("subscriptions")
-      .select("*")
-      .eq("user_id", user.id)
-      .order("created_at", { ascending: false });
-
-    if (subsData) {
-      setSubscriptions(subsData);
-      const active = subsData.find((sub) => sub.status === "active");
-      setActiveSubscription(active || null);
+    } catch (error) {
+      console.error("Error refreshing subscription data:", error);
     }
   };
 
@@ -127,8 +152,21 @@ export default function Subscriptions() {
     }
   };
 
-  if (loading) {
-    return <div className="container mx-auto p-8">Loading...</div>;
+  // Show loading state while checking authentication
+  if (loading || isLoading) {
+    return (
+      <div className="container mx-auto p-8 flex justify-center items-center min-h-[60vh]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-400 mx-auto"></div>
+          <p className="mt-4">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If no user is found and loading is complete, the useEffect will handle the redirect
+  if (!user) {
+    return null;
   }
 
   return (

@@ -4,15 +4,18 @@ import { setUser, setLoading } from "@/store/features/userSlice";
 import supabase from "@/lib/supabaseClient";
 import { createOrUpdateUser } from "@/services/auth";
 import { getUserIpAddress } from "@/utils/ipUtils";
+import { useRouter } from "next/router";
 
 export function useUser() {
   const dispatch = useAppDispatch();
+  const router = useRouter();
 
   useEffect(() => {
     let mounted = true;
 
     async function getInitialSession() {
       try {
+        dispatch(setLoading(true));
         const {
           data: { session },
         } = await supabase.auth.getSession();
@@ -21,6 +24,13 @@ export function useUser() {
           const ipAddress = await getUserIpAddress();
           await createOrUpdateUser(session.user, ipAddress);
           dispatch(setUser(session.user));
+        } else if (!session && mounted) {
+          // Only redirect to home if we're on a protected route
+          const protectedRoutes = ["/profile", "/subscriptions"];
+          if (protectedRoutes.includes(router.pathname)) {
+            router.push("/");
+          }
+          dispatch(setUser(null));
         }
       } catch (error) {
         console.error("Error getting session:", error);
@@ -42,6 +52,11 @@ export function useUser() {
           await createOrUpdateUser(session.user, ipAddress);
           dispatch(setUser(session.user));
         } else {
+          // Only redirect to home if we're on a protected route
+          const protectedRoutes = ["/profile", "/subscriptions"];
+          if (protectedRoutes.includes(router.pathname)) {
+            router.push("/");
+          }
           dispatch(setUser(null));
         }
       }
@@ -51,5 +66,5 @@ export function useUser() {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [dispatch]);
+  }, [dispatch, router]);
 }
