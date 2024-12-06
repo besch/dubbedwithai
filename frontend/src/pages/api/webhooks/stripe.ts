@@ -29,11 +29,23 @@ async function updateSubscription(
   const priceId = subscription.items.data[0].price.id;
   const planType = determinePlanType(priceId);
 
-  // Get user_id from metadata if available
+  // Check for userId in multiple places
   const userId = session?.metadata?.userId || subscription.metadata?.userId;
 
+  console.log("Debug metadata:", {
+    sessionMetadata: session?.metadata,
+    subscriptionMetadata: subscription.metadata,
+    userId: userId,
+  });
+
   if (!userId) {
-    console.error("No user ID found in session metadata");
+    console.error(
+      "No user ID found in metadata. Session and subscription data:",
+      {
+        sessionMetadata: session?.metadata,
+        subscriptionMetadata: subscription.metadata,
+      }
+    );
     return;
   }
 
@@ -48,6 +60,7 @@ async function updateSubscription(
     cancel_at_period_end: subscription.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   };
+  console.log("!!!!!!!!!!subscriptionData", subscriptionData);
 
   const { error } = await supabase
     .from("subscriptions")
@@ -115,6 +128,13 @@ export default async function handler(
 
   try {
     event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
+
+    // // Add debug logging
+    // console.log("Received webhook event:", {
+    //   type: event.type,
+    //   id: event.id,
+    //   object: event.data.object,
+    // });
   } catch (err) {
     console.error(
       `Webhook Error: ${err instanceof Error ? err.message : "Unknown error"}`
@@ -132,11 +152,19 @@ export default async function handler(
       case "customer.subscription.updated":
       case "customer.subscription.deleted":
         const subscription = event.data.object as Stripe.Subscription;
+        console.log("Processing subscription webhook:", {
+          subscriptionId: subscription.id,
+          metadata: subscription.metadata,
+        });
         await updateSubscription(subscription);
         break;
 
       case "checkout.session.completed":
         const session = event.data.object as Stripe.Checkout.Session;
+        console.log("Processing checkout session webhook:", {
+          sessionId: session.id,
+          metadata: session.metadata,
+        });
         if (session.subscription) {
           const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
