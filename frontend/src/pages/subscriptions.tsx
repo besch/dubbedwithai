@@ -15,6 +15,7 @@ interface Subscription {
   cancel_at_period_end: boolean;
   stripe_subscription_id: string;
   created_at: string;
+  updated_at: string;
 }
 
 export default function Subscriptions() {
@@ -165,6 +166,15 @@ export default function Subscriptions() {
     }
   };
 
+  // Add this function to format the date
+  const formatDate = (dateString: string) => {
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+
   // Show loading state while checking authentication
   if (loading || isLoading) {
     return (
@@ -240,38 +250,47 @@ export default function Subscriptions() {
       </div>
 
       {/* Subscription History */}
-      {subscriptions.length > 1 && (
-        <div className="bg-muted p-6 rounded-lg mt-8">
-          <h2 className="text-2xl font-semibold mb-4">Subscription History</h2>
-          <div className="space-y-4">
-            {subscriptions
-              .filter((sub) => sub.id !== activeSubscription?.id)
-              .map((sub) => (
-                <div
-                  key={sub.id}
-                  className="border border-gray-700 rounded-md p-4"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <p className="font-semibold">{sub.plan_type}</p>
-                    <span
-                      className={`px-2 py-1 rounded-full text-sm ${
-                        sub.status === "active"
-                          ? "bg-green-900/20 text-green-400"
-                          : "bg-gray-900/20 text-gray-400"
-                      }`}
-                    >
-                      {sub.status}
-                    </span>
-                  </div>
-                  <p className="text-sm opacity-70">
-                    {new Date(sub.current_period_start).toLocaleDateString()} -{" "}
-                    {new Date(sub.current_period_end).toLocaleDateString()}
+      <div className="bg-muted p-6 rounded-lg mt-8">
+        <h2 className="text-2xl font-semibold mb-4">Subscription History</h2>
+        <div className="space-y-4">
+          {subscriptions.map((sub) => (
+            <div key={sub.id} className="border border-gray-700 rounded-md p-4">
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <h3 className="font-semibold text-lg">
+                    {sub.plan_type} Plan
+                  </h3>
+                  <p className="text-sm text-gray-400">
+                    Created: {formatDate(sub.created_at)}
                   </p>
                 </div>
-              ))}
-          </div>
+                <span
+                  className={`px-2 py-1 rounded-full text-sm ${
+                    sub.status === "active"
+                      ? "bg-green-900/20 text-green-400"
+                      : "bg-gray-900/20 text-gray-400"
+                  }`}
+                >
+                  {sub.status}
+                </span>
+              </div>
+
+              <div className="mt-2 space-y-1 text-sm text-gray-400">
+                <p>
+                  Period: {formatDate(sub.current_period_start)} -{" "}
+                  {formatDate(sub.current_period_end)}
+                </p>
+                {sub.cancel_at_period_end && (
+                  <p className="text-yellow-400">
+                    Scheduled to cancel on {formatDate(sub.current_period_end)}
+                  </p>
+                )}
+                <p>Last updated: {formatDate(sub.updated_at)}</p>
+              </div>
+            </div>
+          ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }

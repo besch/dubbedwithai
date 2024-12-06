@@ -78,16 +78,35 @@ async function updateSubscription(
     cancel_at_period_end: subscription.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   };
-  console.log("!!!!!!!!!!subscriptionData", subscriptionData);
 
-  const { error } = await supabase
+  // Check if this is a subscription update (like cancellation) or a new subscription
+  const { data: existingSubscription } = await supabase
     .from("subscriptions")
-    .upsert(subscriptionData)
-    .match({ stripe_subscription_id: subscriptionId });
+    .select("*")
+    .eq("stripe_subscription_id", subscriptionId)
+    .single();
 
-  if (error) {
-    console.error("Error updating subscription in Supabase:", error);
-    throw error;
+  if (existingSubscription) {
+    // Update existing subscription
+    const { error } = await supabase
+      .from("subscriptions")
+      .update(subscriptionData)
+      .eq("stripe_subscription_id", subscriptionId);
+
+    if (error) {
+      console.error("Error updating subscription in Supabase:", error);
+      throw error;
+    }
+  } else {
+    // Insert new subscription
+    const { error } = await supabase
+      .from("subscriptions")
+      .insert(subscriptionData);
+
+    if (error) {
+      console.error("Error inserting subscription in Supabase:", error);
+      throw error;
+    }
   }
 }
 
