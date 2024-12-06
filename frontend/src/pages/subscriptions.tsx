@@ -4,6 +4,7 @@ import supabase from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
 import SubscriptionManager from "@/components/SubscriptionManager";
 import { ArrowRight, Clock } from "lucide-react";
+import { PRICING_PLANS } from "@/config/pricing";
 
 interface Subscription {
   id: string;
@@ -21,9 +22,13 @@ export default function Subscriptions() {
   const loading = useAppSelector((state) => state.user.loading);
   const router = useRouter();
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
-  const [activeSubscription, setActiveSubscription] = useState<Subscription | null>(null);
-  const [usage, setUsage] = useState<number>(0);
+  const [activeSubscription, setActiveSubscription] =
+    useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [ipUsage, setIpUsage] = useState<{
+    count: number;
+    reset_at: string | null;
+  } | null>(null);
 
   useEffect(() => {
     // Wait for the user state to be loaded
@@ -31,7 +36,7 @@ export default function Subscriptions() {
 
     // If no user is found after loading, redirect to pricing
     if (!user && !loading) {
-      router.push('/pricing');
+      router.push("/pricing");
       return;
     }
 
@@ -39,7 +44,7 @@ export default function Subscriptions() {
 
     async function fetchData() {
       if (!user) return;
-      
+
       try {
         // Fetch all subscriptions
         const { data: subsData } = await supabase
@@ -54,17 +59,25 @@ export default function Subscriptions() {
           setActiveSubscription(active || null);
         }
 
-        // Fetch usage
-        const { data: usageData } = await supabase
-          .from("api_logs")
-          .select("*")
-          .eq("endpoint", "/api/generate-audio");
+        // Fetch IP-based usage
+        const ipAddress = await fetch("https://api.ipify.org?format=json")
+          .then((res) => res.json())
+          .then((data) => data.ip);
 
-        if (mounted) {
-          setUsage(usageData?.length || 0);
+        const { data: usageData } = await supabase
+          .from("audio_generation_usage")
+          .select("*")
+          .eq("ip_address", ipAddress)
+          .single();
+
+        if (mounted && usageData) {
+          setIpUsage({
+            count: usageData.count,
+            reset_at: usageData.reset_at,
+          });
         }
       } catch (error) {
-        console.error("Error fetching subscription data:", error);
+        console.error("Error fetching data:", error);
       } finally {
         if (mounted) {
           setIsLoading(false);
@@ -205,7 +218,25 @@ export default function Subscriptions() {
         <h2 className="text-2xl font-semibold mb-4 flex items-center">
           <Clock className="mr-2" /> Usage Statistics
         </h2>
-        <p className="text-xl">Total Audio Generations: {usage}</p>
+        <div className="space-y-2">
+          {ipUsage && (
+            <>
+              <p className="text-xl">
+                Total Audio Generations: {ipUsage.count}
+              </p>
+              {ipUsage.reset_at && (
+                <p className="text-sm text-gray-400">
+                  Resets on: {new Date(ipUsage.reset_at).toLocaleDateString()}
+                </p>
+              )}
+              {!activeSubscription && (
+                <p className="text-sm text-gray-400">
+                  Free tier limit: {PRICING_PLANS.FREE.generations} generations
+                </p>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Subscription History */}
