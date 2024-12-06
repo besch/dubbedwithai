@@ -69,7 +69,9 @@ async function updateSubscription(
     user_id: userId,
     stripe_customer_id: customerId,
     stripe_subscription_id: subscriptionId,
-    status: mapStripeStatus(status),
+    status: subscription.cancel_at_period_end
+      ? "canceled"
+      : mapStripeStatus(status),
     current_period_start: currentPeriodStart.toISOString(),
     current_period_end: currentPeriodEnd.toISOString(),
     plan_type: planType,

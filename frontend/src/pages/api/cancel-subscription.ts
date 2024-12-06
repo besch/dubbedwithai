@@ -41,13 +41,12 @@ export default async function handler(
       cancel_at_period_end: true,
     });
 
-    console.log("!!!!!!!!!!!!!subscription", subscription);
     // Update the subscription in Supabase
     const { error: updateError } = await supabase
       .from("subscriptions")
       .update({
         cancel_at_period_end: true,
-        status: mapStripeStatus(subscription.status),
+        status: "canceled",
         updated_at: new Date().toISOString(),
       })
       .eq("stripe_subscription_id", subscriptionId);
