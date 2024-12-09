@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useAppSelector } from "@/store/hooks";
 import supabase from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
+import Image from "next/image";
 
 interface UserProfile {
   full_name: string;
@@ -81,10 +82,12 @@ export default function Profile() {
       <div className="bg-muted p-6 rounded-lg">
         <div className="flex items-center space-x-4 mb-6">
           {profile?.avatar_url ? (
-            <img
+            <Image
               src={profile.avatar_url}
               alt={profile.full_name}
-              className="w-20 h-20 rounded-full"
+              width={80}
+              height={80}
+              className="rounded-full"
             />
           ) : (
             <div className="w-20 h-20 rounded-full bg-gray-700" />

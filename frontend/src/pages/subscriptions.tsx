@@ -5,6 +5,7 @@ import { useRouter } from "next/router";
 import SubscriptionManager from "@/components/SubscriptionManager";
 import { ArrowRight, Clock } from "lucide-react";
 import { PRICING_PLANS } from "@/config/pricing";
+import Link from "next/link";
 
 interface Subscription {
   id: string;
@@ -219,12 +220,12 @@ export default function Subscriptions() {
     <div className="container mx-auto p-8 max-w-4xl">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-3xl font-bold">Subscription Management</h1>
-        <a
+        <Link
           href="/pricing"
           className="text-yellow-400 hover:text-yellow-500 flex items-center"
         >
           View Plans <ArrowRight className="ml-2 h-4 w-4" />
-        </a>
+        </Link>
       </div>
 
       {/* Active Subscription or No Subscription Message */}
@@ -239,15 +240,16 @@ export default function Subscriptions() {
           <p className="mb-4">You don&apos;t have any active subscriptions.</p>
           {subscriptions.length > 0 ? (
             <p className="text-sm text-gray-400 mb-4">
-              You can reactivate your previous subscription from the history below or choose a new plan.
+              You can reactivate your previous subscription from the history
+              below or choose a new plan.
             </p>
           ) : null}
-          <a
+          <Link
             href="/pricing"
             className="inline-block px-4 py-2 bg-yellow-400 text-black rounded-md hover:bg-yellow-500 transition-colors"
           >
             View Pricing Plans
-          </a>
+          </Link>
         </div>
       )}
 
@@ -317,19 +319,21 @@ export default function Subscriptions() {
               </div>
 
               {/* Add Reactivate Button for canceled subscriptions */}
-              {!activeSubscription && 
-               (sub === subscriptions[0]) && // Show button only for the most recent subscription
-               ((sub.status === "canceled") || 
-                (sub.status === "active" && sub.cancel_at_period_end)) && (
-                <div className="mt-4">
-                  <button
-                    onClick={() => handleReactivateFromHistory(sub.stripe_subscription_id)}
-                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
-                  >
-                    Reactivate This Plan
-                  </button>
-                </div>
-              )}
+              {!activeSubscription &&
+                sub === subscriptions[0] && // Show button only for the most recent subscription
+                (sub.status === "canceled" ||
+                  (sub.status === "active" && sub.cancel_at_period_end)) && (
+                  <div className="mt-4">
+                    <button
+                      onClick={() =>
+                        handleReactivateFromHistory(sub.stripe_subscription_id)
+                      }
+                      className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors text-sm"
+                    >
+                      Reactivate This Plan
+                    </button>
+                  </div>
+                )}
             </div>
           ))}
         </div>

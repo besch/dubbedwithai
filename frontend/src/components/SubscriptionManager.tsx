@@ -145,7 +145,7 @@ export default function SubscriptionManager({
           <button
             onClick={() => handleAction("reactivate")}
             disabled={isLoading}
-            className="w-full px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 transition-colors disabled:opacity-50"
           >
             {isLoading ? "Processing..." : "Reactivate Subscription"}
           </button>
@@ -153,7 +153,7 @@ export default function SubscriptionManager({
           <button
             onClick={() => handleAction("cancel")}
             disabled={isLoading}
-            className="w-full px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600 transition-colors disabled:opacity-50"
           >
             {isLoading ? "Processing..." : "Cancel Subscription"}
           </button>

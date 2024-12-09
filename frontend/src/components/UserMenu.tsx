@@ -4,6 +4,7 @@ import { LogOut, User, CreditCard } from "lucide-react";
 import Link from "next/link";
 import supabase from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
+import Image from "next/image";
 
 export default function UserMenu() {
   const [isOpen, setIsOpen] = useState(false);
@@ -39,10 +40,12 @@ export default function UserMenu() {
         className="flex items-center space-x-2 hover:text-yellow-400 transition-colors"
       >
         {user.user_metadata?.avatar_url ? (
-          <img
+          <Image
             src={user.user_metadata.avatar_url}
             alt={user.user_metadata?.full_name || "User"}
-            className="w-8 h-8 rounded-full"
+            width={32}
+            height={32}
+            className="rounded-full"
           />
         ) : (
           <div className="w-8 h-8 rounded-full bg-gray-700 flex items-center justify-center">
