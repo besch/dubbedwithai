@@ -7,8 +7,6 @@ const getAllowedOrigins = () => {
 
     // TO REMOVE
     "https://dubbedwithai-git-payments-beschs-projects.vercel.app",
-    "dubbedwithai-git-payments-beschs-projects.vercel.app",
-    "*",
     // TO REMOVE
   ];
   return origins.filter((origin) => origin !== undefined);
