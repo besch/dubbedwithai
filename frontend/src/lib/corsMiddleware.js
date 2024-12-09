@@ -3,6 +3,7 @@ import Cors from "cors";
 const getAllowedOrigins = () => {
   const origins = [
     process.env.API_URL,
+    process.env.TEST_API_URL,
     `chrome-extension://${process.env.CHROME_EXTENSION_ID}`,
   ];
   return origins.filter((origin) => origin !== undefined);
