@@ -15,11 +15,6 @@ const nextConfig = {
       destination: "/src/pages/api/:path*",
     },
   ],
-  api: {
-    bodyParser: {
-      sizeLimit: "1mb",
-    },
-  },
   images: {
     domains: ["lh3.googleusercontent.com"], // Add this line
   },

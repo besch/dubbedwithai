@@ -1,16 +1,37 @@
-tmp
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-src/tmp
-src/source
-src/lib
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
+.yarn/install-state.gz
 
-vocal_remover
-openvoice
+# testing
+/coverage
 
-frontend/.env.local
+# next.js
+/.next/
+/out/
 
-frontend/node_modules
+# production
+/build
 
-src/__pycache__
+# misc
+.DS_Store
+*.pem
 
-pretrain_TalkSet.model
+# debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# local env files
+.env*.local
+.env
+
+# vercel
+.vercel
+
+# typescript
+*.tsbuildinfo
+next-env.d.ts
