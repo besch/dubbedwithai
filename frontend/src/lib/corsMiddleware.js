@@ -3,8 +3,12 @@ import Cors from "cors";
 const getAllowedOrigins = () => {
   const origins = [
     process.env.API_URL,
-    "https://dubbedwithai-git-payments-beschs-projects.vercel.app",
     `chrome-extension://${process.env.CHROME_EXTENSION_ID}`,
+
+    // TO REMOVE
+    "https://dubbedwithai-git-payments-beschs-projects.vercel.app",
+    "dubbedwithai-git-payments-beschs-projects.vercel.app",
+    // TO REMOVE
   ];
   return origins.filter((origin) => origin !== undefined);
 };
