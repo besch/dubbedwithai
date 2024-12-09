@@ -16,7 +16,6 @@ const getAllowedOrigins = () => {
 const cors = Cors({
   methods: ["GET", "HEAD", "POST"],
   origin: function (origin, callback) {
-    console.log("!!!!!!!!!!!", origin);
     const allowedOrigins = getAllowedOrigins();
     if (!origin) return callback(null, true);
     if (allowedOrigins.indexOf(origin) === -1) {
