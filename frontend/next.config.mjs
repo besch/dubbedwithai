@@ -20,6 +20,9 @@ const nextConfig = {
       sizeLimit: "1mb",
     },
   },
+  images: {
+    domains: ["lh3.googleusercontent.com"], // Add this line
+  },
 };
 
 export default nextConfig;
