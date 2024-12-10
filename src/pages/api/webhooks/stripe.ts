@@ -116,13 +116,12 @@ async function updateSubscription(
 }
 
 function determinePlanType(priceId: string): "BASIC" | "PRO" {
-  if (
-    priceId === process.env.STRIPE_BASIC_MONTHLY_PRICE_ID ||
-    priceId === process.env.STRIPE_BASIC_YEARLY_PRICE_ID
-  ) {
-    return "BASIC";
-  }
-  return "PRO";
+  const planType =
+    priceId === process.env.NEXT_PUBLIC_STRIPE_BASIC_MONTHLY_PRICE_ID ||
+    priceId === process.env.NEXT_PUBLIC_STRIPE_BASIC_YEARLY_PRICE_ID
+      ? "BASIC"
+      : "PRO";
+  return planType;
 }
 
 function mapStripeStatus(

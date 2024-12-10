@@ -10,6 +10,7 @@ import Link from "next/link";
 interface Subscription {
   id: string;
   plan_type: string;
+  plan_period: string;
   status: string;
   current_period_end: string;
   current_period_start: string;
@@ -288,7 +289,8 @@ export default function Subscriptions() {
               <div className="flex justify-between items-center mb-2">
                 <div>
                   <h3 className="font-semibold text-lg">
-                    {sub.plan_type} Plan
+                    {sub.plan_type}{" "}
+                    <span className="capitalize">{sub.plan_period}</span> Plan
                   </h3>
                   <p className="text-sm text-gray-400">
                     Created: {formatDate(sub.created_at)}

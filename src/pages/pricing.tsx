@@ -110,7 +110,6 @@ const Pricing: React.FC = () => {
       }
     } catch (error) {
       console.error("Error during checkout:", error);
-      // You might want to show an error message to the user here
     }
   };
 
