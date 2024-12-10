@@ -6,19 +6,7 @@ import SubscriptionManager from "@/components/SubscriptionManager";
 import { ArrowRight, Clock } from "lucide-react";
 import { PRICING_PLANS } from "@/config/pricing";
 import Link from "next/link";
-
-interface Subscription {
-  id: string;
-  plan_type: string;
-  plan_period: string;
-  status: string;
-  current_period_end: string;
-  current_period_start: string;
-  cancel_at_period_end: boolean;
-  stripe_subscription_id: string;
-  created_at: string;
-  updated_at: string;
-}
+import { Subscription } from "@/types";
 
 export default function Subscriptions() {
   const user = useAppSelector((state) => state.user.user);

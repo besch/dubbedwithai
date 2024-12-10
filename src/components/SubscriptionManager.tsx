@@ -1,17 +1,7 @@
 import { useState } from "react";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
 import { PRICING_PLANS } from "@/config/pricing";
-
-interface Subscription {
-  id: string;
-  plan_type: string;
-  status: string;
-  current_period_end: string;
-  current_period_start: string;
-  cancel_at_period_end: boolean;
-  stripe_subscription_id: string;
-  created_at: string;
-}
+import { Subscription } from "@/types";
 
 interface SubscriptionManagerProps {
   subscription: Subscription;
@@ -94,7 +84,8 @@ export default function SubscriptionManager({
       <div className="space-y-4">
         <div className="flex justify-between items-center">
           <h3 className="text-xl font-semibold">
-            {subscription.plan_type} Plan
+            {subscription.plan_type}{" "}
+            <span className="capitalize">{subscription.plan_period}</span> Plan
           </h3>
           <span className="px-3 py-1 rounded-full bg-primary/10 text-primary text-sm">
             {subscription.status}
