@@ -15,6 +15,10 @@ export const config = {
   },
 };
 
+function toDateTime(timestamp: number): Date {
+  return new Date(timestamp * 1000);
+}
+
 async function updateSubscription(
   subscription: Stripe.Subscription,
   session?: Stripe.Checkout.Session
@@ -172,13 +176,85 @@ export default async function handler(
     switch (event.type) {
       case "customer.subscription.created":
       case "customer.subscription.updated":
-      case "customer.subscription.deleted":
-        const subscription = event.data.object as Stripe.Subscription;
-        console.log("Processing subscription webhook:", {
-          subscriptionId: subscription.id,
-          metadata: subscription.metadata,
-        });
-        await updateSubscription(subscription);
+        const subscription = event.data.object;
+
+        // First, check if subscription already exists
+        const existingSubscription = await supabase
+          .from("subscriptions")
+          .select("*")
+          .eq("stripe_subscription_id", subscription.id)
+          .single();
+
+        if (existingSubscription.data) {
+          // Update existing subscription instead of creating a new one
+          await supabase
+            .from("subscriptions")
+            .update({
+              status: subscription.status,
+              metadata: subscription.metadata,
+              price_id: subscription.items.data[0].price.id,
+              quantity: subscription.items.data[0].quantity,
+              cancel_at_period_end: subscription.cancel_at_period_end,
+              cancel_at: subscription.cancel_at
+                ? toDateTime(subscription.cancel_at).toISOString()
+                : null,
+              canceled_at: subscription.canceled_at
+                ? toDateTime(subscription.canceled_at).toISOString()
+                : null,
+              current_period_start: toDateTime(
+                subscription.current_period_start
+              ).toISOString(),
+              current_period_end: toDateTime(
+                subscription.current_period_end
+              ).toISOString(),
+              created: toDateTime(subscription.created).toISOString(),
+              ended_at: subscription.ended_at
+                ? toDateTime(subscription.ended_at).toISOString()
+                : null,
+              trial_start: subscription.trial_start
+                ? toDateTime(subscription.trial_start).toISOString()
+                : null,
+              trial_end: subscription.trial_end
+                ? toDateTime(subscription.trial_end).toISOString()
+                : null,
+            })
+            .eq("stripe_subscription_id", subscription.id);
+        } else {
+          // Create new subscription only if it doesn't exist
+          await supabase.from("subscriptions").insert([
+            {
+              user_id: subscription.metadata.user_id,
+              stripe_subscription_id: subscription.id,
+              status: subscription.status,
+              metadata: subscription.metadata,
+              price_id: subscription.items.data[0].price.id,
+              quantity: subscription.items.data[0].quantity,
+              cancel_at_period_end: subscription.cancel_at_period_end,
+              cancel_at: subscription.cancel_at
+                ? toDateTime(subscription.cancel_at).toISOString()
+                : null,
+              canceled_at: subscription.canceled_at
+                ? toDateTime(subscription.canceled_at).toISOString()
+                : null,
+              current_period_start: toDateTime(
+                subscription.current_period_start
+              ).toISOString(),
+              current_period_end: toDateTime(
+                subscription.current_period_end
+              ).toISOString(),
+              created: toDateTime(subscription.created).toISOString(),
+              ended_at: subscription.ended_at
+                ? toDateTime(subscription.ended_at).toISOString()
+                : null,
+              trial_start: subscription.trial_start
+                ? toDateTime(subscription.trial_start).toISOString()
+                : null,
+              trial_end: subscription.trial_end
+                ? toDateTime(subscription.trial_end).toISOString()
+                : null,
+            },
+          ]);
+        }
         break;
 
       case "checkout.session.completed":
