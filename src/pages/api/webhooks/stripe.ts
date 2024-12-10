@@ -79,6 +79,7 @@ async function updateSubscription(
     current_period_start: currentPeriodStart.toISOString(),
     current_period_end: currentPeriodEnd.toISOString(),
     plan_type: planType,
+    plan_period: session?.metadata?.interval || "unknown",
     cancel_at_period_end: subscription.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   };
