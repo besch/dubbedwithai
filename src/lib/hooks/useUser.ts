@@ -20,7 +20,9 @@ export function useUser() {
           data: { session },
         } = await supabase.auth.getSession();
 
-        if (session?.user && mounted) {
+        if (!mounted) return;
+
+        if (session?.user) {
           // Check if the session is expired
           const now = Math.floor(Date.now() / 1000);
           if (session.expires_at && session.expires_at < now) {
@@ -32,10 +34,24 @@ export function useUser() {
             return;
           }
 
-          const ipAddress = await getUserIpAddress();
-          await createOrUpdateUser(session.user, ipAddress);
+          // Set the user immediately to prevent UI flashing
           dispatch(setUser(session.user));
-        } else if (!session && mounted) {
+
+          // Get IP address and update user in background
+          getUserIpAddress()
+            .then((ipAddress) => {
+              if (mounted) {
+                createOrUpdateUser(session.user, ipAddress);
+              }
+            })
+            .catch((error) => {
+              console.error("Error getting IP address:", error);
+              // Still create/update user with unknown IP if IP fetch fails
+              if (mounted) {
+                createOrUpdateUser(session.user, "unknown");
+              }
+            });
+        } else {
           dispatch(setUser(null));
           if (isProtectedRoute(router.pathname)) {
             router.push("/");
@@ -43,7 +59,9 @@ export function useUser() {
         }
       } catch (error) {
         console.error("Error getting session:", error);
-        dispatch(setUser(null));
+        if (mounted) {
+          dispatch(setUser(null));
+        }
       } finally {
         if (mounted) {
           dispatch(setLoading(false));
@@ -76,9 +94,23 @@ export function useUser() {
           return;
         }
 
-        const ipAddress = await getUserIpAddress();
-        await createOrUpdateUser(session.user, ipAddress);
+        // Set the user immediately to prevent UI flashing
         dispatch(setUser(session.user));
+
+        // Get IP address and update user in background
+        getUserIpAddress()
+          .then((ipAddress) => {
+            if (mounted) {
+              createOrUpdateUser(session.user, ipAddress);
+            }
+          })
+          .catch((error) => {
+            console.error("Error getting IP address:", error);
+            // Still create/update user with unknown IP if IP fetch fails
+            if (mounted) {
+              createOrUpdateUser(session.user, "unknown");
+            }
+          });
       } else {
         dispatch(setUser(null));
         if (isProtectedRoute(router.pathname)) {
