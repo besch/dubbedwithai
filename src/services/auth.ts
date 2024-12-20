@@ -6,6 +6,11 @@ export async function signInWithOAuth(provider: Provider = "google") {
     provider,
     options: {
       redirectTo: `${window.location.origin}/pricing`,
+      queryParams: {
+        prompt: "consent",
+        access_type: "offline",
+      },
+      skipBrowserRedirect: false,
     },
   });
 
