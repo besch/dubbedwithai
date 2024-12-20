@@ -8,6 +8,7 @@ import { signInWithOAuth } from "@/services/auth";
 export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const user = useAppSelector((state) => state.user.user);
+  const loading = useAppSelector((state) => state.user.loading);
 
   return (
     <nav className="bg-gray-900 text-white p-4">
@@ -47,15 +48,19 @@ export default function Navbar() {
           >
             Install Now
           </a>
-          {user ? (
-            <UserMenu />
-          ) : (
-            <button
-              onClick={() => signInWithOAuth()}
-              className="block py-2 hover:text-yellow-400 transition-colors"
-            >
-              Sign In
-            </button>
+          {!loading && (
+            <>
+              {user ? (
+                <UserMenu />
+              ) : (
+                <button
+                  onClick={() => signInWithOAuth()}
+                  className="block py-2 hover:text-yellow-400 transition-colors"
+                >
+                  Sign In
+                </button>
+              )}
+            </>
           )}
         </div>
       </div>

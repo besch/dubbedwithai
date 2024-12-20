@@ -21,19 +21,29 @@ export function useUser() {
         } = await supabase.auth.getSession();
 
         if (session?.user && mounted) {
+          // Check if the session is expired
+          const now = Math.floor(Date.now() / 1000);
+          if (session.expires_at && session.expires_at < now) {
+            await supabase.auth.signOut();
+            dispatch(setUser(null));
+            if (isProtectedRoute(router.pathname)) {
+              router.push("/");
+            }
+            return;
+          }
+
           const ipAddress = await getUserIpAddress();
           await createOrUpdateUser(session.user, ipAddress);
           dispatch(setUser(session.user));
         } else if (!session && mounted) {
-          // Only redirect to home if we're on a protected route
-          const protectedRoutes = ["/profile", "/subscriptions"];
-          if (protectedRoutes.includes(router.pathname)) {
+          dispatch(setUser(null));
+          if (isProtectedRoute(router.pathname)) {
             router.push("/");
           }
-          dispatch(setUser(null));
         }
       } catch (error) {
         console.error("Error getting session:", error);
+        dispatch(setUser(null));
       } finally {
         if (mounted) {
           dispatch(setLoading(false));
@@ -41,23 +51,38 @@ export function useUser() {
       }
     }
 
+    // Helper function to check if a route is protected
+    function isProtectedRoute(pathname: string) {
+      const protectedRoutes = ["/profile", "/subscriptions"];
+      return protectedRoutes.includes(pathname);
+    }
+
     getInitialSession();
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (mounted) {
-        if (session?.user) {
-          const ipAddress = await getUserIpAddress();
-          await createOrUpdateUser(session.user, ipAddress);
-          dispatch(setUser(session.user));
-        } else {
-          // Only redirect to home if we're on a protected route
-          const protectedRoutes = ["/profile", "/subscriptions"];
-          if (protectedRoutes.includes(router.pathname)) {
+      if (!mounted) return;
+
+      if (session?.user) {
+        // Check if the session is expired
+        const now = Math.floor(Date.now() / 1000);
+        if (session.expires_at && session.expires_at < now) {
+          await supabase.auth.signOut();
+          dispatch(setUser(null));
+          if (isProtectedRoute(router.pathname)) {
             router.push("/");
           }
-          dispatch(setUser(null));
+          return;
+        }
+
+        const ipAddress = await getUserIpAddress();
+        await createOrUpdateUser(session.user, ipAddress);
+        dispatch(setUser(session.user));
+      } else {
+        dispatch(setUser(null));
+        if (isProtectedRoute(router.pathname)) {
+          router.push("/");
         }
       }
     });
