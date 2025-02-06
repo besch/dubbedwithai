@@ -1,16 +1,3 @@
-tmp
+node_modules
 
-src/tmp
-src/source
-src/lib
-
-vocal_remover
-openvoice
-
-frontend/.env.local
-
-frontend/node_modules
-
-src/__pycache__
-
-pretrain_TalkSet.model
+.env
