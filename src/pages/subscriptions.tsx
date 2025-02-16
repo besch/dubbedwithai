@@ -108,7 +108,7 @@ export default function Subscriptions() {
     if (!activeSubscription?.stripe_subscription_id) return;
 
     try {
-      const response = await fetch("/api/cancel-subscription", {
+      const response = await fetch("/api/subscription/cancel-subscription", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -134,7 +134,7 @@ export default function Subscriptions() {
     if (!activeSubscription?.stripe_subscription_id) return;
 
     try {
-      const response = await fetch("/api/reactivate-subscription", {
+      const response = await fetch("/api/subscription/reactivate-subscription", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

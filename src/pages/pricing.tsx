@@ -83,7 +83,7 @@ const Pricing: React.FC = () => {
         return;
       }
 
-      const response = await fetch("/api/create-checkout-session", {
+      const response = await fetch("/api/subscription/create-checkout-session", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
