@@ -139,6 +139,45 @@ function mapStripeStatus(
   }
 }
 
+async function cancelExistingSubscriptions(userId: string, newSubscriptionId: string) {
+  try {
+    // Get all active subscriptions for the user except the new one
+    const { data: activeSubscriptions } = await supabase
+      .from("subscriptions")
+      .select("*")
+      .eq("user_id", userId)
+      .eq("status", "active")
+      .neq("stripe_subscription_id", newSubscriptionId);
+
+    if (!activeSubscriptions?.length) return;
+
+    // Cancel each active subscription in Stripe and update in Supabase
+    for (const subscription of activeSubscriptions) {
+      try {
+        // Cancel in Stripe immediately
+        await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
+
+        // Update in Supabase
+        await supabase
+          .from("subscriptions")
+          .update({
+            status: "canceled",
+            cancel_at_period_end: false,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("stripe_subscription_id", subscription.stripe_subscription_id);
+      } catch (error) {
+        console.error(
+          `Error canceling subscription ${subscription.stripe_subscription_id}:`,
+          error
+        );
+      }
+    }
+  } catch (error) {
+    console.error("Error in cancelExistingSubscriptions:", error);
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -175,10 +214,15 @@ export default async function handler(
   try {
     switch (event.type) {
       case "customer.subscription.created":
-      case "customer.subscription.updated":
-        const subscription = event.data.object;
+        const subscription = event.data.object as Stripe.Subscription;
+        const userId = subscription.metadata?.userId;
 
-        // First, check if subscription already exists
+        if (userId) {
+          // Cancel existing subscriptions when a new one is created
+          await cancelExistingSubscriptions(userId, subscription.id);
+        }
+
+        // Continue with the existing subscription creation logic
         const existingSubscription = await supabase
           .from("subscriptions")
           .select("*")
@@ -263,7 +307,14 @@ export default async function handler(
           sessionId: session.id,
           metadata: session.metadata,
         });
-        if (session.subscription) {
+        
+        if (session.subscription && session.metadata?.userId) {
+          // Cancel existing subscriptions when checkout is completed
+          await cancelExistingSubscriptions(
+            session.metadata.userId,
+            session.subscription as string
+          );
+          
           const subscription = await stripe.subscriptions.retrieve(
             session.subscription as string
           );
