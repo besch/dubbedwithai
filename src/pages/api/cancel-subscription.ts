@@ -6,21 +6,6 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2024-11-20.acacia",
 });
 
-function mapStripeStatus(
-  status: string
-): "active" | "canceled" | "past_due" | "unpaid" {
-  switch (status) {
-    case "active":
-      return "active";
-    case "canceled":
-      return "canceled";
-    case "past_due":
-      return "past_due";
-    default:
-      return "unpaid";
-  }
-}
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
