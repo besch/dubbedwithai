@@ -158,7 +158,7 @@ export default function Subscriptions() {
 
   const handleReactivateFromHistory = async (subscriptionId: string) => {
     try {
-      const response = await fetch("/api/reactivate-subscription", {
+      const response = await fetch("/api/subscription/reactivate-subscription", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
