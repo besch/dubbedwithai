@@ -1,10 +1,13 @@
 import Head from "next/head";
 import { Check } from "lucide-react";
-import { useState } from "react";
-import { PRICING_PLANS } from "@/config/pricing";
+import { useState, useEffect } from "react";
 import { loadStripe } from "@stripe/stripe-js";
-import { useAppSelector } from "@/store/hooks";
 import { signInWithOAuth } from "@/services/auth";
+import { useUser } from '@/hooks/useUser';
+import { fetchPlanLimits } from '@/lib/planLimits'
+import { createPricingPlans } from '@/config/pricing'
+import type { PlanLimits } from '@/lib/planLimits';
+import supabase from '@/lib/supabaseClient';
 
 const stripePromise = loadStripe(
   process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
@@ -16,6 +19,8 @@ interface PricingTierProps {
   features: string[];
   popular?: boolean;
   onSelect?: () => void;
+  disabled?: boolean;
+  buttonText: string;
 }
 
 const PricingTier: React.FC<PricingTierProps> = ({
@@ -24,6 +29,8 @@ const PricingTier: React.FC<PricingTierProps> = ({
   features,
   popular = false,
   onSelect,
+  disabled = false,
+  buttonText,
 }) => (
   <div
     className={`bg-muted p-8 rounded-lg shadow-lg flex flex-col h-full ${
@@ -51,16 +58,50 @@ const PricingTier: React.FC<PricingTierProps> = ({
             ? "bg-yellow-400 text-black hover:bg-yellow-500"
             : "bg-primary text-white hover:bg-opacity-90"
         }`}
+        disabled={disabled}
       >
-        Choose Plan
+        {buttonText}
       </button>
     )}
   </div>
 );
 
-const Pricing: React.FC = () => {
+export async function getServerSideProps() {
+  try {
+    const planLimits = await fetchPlanLimits()
+    return {
+      props: {
+        planLimits,
+      },
+    }
+  } catch (error) {
+    console.error('Error fetching plan limits:', error)
+    return {
+      props: {
+        error: 'Failed to load pricing plans'
+      }
+    }
+  }
+}
+
+const Pricing: React.FC<{ planLimits: PlanLimits }> = ({ planLimits }) => {
+  const { user } = useUser();
   const [isYearly, setIsYearly] = useState<boolean>(false);
-  const user = useAppSelector((state) => state.user.user);
+  const [loading, setLoading] = useState(true);
+  const [currentPlan, setCurrentPlan] = useState<string | null>(null);
+
+  const PRICING_PLANS = createPricingPlans(planLimits);
+
+  useEffect(() => {
+    if (user) {
+      fetchSubscription();
+    }
+  }, [user]);
+
+  async function fetchSubscription() {
+    if (!user) return;
+    setLoading(false);
+  }
 
   const handlePlanSelection = async (
     plan: (typeof PRICING_PLANS)[keyof typeof PRICING_PLANS]
@@ -71,14 +112,20 @@ const Pricing: React.FC = () => {
         return;
       }
 
-      const priceId =
-        isYearly && "stripeYearlyPriceId" in plan
-          ? plan.stripeYearlyPriceId
-          : "stripeMonthlyPriceId" in plan
-          ? plan.stripeMonthlyPriceId
-          : undefined;
+      // Get the correct price ID from plan_limits table
+      const { data: planLimit } = await supabase
+        .from('plan_limits')
+        .select('stripe_price_id')
+        .eq('name', `${plan.name.toUpperCase()}_${isYearly ? 'YEARLY' : 'MONTHLY'}`)
+        .single();
 
-      if (!priceId) {
+      console.log('Plan lookup:', { 
+        name: plan.name,
+        lookupName: `${plan.name.toUpperCase()}_${isYearly ? 'YEARLY' : 'MONTHLY'}`,
+        planLimit 
+      });
+
+      if (!planLimit?.stripe_price_id) {
         console.error("No price ID available for this plan");
         return;
       }
@@ -89,8 +136,8 @@ const Pricing: React.FC = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          priceId,
-          planType: plan.name.toUpperCase(),
+          priceId: planLimit.stripe_price_id,
+          planType: plan.name,
           interval: isYearly ? "yearly" : "monthly",
           userId: user.id,
         }),
@@ -121,6 +168,7 @@ const Pricing: React.FC = () => {
         `Up to ${PRICING_PLANS.FREE.generations} dubbing generations per ${PRICING_PLANS.FREE.period}`,
       ],
       onSelect: () => {}, // Free plan doesn't need payment
+      buttonText: 'Choose Plan',
     },
     {
       name: PRICING_PLANS.BASIC.name,
@@ -132,6 +180,7 @@ const Pricing: React.FC = () => {
       ],
       popular: true,
       onSelect: () => handlePlanSelection(PRICING_PLANS.BASIC),
+      buttonText: 'Choose Plan',
     },
     {
       name: PRICING_PLANS.PRO.name,
@@ -139,11 +188,25 @@ const Pricing: React.FC = () => {
         ? PRICING_PLANS.PRO.price.yearly / 12
         : PRICING_PLANS.PRO.price.monthly,
       features: [
-        `${PRICING_PLANS.PRO.generations} dubbing generations per ${PRICING_PLANS.PRO.period}`,
+        `${PRICING_PLANS.PRO.generations === Infinity ? 'Unlimited' : PRICING_PLANS.PRO.generations} dubbing generations per ${PRICING_PLANS.PRO.period}`,
       ],
       onSelect: () => handlePlanSelection(PRICING_PLANS.PRO),
+      buttonText: 'Choose Plan',
     },
   ];
+
+  async function handleSubscribe(priceId: string) {
+    const response = await fetch('/api/subscription/create-checkout-session', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ priceId })
+    });
+
+    const { url } = await response.json();
+    window.location.href = url;
+  }
+
+  if (loading) return <div>Loading...</div>;
 
   return (
     <>
@@ -186,8 +249,13 @@ const Pricing: React.FC = () => {
             </button>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {pricingPlans.map((plan, index) => (
-              <PricingTier key={index} {...plan} />
+            {pricingPlans.map((plan) => (
+              <PricingTier 
+                key={plan.name}
+                {...plan}
+                disabled={currentPlan === plan.name.toUpperCase()}
+                buttonText={currentPlan === plan.name.toUpperCase() ? 'Current Plan' : 'Choose Plan'}
+              />
             ))}
           </div>
           <div className="mt-16 text-center">
@@ -200,7 +268,7 @@ const Pricing: React.FC = () => {
                   What happens if I exceed the free plan limit?
                 </h3>
                 <p>
-                  Once you reach the 150 weekly dubbing generations limit on the
+                  Once you reach the {PRICING_PLANS.FREE.generations} {PRICING_PLANS.FREE.period}ly dubbing generations limit on the
                   free plan, you&apos;ll need to wait until the next day or
                   upgrade to a paid plan for unlimited dubbing.
                 </p>

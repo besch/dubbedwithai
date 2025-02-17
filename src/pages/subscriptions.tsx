@@ -4,11 +4,20 @@ import supabase from "@/lib/supabaseClient";
 import { useRouter } from "next/router";
 import SubscriptionManager from "@/components/SubscriptionManager";
 import { ArrowRight, Clock } from "lucide-react";
-import { PRICING_PLANS } from "@/config/pricing";
+import { createPricingPlans } from "@/config/pricing";
 import Link from "next/link";
 import { Subscription } from "@/types";
+import { fetchPlanLimits } from '@/lib/planLimits';
+import { PlanLimits } from '@/lib/planLimits';
 
-export default function Subscriptions() {
+// Add planLimits to component props and fetch in getServerSideProps
+export async function getServerSideProps() {
+  const planLimits = await fetchPlanLimits();
+  return { props: { planLimits } };
+}
+
+export default function Subscriptions({ planLimits }: { planLimits: PlanLimits }) {
+  const PRICING_PLANS = createPricingPlans(planLimits);
   const user = useAppSelector((state) => state.user.user);
   const loading = useAppSelector((state) => state.user.loading);
   const router = useRouter();
@@ -223,6 +232,7 @@ export default function Subscriptions() {
           subscription={activeSubscription}
           onCancel={handleCancelSubscription}
           onReactivate={handleReactivateSubscription}
+          pricingPlans={PRICING_PLANS}
         />
       ) : (
         <div className="bg-muted p-6 rounded-lg mb-8 text-center">

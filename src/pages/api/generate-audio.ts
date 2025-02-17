@@ -5,12 +5,15 @@ import OpenAI from "openai";
 import { DubbingVoice } from "@/types";
 import { logApiRequest, LogEntry } from "@/lib/logApiRequest";
 import { checkUsageLimit } from "@/lib/checkUsageLimit";
-import { PRICING_PLANS } from "@/config/pricing";
+import { checkRateLimit } from '@/middleware/rateLimiting';
+import supabase from '@/lib/supabaseClient';
+import { fetchPlanLimits } from '@/lib/planLimits';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 const bucketName = "dubbed_with_ai";
+const UPGRADE_URL = 'https://www.dubabase.com/';
 
 export default async function generateAudio(
   req: NextApiRequest,
@@ -56,45 +59,70 @@ export default async function generateAudio(
   }
 
   try {
-    // Check usage limit
-    const { hasExceededLimit, currentCount, resetAt } = await checkUsageLimit(
-      ip_address
-    );
-
+    // Check usage limit first
+    const { hasExceededLimit, currentCount, resetAt } = await checkUsageLimit(ip_address);
+    console.error('Usage limit check:', { hasExceededLimit, currentCount });
+    
     if (hasExceededLimit) {
-      logEntry.error_message = "Free generation limit exceeded";
-      logEntry.error_code = "429";
-      await logApiRequest(logEntry);
+      const { data: freePlan } = await supabase
+        .from('plan_limits')
+        .select('request_limit')
+        .eq('name', 'FREE')
+        .single();
+
       return res.status(429).json({
-        error: "Generation limit exceeded",
+        error: "Free tier limit exceeded",
         details: {
           currentCount,
-          limit: PRICING_PLANS.FREE.generations,
+          limit: freePlan?.request_limit,
           resetAt,
           requiresSubscription: true,
+          message: `You've reached your free tier limit of ${freePlan?.request_limit} requests. Your limit will reset on ${new Date(resetAt).toLocaleDateString()}.`,
+          upgradeUrl: UPGRADE_URL,
+          upgradeMessage: "Upgrade to a premium plan to continue using OneDub without limits!"
         },
       });
     }
 
-    const voice = extractVoiceFromFilePath(filePath);
-    const buffer = await generateAndUploadAudio(text, filePath, voice);
+    // Continue with audio generation only if limit not exceeded
+    await checkRateLimit(req, res, async () => {
+      const planLimits = await fetchPlanLimits();
 
-    logEntry.success = true;
-    logEntry.steps = {
-      voiceExtracted: true,
-      audioGenerated: true,
-      audioUploaded: true,
-    };
-    await logApiRequest(logEntry);
+      const voice = extractVoiceFromFilePath(filePath);
+      const buffer = await generateAndUploadAudio(text, filePath, voice);
 
-    res.setHeader("Content-Type", "audio/mp3");
-    res.status(200).send(buffer);
+      logEntry.success = true;
+      logEntry.steps = {
+        voiceExtracted: true,
+        audioGenerated: true,
+        audioUploaded: true,
+      };
+      await logApiRequest(logEntry);
+
+      res.setHeader("Content-Type", "audio/mp3");
+      res.status(200).send(buffer);
+
+      // Log the request
+      await supabase.from('api_logs').insert({
+        ip_address: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+        endpoint: '/api/generate-audio',
+        parameters: req.body,
+        success: true
+      });
+    });
   } catch (error: unknown) {
     console.error("Error generating audio:", error);
     logEntry.error_message =
       error instanceof Error ? error.message : "An unknown error occurred";
     logEntry.error_code = "500";
     await logApiRequest(logEntry);
+    await supabase.from('api_logs').insert({
+      ip_address: req.headers['x-forwarded-for'] || req.socket.remoteAddress,
+      endpoint: '/api/generate-audio',
+      parameters: req.body,
+      success: false,
+      error_message: error instanceof Error ? error.message : "An unknown error occurred"
+    });
     if (error instanceof Error) {
       res
         .status(500)

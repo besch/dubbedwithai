@@ -1,11 +1,8 @@
+import { buffer } from 'micro';
 import { NextApiRequest, NextApiResponse } from "next";
-import { buffer } from "micro";
+import stripe from "@/lib/stripeClient";
 import Stripe from "stripe";
 import supabase from "@/lib/supabaseAdmin";
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: "2024-11-20.acacia",
-});
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
 
@@ -14,10 +11,6 @@ export const config = {
     bodyParser: false,
   },
 };
-
-function toDateTime(timestamp: number): Date {
-  return new Date(timestamp * 1000);
-}
 
 async function updateSubscription(
   subscription: Stripe.Subscription,
@@ -29,9 +22,22 @@ async function updateSubscription(
   const currentPeriodEnd = new Date(subscription.current_period_end * 1000);
   const currentPeriodStart = new Date(subscription.current_period_start * 1000);
 
-  // Get the price ID to determine the plan type
+  // Get the price ID and interval to determine the plan type and period
   const priceId = subscription.items.data[0].price.id;
-  const planType = determinePlanType(priceId);
+  const interval = subscription.items.data[0].price.recurring?.interval || 
+                  session?.metadata?.interval || 
+                  'month';
+
+  // Get plan details from plan_limits table
+  const { data: planLimit } = await supabase
+    .from('plan_limits')
+    .select('*')
+    .eq('stripe_price_id', priceId)
+    .single();
+
+  if (!planLimit) {
+    throw new Error(`No plan found for price ID: ${priceId}`);
+  }
 
   // Check for userId in multiple places
   let userId = subscription.metadata?.userId;
@@ -78,8 +84,8 @@ async function updateSubscription(
       : mapStripeStatus(status),
     current_period_start: currentPeriodStart.toISOString(),
     current_period_end: currentPeriodEnd.toISOString(),
-    plan_type: planType,
-    plan_period: session?.metadata?.interval || "unknown",
+    plan_type: planLimit.name.split('_')[0],
+    plan_period: interval,
     cancel_at_period_end: subscription.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   };
@@ -115,15 +121,6 @@ async function updateSubscription(
   }
 }
 
-function determinePlanType(priceId: string): "BASIC" | "PRO" {
-  const planType =
-    priceId === process.env.NEXT_PUBLIC_STRIPE_BASIC_MONTHLY_PRICE_ID ||
-    priceId === process.env.NEXT_PUBLIC_STRIPE_BASIC_YEARLY_PRICE_ID
-      ? "BASIC"
-      : "PRO";
-  return planType;
-}
-
 function mapStripeStatus(
   status: string
 ): "active" | "canceled" | "past_due" | "unpaid" {
@@ -154,23 +151,16 @@ async function cancelExistingSubscriptions(userId: string, newSubscriptionId: st
     // Cancel each active subscription in Stripe and update in Supabase
     for (const subscription of activeSubscriptions) {
       try {
-        // Cancel in Stripe immediately
         await stripe.subscriptions.cancel(subscription.stripe_subscription_id);
-
-        // Update in Supabase
         await supabase
           .from("subscriptions")
           .update({
             status: "canceled",
-            cancel_at_period_end: false,
-            updated_at: new Date().toISOString(),
+            canceled_at: new Date().toISOString(),
           })
           .eq("stripe_subscription_id", subscription.stripe_subscription_id);
       } catch (error) {
-        console.error(
-          `Error canceling subscription ${subscription.stripe_subscription_id}:`,
-          error
-        );
+        console.error(`Error canceling subscription ${subscription.stripe_subscription_id}:`, error);
       }
     }
   } catch (error) {
@@ -183,131 +173,64 @@ export default async function handler(
   res: NextApiResponse
 ) {
   if (req.method !== "POST") {
-    return res.status(405).end();
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   const buf = await buffer(req);
-  const sig = req.headers["stripe-signature"]!;
-
-  let event: Stripe.Event;
+  const sig = req.headers['stripe-signature'] as string;
 
   try {
-    event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
-
-    // // Add debug logging
-    // console.log("Received webhook event:", {
-    //   type: event.type,
-    //   id: event.id,
-    //   object: event.data.object,
-    // });
-  } catch (err) {
-    console.error(
-      `Webhook Error: ${err instanceof Error ? err.message : "Unknown error"}`
+    const event = stripe.webhooks.constructEvent(
+      buf,
+      sig,
+      webhookSecret
     );
-    return res
-      .status(400)
-      .send(
-        `Webhook Error: ${err instanceof Error ? err.message : "Unknown error"}`
-      );
-  }
 
-  try {
     switch (event.type) {
-      case "customer.subscription.created":
+      case 'customer.subscription.created':
+      case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
-        const userId = subscription.metadata?.userId;
-
-        if (userId) {
-          // Cancel existing subscriptions when a new one is created
-          await cancelExistingSubscriptions(userId, subscription.id);
-        }
-
-        // Continue with the existing subscription creation logic
-        const existingSubscription = await supabase
-          .from("subscriptions")
-          .select("*")
-          .eq("stripe_subscription_id", subscription.id)
+        const priceId = subscription.items.data[0].price.id;
+        
+        // Get plan type from price ID
+        const { data: planLimit } = await supabase
+          .from('plan_limits')
+          .select('plan_type')
+          .eq('stripe_price_id', priceId)
           .single();
 
-        if (existingSubscription.data) {
-          // Update existing subscription instead of creating a new one
-          await supabase
-            .from("subscriptions")
-            .update({
-              status: subscription.status,
-              metadata: subscription.metadata,
-              price_id: subscription.items.data[0].price.id,
-              quantity: subscription.items.data[0].quantity,
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              cancel_at: subscription.cancel_at
-                ? toDateTime(subscription.cancel_at).toISOString()
-                : null,
-              canceled_at: subscription.canceled_at
-                ? toDateTime(subscription.canceled_at).toISOString()
-                : null,
-              current_period_start: toDateTime(
-                subscription.current_period_start
-              ).toISOString(),
-              current_period_end: toDateTime(
-                subscription.current_period_end
-              ).toISOString(),
-              created: toDateTime(subscription.created).toISOString(),
-              ended_at: subscription.ended_at
-                ? toDateTime(subscription.ended_at).toISOString()
-                : null,
-              trial_start: subscription.trial_start
-                ? toDateTime(subscription.trial_start).toISOString()
-                : null,
-              trial_end: subscription.trial_end
-                ? toDateTime(subscription.trial_end).toISOString()
-                : null,
-            })
-            .eq("stripe_subscription_id", subscription.id);
-        } else {
-          // Create new subscription only if it doesn't exist
-          await supabase.from("subscriptions").insert([
-            {
-              user_id: subscription.metadata.user_id,
-              stripe_subscription_id: subscription.id,
-              status: subscription.status,
-              metadata: subscription.metadata,
-              price_id: subscription.items.data[0].price.id,
-              quantity: subscription.items.data[0].quantity,
-              cancel_at_period_end: subscription.cancel_at_period_end,
-              cancel_at: subscription.cancel_at
-                ? toDateTime(subscription.cancel_at).toISOString()
-                : null,
-              canceled_at: subscription.canceled_at
-                ? toDateTime(subscription.canceled_at).toISOString()
-                : null,
-              current_period_start: toDateTime(
-                subscription.current_period_start
-              ).toISOString(),
-              current_period_end: toDateTime(
-                subscription.current_period_end
-              ).toISOString(),
-              created: toDateTime(subscription.created).toISOString(),
-              ended_at: subscription.ended_at
-                ? toDateTime(subscription.ended_at).toISOString()
-                : null,
-              trial_start: subscription.trial_start
-                ? toDateTime(subscription.trial_start).toISOString()
-                : null,
-              trial_end: subscription.trial_end
-                ? toDateTime(subscription.trial_end).toISOString()
-                : null,
-            },
-          ]);
+        if (!planLimit) {
+          throw new Error(`No plan found for price ID: ${priceId}`);
         }
-        break;
 
-      case "checkout.session.completed":
+        await supabase
+          .from('subscriptions')
+          .upsert({
+            user_id: subscription.metadata.user_id,
+            stripe_customer_id: subscription.customer as string,
+            stripe_subscription_id: subscription.id,
+            plan_type: planLimit.plan_type,
+            current_period_end: new Date(subscription.current_period_end * 1000),
+            cancel_at_period_end: subscription.cancel_at_period_end,
+            status: subscription.status
+          });
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+        await supabase
+          .from('subscriptions')
+          .update({
+            status: 'canceled',
+            canceled_at: new Date()
+          })
+          .eq('stripe_subscription_id', subscription.id);
+        break;
+      }
+
+      case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        console.log("Processing checkout session webhook:", {
-          sessionId: session.id,
-          metadata: session.metadata,
-        });
-        
         if (session.subscription && session.metadata?.userId) {
           // Cancel existing subscriptions when checkout is completed
           await cancelExistingSubscriptions(
@@ -321,11 +244,20 @@ export default async function handler(
           await updateSubscription(subscription, session);
         }
         break;
+      }
+
+      case 'invoice.paid': {
+        const invoice = event.data.object as Stripe.Invoice;
+        // Handle successful payment
+        break;
+      }
     }
 
     res.json({ received: true });
-  } catch (error) {
-    console.error("Error processing webhook:", error);
-    res.status(500).json({ error: "Webhook handler failed" });
+  } catch (err) {
+    console.error('Webhook error:', err);
+    res.status(400).json({
+      error: `Webhook Error: ${err instanceof Error ? err.message : 'Unknown error'}`
+    });
   }
 }

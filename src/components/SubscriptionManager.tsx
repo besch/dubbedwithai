@@ -1,19 +1,21 @@
 import { useState } from "react";
 import { AlertCircle, CheckCircle, XCircle } from "lucide-react";
-import { PRICING_PLANS } from "@/config/pricing";
+import { createPricingPlans } from "@/config/pricing";
 import { Subscription } from "@/types";
 
 interface SubscriptionManagerProps {
   subscription: Subscription;
   onCancel: () => Promise<void>;
   onReactivate: () => Promise<void>;
+  pricingPlans: ReturnType<typeof createPricingPlans>;
 }
 
-export default function SubscriptionManager({
+const SubscriptionManager: React.FC<SubscriptionManagerProps> = ({
   subscription,
   onCancel,
   onReactivate,
-}: SubscriptionManagerProps) {
+  pricingPlans,
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -42,8 +44,7 @@ export default function SubscriptionManager({
     }
   };
 
-  const planDetails =
-    PRICING_PLANS[subscription.plan_type as keyof typeof PRICING_PLANS];
+  const planDetails = pricingPlans[subscription.plan_type as keyof typeof pricingPlans];
 
   return (
     <div className="bg-muted rounded-lg p-6 space-y-6">
@@ -152,4 +153,6 @@ export default function SubscriptionManager({
       </div>
     </div>
   );
-}
+};
+
+export default SubscriptionManager;
